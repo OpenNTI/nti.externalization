@@ -1,0 +1,68 @@
+<!-- -*- mode: nxml -*- -->
+<configure	xmlns="http://namespaces.zope.org/zope"
+			xmlns:i18n="http://namespaces.zope.org/i18n"
+			xmlns:zcml="http://namespaces.zope.org/zcml">
+
+	<include package="zope.component" />
+	<include package="zope.annotation" />
+	<include package="zope.security" />
+	<include package="zope.preference" file="meta.zcml" />
+	<include package="zope.preference" />
+
+	<subscriber
+		provides=".interfaces.IExternalMappingDecorator"
+		for="zope.dublincore.interfaces.IDCExtended"
+		factory=".dublincore.DCExtendedExternalMappingDecorator" />
+		
+	<subscriber
+		provides=".interfaces.IExternalMappingDecorator"
+		for="zope.dublincore.interfaces.IDCDescriptiveProperties"
+		factory=".dublincore.DCDescriptivePropertiesExternalMappingDecorator" />
+
+	<adapter for=""
+			 provides=".interfaces.ILocatedExternalMapping"
+			 factory=".interfaces.LocatedExternalDict" />
+
+	<adapter for=""
+			 provides=".interfaces.ILocatedExternalSequence"
+			 factory=".interfaces.LocatedExternalList" />
+
+	<adapter for="dolmen.builtins.IList"
+			 provides=".interfaces.ILocatedExternalSequence"
+			 factory=".interfaces.LocatedExternalList" />
+
+	<utility factory=".representation.JsonRepresenter" />
+	<utility factory=".representation.YamlRepresenter" />
+	<utility factory=".representation.PlistRepresenter" />
+	
+	<!-- Offer to adapt strings to dates -->
+	<!-- TODO: This is a bit ad-hoc. Surely there's a more formal set
+	of transforms somewhere? -->
+	<adapter factory=".datetime._date_from_string" />
+	<adapter factory=".datetime.datetime_from_string" />
+	
+	<!-- Do the reverse as well.-->
+	<adapter factory=".datetime._date_to_string" />
+	<adapter factory=".datetime._datetime_to_string" />
+	<adapter factory=".datetime._duration_to_string" />
+
+	<!-- The "*" matches things that implement some interface -->
+	<!-- It translates into passing None to the registry method -->
+	<adapter for="*"
+			 factory=".internalization.default_externalized_object_factory_finder_factory"
+			 provides=".interfaces.IExternalizedObjectFactoryFinder" />
+			 
+	<!-- The empty string matches things that don't implement any interface -->
+	<adapter for=""
+			 factory=".internalization.default_externalized_object_factory_finder_factory"
+			 provides=".interfaces.IExternalizedObjectFactoryFinder" />
+
+	<adapter for=""
+			 factory=".externalization._DevmodeNonExternalizableObjectReplacer"
+			 zcml:condition="have devmode" />
+
+	<adapter for="*"
+			 factory=".externalization._DevmodeNonExternalizableObjectReplacer"
+			 zcml:condition="have devmode" />
+
+</configure>
