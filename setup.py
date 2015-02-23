@@ -52,6 +52,7 @@ setup(
 		'setuptools',
 		'isodate',
 		'persistent',
+		'pyramid',
 		'PyYAML',
 		'pytz',
 		'simplejson',

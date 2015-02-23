@@ -66,7 +66,7 @@ StandardInternalFields_LAST_MODIFIEDU = StandardInternalFields.LAST_MODIFIEDU
 # the name that was established at the top level.
 _NotGiven = object()
 
-from .threadlocal import ThreadLocalManager
+from pyramid.threadlocal import ThreadLocalManager
 
 _manager = ThreadLocalManager(default=lambda: {'name': _NotGiven,
 											   'memos': None})
