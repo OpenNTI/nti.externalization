@@ -3,10 +3,6 @@ from setuptools import setup, find_packages
 
 VERSION = '0.0.0'
 
-import platform
-py_impl = getattr(platform, 'python_implementation', lambda: None)
-IS_PYPY = py_impl() == 'PyPy'
-
 entry_points = {
 	'console_scripts': [
 	],
@@ -39,9 +35,6 @@ setup(
 		'Operating System :: OS Independent',
 		'Programming Language :: Python :: 2',
 		'Programming Language :: Python :: 2.7',
-		'Programming Language :: Python :: 3',
-		'Programming Language :: Python :: 3.3',
-		'Programming Language :: Python :: 3.4',
 		'Programming Language :: Python :: Implementation :: CPython'
 	],
 	packages=find_packages('src'),
