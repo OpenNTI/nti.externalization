@@ -66,7 +66,7 @@ StandardInternalFields_LAST_MODIFIEDU = StandardInternalFields.LAST_MODIFIEDU
 # the name that was established at the top level.
 _NotGiven = object()
 
-from pyramid.threadlocal import ThreadLocalManager
+from ._pyramid import ThreadLocalManager
 
 _manager = ThreadLocalManager(default=lambda: {'name': _NotGiven,
 											   'memos': None})
@@ -397,7 +397,7 @@ def _ext_class_if_needed(self, result):
 												 'nti.externalization.interfaces' )):
 		result[StandardExternalFields_CLASS] = self.__class__.__name__
 
-from pyramid.threadlocal import get_current_request # XXX Layer violation
+from ._pyramid import get_current_request
 
 def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
 									 registry=component, decorate=True,
