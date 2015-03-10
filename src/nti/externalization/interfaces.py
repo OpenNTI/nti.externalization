@@ -36,7 +36,9 @@ class StandardExternalFields(object):
 	LINKS = 'Links'
 	HREF = 'href'
 	ITEMS = 'Items'
-
+	
+	CTA_MIMETYPE = 'mimeType' # IContentTypeAware MimeType field
+	
 StandardExternalFields.ALL = (lambda : [ v for k,v in StandardExternalFields.__dict__.iteritems() 
 										if not k.startswith( '_' ) ])()
 

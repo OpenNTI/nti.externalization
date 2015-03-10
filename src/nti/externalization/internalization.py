@@ -17,7 +17,6 @@ import sys
 import inspect
 import numbers
 import collections
-
 from zope import component
 from zope import interface
 
@@ -49,6 +48,7 @@ LEGACY_FACTORY_SEARCH_MODULES = set()
 
 StandardExternalFields_CLASS = StandardExternalFields.CLASS
 StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
+StandardExternalFields_CTA_MIMETYPE = StandardExternalFields.CTA_MIMETYPE
 
 def register_legacy_search_module( module_name ):
 	"""
@@ -103,17 +103,21 @@ def _search_for_external_factory( typeName, search_set=None ):
 
 @interface.implementer(IFactory)
 def default_externalized_object_factory_finder( externalized_object ):
-	factory = None
+	mime_type = factory = None
 	# We use specialized interfaces instead of plain IFactory to make it clear
 	# that these are being created from external data
 	try:
 		if StandardExternalFields_MIMETYPE in externalized_object:
-			factory = component.queryAdapter( externalized_object, IMimeObjectFactory,
-											  name=externalized_object[StandardExternalFields_MIMETYPE] )
+			mime_type =  externalized_object[StandardExternalFields_MIMETYPE]
+		elif StandardExternalFields_CTA_MIMETYPE in externalized_object:
+			mime_type =  externalized_object[StandardExternalFields_CTA_MIMETYPE]
+		
+		if mime_type:
+			factory = component.queryAdapter(externalized_object, IMimeObjectFactory,
+											 name=mime_type )
 			if not factory:
 				# What about a named utility?
-				factory = component.queryUtility( IMimeObjectFactory,
-												  name=externalized_object[StandardExternalFields_MIMETYPE] )
+				factory = component.queryUtility( IMimeObjectFactory, name=mime_type)
 
 			if not factory:
 				# Is there a default?
