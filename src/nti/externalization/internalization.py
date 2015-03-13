@@ -200,10 +200,14 @@ def _resolve_externals(object_io, updating_object, externalObject,
 # Things we don't bother trying to internalize
 _primitives = six.string_types + (numbers.Number,bool)
 
+def _pre_hook( k, x ):
+	pass
+
 def _object_hook( k, v, x ):
 	return v
 
 def _recall( k, obj, ext_obj, kwargs ):
+	kwargs['pre_hook']( k, ext_obj )
 	obj = update_from_external_object( obj, ext_obj, **kwargs )
 	obj = kwargs['object_hook']( k, obj, ext_obj )
 	if IPersistent.providedBy( obj ):
@@ -213,7 +217,9 @@ def _recall( k, obj, ext_obj, kwargs ):
 def update_from_external_object( containedObject, externalObject,
 								 registry=component, context=None,
 								 require_updater=False,
-								 notify=True, object_hook=_object_hook ):
+								 notify=True, 
+								 object_hook=_object_hook,
+								 pre_hook=_pre_hook):
 	"""
 	Central method for updating objects from external values.
 
@@ -239,6 +245,9 @@ def update_from_external_object( containedObject, externalObject,
 		as it has been updated. The return value will be used instead of the nested object.
 		Signature ``f(k,v,x)`` where ``k`` is either the key name, or None in the case of a sequence,
 		``v`` is the newly-updated value, and ``x`` is the external object used to update ``v``.
+	:param callable pre_hook: If given, called with the before update_from_external_object is
+		called for every nested object. Signature ``f(k,x)`` where ``k`` is either the key name,
+		 or None in the case of a sequence and ``x`` is the external object
 
 	:return: `containedObject` after updates from `externalObject`
 	"""
@@ -247,7 +256,8 @@ def update_from_external_object( containedObject, externalObject,
 				  context=context, 
 				  require_updater=require_updater, 
 				  notify=notify, 
-				  object_hook=object_hook)
+				  object_hook=object_hook,
+				  pre_hook=_pre_hook)
 
 	# Parse any contained objects
 	# TODO: We're (deliberately?) not actually updating any contained
