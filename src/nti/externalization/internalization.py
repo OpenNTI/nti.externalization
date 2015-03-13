@@ -207,7 +207,6 @@ def _object_hook( k, v, x ):
 	return v
 
 def _recall( k, obj, ext_obj, kwargs ):
-	kwargs['pre_hook']( k, ext_obj )
 	obj = update_from_external_object( obj, ext_obj, **kwargs )
 	obj = kwargs['object_hook']( k, obj, ext_obj )
 	if IPersistent.providedBy( obj ):
@@ -272,11 +271,13 @@ def update_from_external_object( containedObject, externalObject,
 	if isinstance( externalObject, collections.MutableSequence ):
 		tmp = []
 		for i in externalObject:
+			kwargs['pre_hook']( None, i )
 			factory = find_factory_for( i, registry=registry )
 			tmp.append( _recall( None, factory(), i, kwargs ) if factory else i )
 		return tmp
 
 	assert isinstance( externalObject, collections.MutableMapping )
+
 	# We have to save the list of keys, it's common that they get popped during the update
 	# process, and then we have no descriptions to send
 	external_keys = list()
@@ -285,6 +286,8 @@ def update_from_external_object( containedObject, externalObject,
 		if isinstance( v, _primitives ):
 			continue
 
+		kwargs['pre_hook']( k, v )
+		
 		if isinstance( v, collections.MutableSequence ):
 			# Update the sequence in-place
 			__traceback_info__ = k, v
