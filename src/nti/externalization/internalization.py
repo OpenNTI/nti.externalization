@@ -257,7 +257,7 @@ def update_from_external_object( containedObject, externalObject,
 				  require_updater=require_updater, 
 				  notify=notify, 
 				  object_hook=object_hook,
-				  pre_hook=_pre_hook)
+				  pre_hook=pre_hook)
 
 	# Parse any contained objects
 	# TODO: We're (deliberately?) not actually updating any contained
