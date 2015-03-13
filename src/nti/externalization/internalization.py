@@ -251,12 +251,12 @@ def update_from_external_object( containedObject, externalObject,
 	:return: `containedObject` after updates from `externalObject`
 	"""
 
-	kwargs = dict(registry=registry, 
+	kwargs = dict(notify=notify,
 				  context=context, 
-				  require_updater=require_updater, 
-				  notify=notify, 
+				  registry=registry, 
+				  pre_hook=pre_hook,
 				  object_hook=object_hook,
-				  pre_hook=pre_hook)
+				  require_updater=require_updater)
 
 	# Parse any contained objects
 	# TODO: We're (deliberately?) not actually updating any contained
@@ -266,8 +266,7 @@ def update_from_external_object( containedObject, externalObject,
 	# TODO: Schema validation
 	# TODO: Should the current user impact on this process?
 
-	# Sequences do not represent python types, they represent collections of
-	# python types
+	# Sequences do not represent python types, they represent collections of python types
 	if isinstance( externalObject, collections.MutableSequence ):
 		tmp = []
 		for i in externalObject:
