@@ -109,9 +109,7 @@ def default_externalized_object_factory_finder( externalized_object ):
 	try:
 		if StandardExternalFields_MIMETYPE in externalized_object:
 			mime_type =  externalized_object[StandardExternalFields_MIMETYPE]
-		elif StandardExternalFields_CTA_MIMETYPE in externalized_object:
-			mime_type =  externalized_object[StandardExternalFields_CTA_MIMETYPE]
-		
+
 		if mime_type:
 			factory = component.queryAdapter(externalized_object, IMimeObjectFactory,
 											 name=mime_type )
