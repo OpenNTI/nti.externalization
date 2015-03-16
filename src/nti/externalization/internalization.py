@@ -202,6 +202,7 @@ _primitives = six.string_types + (numbers.Number,bool)
 
 def _pre_hook( k, x ):
 	pass
+pre_hook = _pre_hook
 
 def _object_hook( k, v, x ):
 	return v
