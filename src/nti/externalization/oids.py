@@ -212,9 +212,11 @@ def to_external_ntiid_oid(contained, default_oid=None,
 	else:
 		creator = getattr( contained, 'creator', DEFAULT_EXTERNAL_CREATOR )
 
-	ext_oid = ntiids.make_ntiid(provider=(creator
-										   if isinstance(creator, string_types)
-										   else getattr(creator, 'username', DEFAULT_EXTERNAL_CREATOR)),
+	creator = (	creator
+				if isinstance(creator, string_types)
+				else getattr(creator, 'username', DEFAULT_EXTERNAL_CREATOR) )
+	
+	ext_oid = ntiids.make_ntiid(provider=ntiids.make_provider_safe(creator),
 								specific=oid,
 								nttype=ntiids.TYPE_OID)
 	try:
