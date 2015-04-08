@@ -326,11 +326,13 @@ class IInternalObjectIO(IInternalObjectExternalizer,IInternalObjectUpdater):
 	in external forms.
 	"""
 
-from zope.lifecycleevent import ObjectEvent
+from zope.interface.interfaces import ObjectEvent
+from zope.interface.interfaces import IObjectEvent
+
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.lifecycleevent import IObjectModifiedEvent
 
-class IObjectWillUpdateFromExternalEvent(ObjectEvent):
+class IObjectWillUpdateFromExternalEvent(IObjectEvent):
 	"""
 	An object will be updated from an external value.
 	"""
