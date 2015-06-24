@@ -172,7 +172,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True):
 		# Note that for speed, before calling 'recall' we are performing the primitive check
 		result = obj
 		if obj_has_usable_external_object: # either an adapter or the original object
-			result = obj.toExternalObject(request=state.request, name=state.name)
+			result = obj.toExternalObject(request=state.request, name=state.name,
+										  decorate=decorate)
 		elif hasattr( obj, "toExternalDictionary" ):
 			result = obj.toExternalDictionary(request=state.request, name=state.name)
 		elif hasattr( obj, "toExternalList" ):
