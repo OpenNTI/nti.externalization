@@ -175,7 +175,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True):
 			result = obj.toExternalObject(request=state.request, name=state.name,
 										  decorate=decorate)
 		elif hasattr( obj, "toExternalDictionary" ):
-			result = obj.toExternalDictionary(request=state.request, name=state.name)
+			result = obj.toExternalDictionary(request=state.request, name=state.name,
+											  decorate=decorate)
 		elif hasattr( obj, "toExternalList" ):
 			result = obj.toExternalList()
 		elif isinstance(obj, MAPPING_TYPES ):

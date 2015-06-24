@@ -114,10 +114,10 @@ class PersistentExternalizableDictionary(PersistentPropertyHolder,
 	def __init__(self, data=None, **kwargs ):
 		super(PersistentExternalizableDictionary, self).__init__( data, **kwargs )
 
-	def toExternalDictionary( self, mergeFrom=None):
-		result = super(PersistentExternalizableDictionary,self).toExternalDictionary( self )
+	def toExternalDictionary(self, mergeFrom=None, *args, **kwargs):
+		result = super(PersistentExternalizableDictionary,self).toExternalDictionary(self, *args, **kwargs)
 		for key, value in self.iteritems():
-			result[key] = toExternalObject( value )
+			result[key] = toExternalObject(value, *args, **kwargs)
 		return result
 
 class PersistentExternalizableList(PersistentPropertyHolder, PersistentList):
@@ -157,7 +157,6 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 			initlist = [self.__wrap( x ) for x in initlist]
 		super(PersistentExternalizableWeakList,self).__init__(initlist)
 
-
 	def __getitem__(self, i ):
 		return super(PersistentExternalizableWeakList,self).__getitem__( i )()
 
@@ -181,14 +180,11 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 	def __wrap( self, obj ):
 		return obj if isinstance( obj, PWeakRef ) else PWeakRef( obj )
 
-
 	def remove(self,value):
 		super(PersistentExternalizableWeakList,self).remove( self.__wrap( PWeakRef(value) ) )
 
-
 	def __setitem__(self, i, item):
 		super(PersistentExternalizableWeakList,self).__setitem__( i, self.__wrap( PWeakRef( item ) ) )
-
 
 	def __setslice__(self, i, j, other):
 		raise TypeError( 'Not supported' ) # pragma: no cover
@@ -203,25 +199,20 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 		# but the UserList from which we are descended accepts
 		# any iterable.
 		result = super(PersistentExternalizableWeakList,self).__iadd__([self.__wrap(PWeakRef(o)) for o in other])
-
 		return result
 
 	def __imul__(self, n):
 		result = super(PersistentExternalizableWeakList,self).__imul__(n)
-
 		return result
 
 	def append(self, item):
 		super(PersistentExternalizableWeakList,self).append(self.__wrap( PWeakRef(item) ) )
 
-
 	def insert(self, i, item):
 		super(PersistentExternalizableWeakList,self).insert( i, self.__wrap( PWeakRef(item)) )
 
-
 	def pop(self, i=-1):
 		rtn = super(PersistentExternalizableWeakList,self).pop( i )
-
 		return rtn()
 
 	def extend(self, other):

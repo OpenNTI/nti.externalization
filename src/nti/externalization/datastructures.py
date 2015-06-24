@@ -63,7 +63,7 @@ class ExternalizableDictionaryMixin(object):
 												mergeFrom=mergeFrom,
 												**kwargs )
 
-	def toExternalDictionary( self, mergeFrom=None, **kwargs ):
+	def toExternalDictionary(self, mergeFrom=None, *args, **kwargs ):
 		return self._ext_standard_external_dictionary( self._ext_replacement(), 
 													   mergeFrom=mergeFrom,
 													   **kwargs )
@@ -150,8 +150,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 		"""
 		return self._ext_primitive_out_ivars_
 
-	def toExternalDictionary( self, mergeFrom=None, **kwargs ):
-		result = super(AbstractDynamicObjectIO,self).toExternalDictionary( mergeFrom=mergeFrom, **kwargs )
+	def toExternalDictionary( self, mergeFrom=None, *args, **kwargs):
+		result = super(AbstractDynamicObjectIO,self).toExternalDictionary(mergeFrom=mergeFrom, **kwargs)
 		ext_self = self._ext_replacement()
 		primitive_ext_keys = self._ext_primitive_keys()
 		for k in self._ext_keys():
@@ -161,7 +161,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
 			attr_val = self._ext_getattr( ext_self, k )
 			__traceback_info__ = k, attr_val
-			result[k] = toExternalObject( attr_val, **kwargs ) if k not in primitive_ext_keys else attr_val
+			result[k] = toExternalObject(attr_val, **kwargs) if k not in primitive_ext_keys else attr_val
 
 			if result[k] is not attr_val:
 				# We want to be sure things we externalize have the right parent relationship
@@ -179,8 +179,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 			result[StandardExternalFields.ID] = result[StandardExternalFields.OID]
 		return result
 
-	def toExternalObject( self, mergeFrom=None, **kwargs ):
-		return self.toExternalDictionary(mergeFrom, **kwargs)
+	def toExternalObject( self, mergeFrom=None, *args, **kwargs ):
+		return self.toExternalDictionary(mergeFrom, *args, **kwargs)
 
 	def _ext_accept_update_key( self, k, ext_self, ext_keys ):
 		"""
