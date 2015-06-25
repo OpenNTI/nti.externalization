@@ -457,8 +457,11 @@ def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
 
 	_ext_class_if_needed(self, result)
 
-	_choose_field( result, self, StandardExternalFields_CONTAINER_ID,
-				   fields=(StandardInternalFields_CONTAINER_ID,) )
+	containerId = _choose_field(result, self, StandardExternalFields_CONTAINER_ID,
+				   				fields=(StandardInternalFields_CONTAINER_ID,) ) 
+	if containerId: # alias per mobile client request 20150625
+		result[StandardInternalFields_CONTAINER_ID] = containerId
+
 	try:
 		_choose_field( result, self, StandardExternalFields_NTIID,
 					   fields=(StandardInternalFields_NTIID, StandardExternalFields_NTIID) )
