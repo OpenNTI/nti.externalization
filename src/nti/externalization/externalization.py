@@ -335,7 +335,14 @@ def _choose_field(result, self, ext_name,
 			continue
 
 		if value is not None:
-			value = converter(value)
+			# If the creator is the system user, catch it here
+			from nti.dataserver.interfaces import system_user
+			from nti.dataserver.interfaces import SYSTEM_USER_NAME
+			if ext_name is StandardExternalFields_CREATOR and isinstance( value, system_user.__class__ ):
+				value = unicode( SYSTEM_USER_NAME )
+				result[ext_name] = value
+				return value
+			value = converter( value )
 			if value is not None:
 				result[ext_name] = value
 				return value
