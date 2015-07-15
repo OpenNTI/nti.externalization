@@ -15,6 +15,15 @@ import numbers
 import collections
 from collections import defaultdict
 
+from zope import component
+from zope import interface
+from zope import deprecation
+
+from zope.interface.common.sequence import IFiniteSequence
+
+from zope.dublincore.interfaces import IDCTimes
+
+from zope.security.interfaces import IPrincipal
 from zope.security.management import system_user
 
 from ZODB.POSException import POSKeyError
@@ -23,11 +32,7 @@ import persistent
 
 import BTrees.OOBTree
 
-from zope import component
-from zope import interface
-from zope import deprecation
-from zope.interface.common import sequence
-from zope.dublincore import interfaces as dub_interfaces
+from nti.common.string import safestr
 
 from nti.ntiids import ntiids
 
@@ -62,9 +67,12 @@ StandardInternalFields_CREATED_TIME = StandardInternalFields.CREATED_TIME
 StandardInternalFields_LAST_MODIFIED = StandardInternalFields.LAST_MODIFIED
 StandardInternalFields_LAST_MODIFIEDU = StandardInternalFields.LAST_MODIFIEDU
 
-SYSTEM_USER_ID = system_user.id
 SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 
+def is_system_user(obj):
+	result = bool(IPrincipal.providedBy(obj) and obj.id == system_user.id)
+	return result
+		
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
 # and they call back into us, and otherwise we would lose
@@ -196,10 +204,10 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True):
 			# NOTE: This means that Links added here will not be externalized. There
 			# is an IExternalObjectDecorator that does that
 			for key, value in obj.items():
-				result[key] = _to_external_object_state( value, state, decorate=decorate) \
-							  if not isinstance(value, _primitives) else value
-		elif isinstance( obj, SEQUENCE_TYPES ) or \
-			 sequence.IFiniteSequence.providedBy( obj ):
+				result[key] = \
+					_to_external_object_state( value, state, decorate=decorate) \
+					if not isinstance(value, _primitives) else value
+		elif isinstance( obj, SEQUENCE_TYPES ) or IFiniteSequence.providedBy( obj ):
 			result = [ (_to_external_object_state(x, state, decorate=decorate) \
 					    if not isinstance(x, _primitives) else x) for x in obj ]
 			result = state.registry.getAdapter(result, ILocatedExternalSequence)
@@ -341,9 +349,8 @@ def _choose_field(result, self, ext_name,
 
 		if value is not None:
 			# If the creator is the system user, catch it here
-			if ext_name is StandardExternalFields_CREATOR and \
-				isinstance( value, system_user.__class__ ):
-				value = unicode( SYSTEM_USER_NAME )
+			if ext_name is StandardExternalFields_CREATOR and is_system_user(value):
+				value = safestr(SYSTEM_USER_NAME)
 				result[ext_name] = value
 				return value
 			value = converter( value )
@@ -373,7 +380,7 @@ def to_standard_external_last_modified_time( context, default=None, _write_into=
 
 	_choose_field( holder, context, StandardExternalFields_LAST_MODIFIED,
 				   fields=(StandardInternalFields_LAST_MODIFIED, StandardInternalFields_LAST_MODIFIEDU),
-				   sup_iface=dub_interfaces.IDCTimes, sup_fields=('modified',), sup_converter=_datetime_to_epoch)
+				   sup_iface=IDCTimes, sup_fields=('modified',), sup_converter=_datetime_to_epoch)
 	return holder.get( StandardExternalFields_LAST_MODIFIED, default)
 
 def to_standard_external_created_time( context, default=None, _write_into=None ):
@@ -391,7 +398,7 @@ def to_standard_external_created_time( context, default=None, _write_into=None )
 
 	_choose_field( holder, context, StandardExternalFields_CREATED_TIME,
 				   fields=(StandardInternalFields_CREATED_TIME,),
-				   sup_iface=dub_interfaces.IDCTimes, sup_fields=('created',), sup_converter=_datetime_to_epoch)
+				   sup_iface=IDCTimes, sup_fields=('created',), sup_converter=_datetime_to_epoch)
 
 	return holder.get( StandardExternalFields_CREATED_TIME, default )
 
