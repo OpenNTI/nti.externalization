@@ -15,6 +15,8 @@ import numbers
 import collections
 from collections import defaultdict
 
+from zope.security.management import system_user
+
 from ZODB.POSException import POSKeyError
 
 import persistent
@@ -59,6 +61,9 @@ StandardInternalFields_CONTAINER_ID = StandardInternalFields.CONTAINER_ID
 StandardInternalFields_CREATED_TIME = StandardInternalFields.CREATED_TIME
 StandardInternalFields_LAST_MODIFIED = StandardInternalFields.LAST_MODIFIED
 StandardInternalFields_LAST_MODIFIEDU = StandardInternalFields.LAST_MODIFIEDU
+
+SYSTEM_USER_ID = system_user.id
+SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
@@ -336,9 +341,8 @@ def _choose_field(result, self, ext_name,
 
 		if value is not None:
 			# If the creator is the system user, catch it here
-			from nti.dataserver.interfaces import system_user
-			from nti.dataserver.interfaces import SYSTEM_USER_NAME
-			if ext_name is StandardExternalFields_CREATOR and isinstance( value, system_user.__class__ ):
+			if ext_name is StandardExternalFields_CREATOR and \
+				isinstance( value, system_user.__class__ ):
 				value = unicode( SYSTEM_USER_NAME )
 				result[ext_name] = value
 				return value
