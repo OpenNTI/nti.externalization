@@ -186,17 +186,18 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 		result = obj
 		if obj_has_usable_external_object: # either an adapter or the original object
 			result = obj.toExternalObject(request=state.request, name=state.name,
-										  decorate=decorate)
+										  decorate=decorate, useCache=useCache)
 		elif hasattr( obj, "toExternalDictionary" ):
 			result = obj.toExternalDictionary(request=state.request, name=state.name,
-											  decorate=decorate)
+											  decorate=decorate, useCache=useCache)
 		elif hasattr( obj, "toExternalList" ):
 			result = obj.toExternalList()
 		elif isinstance(obj, MAPPING_TYPES ):
 			result = to_standard_external_dictionary(obj, name=state.name,
 													 registry=state.registry, 
 													 request=state.request,
-													 decorate=decorate )
+													 decorate=decorate,
+													 useCache=useCache)
 			if obj.__class__ is dict:
 				result.pop( 'Class', None )
 			# Note that we recurse on the original items, not the things newly
@@ -424,7 +425,7 @@ from ._pyramid import get_current_request
 
 def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
 									 registry=component, decorate=True,
-									 request=_NotGiven):
+									 request=_NotGiven, useCache=True):
 	"""
 	Returns a dictionary representing the standard externalization of
 	the object. This impl takes care of the standard attributes
