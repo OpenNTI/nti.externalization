@@ -153,12 +153,12 @@ class _ExternalizationState(object):
 		# and thus ensure no overlapping ids
 		return {}
 
-def _to_external_object_state(obj, state, top_level=False, decorate=True):
+def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=False):
 	__traceback_info__ = obj
 	
 	orig_obj = obj
 	orig_obj_id = id(obj)
-	if orig_obj_id in state.memo:
+	if useCache and orig_obj_id in state.memo:
 		return state.memo[orig_obj_id][1]
 
 	try:
@@ -205,10 +205,10 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True):
 			# is an IExternalObjectDecorator that does that
 			for key, value in obj.items():
 				result[key] = \
-					_to_external_object_state( value, state, decorate=decorate) \
+					_to_external_object_state(value, state, decorate=decorate, useCache=useCache) \
 					if not isinstance(value, _primitives) else value
 		elif isinstance( obj, SEQUENCE_TYPES ) or IFiniteSequence.providedBy( obj ):
-			result = [ (_to_external_object_state(x, state, decorate=decorate) \
+			result = [ (_to_external_object_state(x, state, decorate=decorate, useCache=useCache) \
 					    if not isinstance(x, _primitives) else x) for x in obj ]
 			result = state.registry.getAdapter(result, ILocatedExternalSequence)
 		# PList doesn't support None values, JSON does. The closest
@@ -234,7 +234,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True):
 			for decorator in state.registry.subscribers( (orig_obj, state.request), IExternalObjectDecorator):
 				decorator.decorateExternalObject( orig_obj, result )
 
-		state.memo[orig_obj_id] = (orig_obj, result)
+		if useCache:
+			state.memo[orig_obj_id] = (orig_obj, result)
 		return result
 	except state.catch_components as t:
 		if top_level:
@@ -252,7 +253,8 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 					  catch_components=(), catch_component_action=None,
 					  default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
 					  request=_NotGiven,
-					  decorate=True):
+					  decorate=True,
+					  useCache=True):
 	""" Translates the object into a form suitable for
 	external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
 	and :const:`MAPPING_TYPES` for details on what we can handle by default.
@@ -305,7 +307,8 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 	state.request = request
 
 	try:
-		return _to_external_object_state( obj, state, top_level=True, decorate=decorate)
+		return _to_external_object_state( obj, state, top_level=True,
+										  decorate=decorate, useCache=useCache)
 	finally:
 		_manager.pop()
 
