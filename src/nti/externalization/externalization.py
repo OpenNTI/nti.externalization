@@ -153,7 +153,7 @@ class _ExternalizationState(object):
 		# and thus ensure no overlapping ids
 		return {}
 
-def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=False):
+def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=True):
 	__traceback_info__ = obj
 	
 	orig_obj = obj
