@@ -45,6 +45,7 @@ from nti.externalization.externalization import EXT_FORMAT_PLIST
 from nti.externalization.externalization import EXT_FORMAT_JSON
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.externalization import catch_replace_action
+from nti.externalization.externalization import removed_unserializable
 from nti.externalization.externalization import to_standard_external_dictionary
 
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
@@ -182,6 +183,16 @@ class TestFunctions(ExternalizationLayerTest):
 		del sys.modules[n]
 		# something unresolvable
 		assert_that( _search_for_external_factory( 'FooBar', search_set=[n] ), is_( none() ) )
+		
+	def test_removed_unserializable(self):
+		marker = object()
+		ext = {'x':1, 'y':[1,2, marker], 'z':marker, 'a': {3,4}, 'b':{'c':(marker,1)}}
+		removed_unserializable(ext)
+		assert_that(ext, has_entry('x', is_(1)))
+		assert_that(ext, has_entry('y', is_([1, 2, None])))
+		assert_that(ext, has_entry('a', is_([3, 4])))
+		assert_that(ext, has_entry('z', is_(none())))
+		assert_that(ext, has_entry('b', has_entry('c', is_([None, 1]))))
 
 class TestPersistentExternalizableWeakList(unittest.TestCase):
 

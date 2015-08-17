@@ -534,21 +534,35 @@ def is_nonstr_iter(v):
 	return hasattr(v, '__iter__')
 
 def removed_unserializable(ext):
+
+	def _is_sequence(m):
+		return 	not isinstance(m, collections.Mapping) \
+				and is_nonstr_iter(m)
+
 	def _clean(m):
 		if isinstance(m, collections.Mapping):
 			for k, v in list(m.items()):
-				if is_nonstr_iter(v) and not isinstance(v, (list,tuple)):
-					m[k] = list(v)
-				elif not isinstance(v, _primitives):
-					m.pop(k, None)
+				if _is_sequence(v):
+					if not isinstance(v, list):
+						m[k] = list(v)
+				elif not isinstance(v, collections.Mapping):
+					if not isinstance(v, _primitives):
+						m[k] = None
 			values = m.values()
-		elif is_nonstr_iter(m):
+		elif isinstance(m, list):
+			for idx, v in enumerate(m):
+				if _is_sequence(v):
+					if not isinstance(v, list):
+						m[idx] = list(v)
+				elif not isinstance(v, collections.Mapping):
+					if not isinstance(v, _primitives):
+						m[idx] = None
 			values = m
 		else:
 			values = ()
 		for x in values:
 			_clean(x)
-	if is_nonstr_iter(ext) and not isinstance(ext, (list,tuple)):
+	if _is_sequence(ext) and not isinstance(ext, list):
 		ext = list(ext)
 	_clean(ext)
 	return ext
