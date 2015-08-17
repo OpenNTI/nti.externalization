@@ -530,6 +530,29 @@ def to_minimal_standard_external_dictionary( self, mergeFrom=None, **kwargs ):
 		result[StandardExternalFields_MIMETYPE] = mime_type
 	return result
 
+def is_nonstr_iter(v):
+	return hasattr(v, '__iter__')
+
+def removed_unserializable(ext):
+	def _clean(m):
+		if isinstance(m, collections.Mapping):
+			for k, v in list(m.items()):
+				if is_nonstr_iter(v) and not isinstance(v, (list,tuple)):
+					m[k] = list(v)
+				elif not isinstance(v, _primitives):
+					m.pop(k, None)
+			values = m.values()
+		elif is_nonstr_iter(m):
+			values = m
+		else:
+			values = ()
+		for x in values:
+			_clean(x)
+	if is_nonstr_iter(ext) and not isinstance(ext, (list,tuple)):
+		ext = list(ext)
+	_clean(ext)
+	return ext
+
 # Things that have moved
 import zope.deferredimport
 zope.deferredimport.initialize()
