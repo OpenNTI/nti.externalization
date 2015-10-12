@@ -37,7 +37,7 @@ class SingletonDecorator(type):
 	"""
 
 	def __new__(cls, name, bases, cls_dict):
-		cls_dict[str('__slots__')] = () # no ivars
+		cls_dict[str('__slots__')] = ()  # no ivars
 
 		cls = type.__new__(cls, name, bases, cls_dict)
 
@@ -57,7 +57,7 @@ class SingletonDecorator(type):
 			return the_instance
 		cls.__new__ = staticmethod(__new__)
 
-		def __init__( self, context=None, request=None ):
+		def __init__(self, context=None, request=None):
 			pass
 		cls.__init__ = __init__
 

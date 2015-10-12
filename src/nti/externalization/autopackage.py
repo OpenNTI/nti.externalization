@@ -23,6 +23,7 @@ from zope.mimetype.interfaces import IContentTypeAware
 from ZODB.loglevels import TRACE
 
 from .datastructures import ModuleScopedInterfaceObjectIO
+
 from .internalization import register_legacy_search_module
 
 class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO):

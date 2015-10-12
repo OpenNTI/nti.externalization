@@ -12,6 +12,7 @@ __docformat__ = "restructuredtext en"
 logger = __import__('logging').getLogger(__name__)
 
 from zope import interface
+
 from zope.interface.common.sequence import ISequence
 from zope.interface.common.mapping import IFullMapping
 
@@ -73,14 +74,9 @@ class IInternalObjectExternalizer(interface.Interface):
 		used instead. """)
 
 	def toExternalObject(**kwargs):
-		""" Optional, see this :func:`~nti.externalization.externalization.to_external_object`."""
-
-	# def updateFromExternalObject( parsed, *args, **kwargs ):
-	# 	""" Optional, updates this object using the parsed input
-	# 	from the external object form. If the object does not implement
-	# 	this method, then if it implements clear() and update() those will be
-	# 	used. The arguments are optional context arguments possibly passed. One
-	# 	common key is dataserver pointing to a Dataserver."""
+		""" 
+		Optional, see this :func:`~nti.externalization.externalization.to_external_object`.
+		"""
 
 IExternalObject = IInternalObjectExternalizer # b/c aliase
 
@@ -204,9 +200,7 @@ class LocatedExternalList(list):
 	__acl__ = ()
 	mimeType = None
 
-###
 # Representations as strings
-###
 
 class IExternalObjectRepresenter(interface.Interface):
 	"""
@@ -252,7 +246,7 @@ EXT_REPR_PLIST = 'plist'
 #: Constant requesting YAML format data
 EXT_REPR_YAML = 'yaml'
 
-### Creating and updating new and existing objects given external forms
+# Creating and updating new and existing objects given external forms
 
 class IMimeObjectFactory(IFactory):
 	"""
@@ -338,7 +332,7 @@ class IObjectWillUpdateFromExternalEvent(IObjectEvent):
 	"""
 	external_value = interface.Attribute("The external value")
 
-@interface.implementer( IObjectWillUpdateFromExternalEvent )
+@interface.implementer(IObjectWillUpdateFromExternalEvent)
 class ObjectWillUpdateFromExternalEvent(ObjectEvent):
 	external_value = None
 

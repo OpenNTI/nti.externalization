@@ -13,8 +13,8 @@ logger = __import__('logging').getLogger(__name__)
 
 import collections
 
-from zope import interface
 from zope import component
+from zope import interface
 
 from .interfaces import EXT_REPR_JSON
 from .interfaces import EXT_REPR_YAML
@@ -26,9 +26,7 @@ from .interfaces import IExternalObjectRepresenter
 from .externalization import _NotGiven
 from .externalization import toExternalObject
 
-###
 # Driver functions
-###
 
 def to_external_representation( obj, ext_format=EXT_REPR_JSON,
 								name=_NotGiven, registry=component ):
@@ -53,9 +51,7 @@ def to_json_representation( obj ):
 	"""
 	return to_external_representation( obj, EXT_REPR_JSON )
 
-###
 # Plist
-###
 
 import plistlib
 
@@ -81,10 +77,7 @@ class PlistRepresenter(object):
 		else:
 			return plistlib.writePlistToString(ext)
 
-
-###
 # JSON
-###
 
 import simplejson
 
@@ -147,9 +140,7 @@ class JsonRepresenter(object):
 
 to_json_representation_externalized = JsonRepresenter().dump
 
-###
 # YAML
-###
 
 import yaml
 
@@ -188,9 +179,7 @@ class YamlRepresenter(object):
 	def load(self, stream):
 		return yaml.load(stream, Loader=_UnicodeLoader)
 
-###
 # Misc
-###
 
 from ZODB.POSException import ConnectionStateError
 

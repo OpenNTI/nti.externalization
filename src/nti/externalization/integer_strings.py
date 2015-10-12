@@ -37,19 +37,19 @@ import string
 _VERSION = b'$'
 
 # First, our vocabulary.
-# Remove the letter values o and O, Q (confused with O if you're sloppy), l and L, 
+# Remove the letter values o and O, Q (confused with O if you're sloppy), l and L,
 # and i and I, leaving the digits 1 and 0
 _REMOVED = b'oOQlLiI'
 _REPLACE = b'0001111'
-_VOCABULARY = b''.join( reversed(sorted(list(set(string.ascii_letters + string.digits) - set( _REMOVED ))) ))
+_VOCABULARY = b''.join(reversed(sorted(list(set(string.ascii_letters + string.digits) - set(_REMOVED)))))
 
 # We translate the letters we removed
-_TRANSTABLE = string.maketrans( _REMOVED, _REPLACE )
+_TRANSTABLE = string.maketrans(_REMOVED, _REPLACE)
 
 # Leaving us a base vocabulary to map integers into
 _BASE = len(_VOCABULARY)
 
-_ZERO_MARKER = b'@' # Zero is special
+_ZERO_MARKER = b'@'  # Zero is special
 
 def from_external_string(key):
 	"""
@@ -61,18 +61,17 @@ def from_external_string(key):
 	"""
 
 	if not key:
-		raise ValueError("Improper key" )
+		raise ValueError("Improper key")
 
-	if isinstance( key, unicode ):
+	if isinstance(key, unicode):
 		# Unicode keys cause problems: The _TRANSTABLE is coerced
 		# to Unicode, which fails because it contains non-ASCII values.
 		# So instead, we encode the unicode string to ascii, which, if it is a
 		# valid key, will work
-		key = key.encode( 'ascii' )
+		key = key.encode('ascii')
 
-
-	key = key[:-1] if key[-1] == _VERSION else key # strip the version if needed
-	key = string.translate( key, _TRANSTABLE ) # translate bad chars
+	key = key[:-1] if key[-1] == _VERSION else key  # strip the version if needed
+	key = string.translate(key, _TRANSTABLE)  # translate bad chars
 
 	if key == _ZERO_MARKER:
 		return 0
@@ -97,6 +96,6 @@ def to_external_string(integer):
 	# Simple string concat benchmarks the fastest for this size data,
 	# among a list and an array.array( 'c' )
 	while integer > 0:
-		integer, remainder = divmod( integer, _BASE )
+		integer, remainder = divmod(integer, _BASE)
 		result = _VOCABULARY[remainder] + result
 	return result
