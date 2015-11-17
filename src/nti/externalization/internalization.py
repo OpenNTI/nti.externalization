@@ -213,6 +213,40 @@ def _recall( k, obj, ext_obj, kwargs ):
 		obj._v_updated_from_external_source = ext_obj
 	return obj
 
+def notifyModified(containedObject, externalObject, updater, external_keys=()):
+	# try to provide external keys
+	if not external_keys:
+		external_keys = [k for k in externalObject.keys()]
+		
+	# TODO: We need to try to find the actual interfaces and fields to allow correct
+	# decisions to be made at higher levels.
+	# zope.formlib.form.applyData does this because it has a specific, configured mapping. We
+	# just do the best we can by looking at what's implemented. The most specific
+	# interface wins
+	descriptions = collections.defaultdict(list) # map from interface class to list of keys
+	provides = interface.providedBy( containedObject )
+	for k in external_keys:
+		iface_providing_attr = None
+		iface_attr = provides.get( k )
+		if iface_attr:
+			iface_providing_attr = iface_attr.interface
+		descriptions[iface_providing_attr].append( k )
+	attributes = [Attributes(iface, *keys) for iface, keys in descriptions.items()]
+	event = ObjectModifiedFromExternalEvent( containedObject, *attributes )
+	event.external_value = externalObject
+	# Let the updater have its shot at modifying the event, too, adding
+	# interfaces or attributes. (Note: this was added to be able to provide
+	# sharedWith information on the event, since that makes for a better stream.
+	# If that use case expands, revisit this interface
+	try:
+		meth = updater._ext_adjust_modified_event
+	except AttributeError:
+		pass
+	else:
+		event = meth( event )
+	_zope_event_notify( event )
+notify_modified = notifyModified
+
 def update_from_external_object( containedObject, externalObject,
 								 registry=component, context=None,
 								 require_updater=False,
@@ -327,33 +361,7 @@ def update_from_external_object( containedObject, externalObject,
 
 		# Broadcast a modified event if the object seems to have changed.
 		if notify and (updated is None or updated):
-			# TODO: We need to try to find the actual interfaces and fields to allow correct
-			# decisions to be made at higher levels.
-			# zope.formlib.form.applyData does this because it has a specific, configured mapping. We
-			# just do the best we can by looking at what's implemented. The most specific
-			# interface wins
-			descriptions = collections.defaultdict(list) # map from interface class to list of keys
-			provides = interface.providedBy( containedObject )
-			for k in external_keys:
-				iface_providing_attr = None
-				iface_attr = provides.get( k )
-				if iface_attr:
-					iface_providing_attr = iface_attr.interface
-				descriptions[iface_providing_attr].append( k )
-			attributes = [Attributes(iface, *keys) for iface, keys in descriptions.items()]
-			event = ObjectModifiedFromExternalEvent( containedObject, *attributes )
-			event.external_value = externalObject
-			# Let the updater have its shot at modifying the event, too, adding
-			# interfaces or attributes. (Note: this was added to be able to provide
-			# sharedWith information on the event, since that makes for a better stream.
-			# If that use case expands, revisit this interface
-			try:
-				meth = updater._ext_adjust_modified_event
-			except AttributeError:
-				pass
-			else:
-				event = meth( event )
-			_zope_event_notify( event )
+			notifyModified(containedObject, externalObject, updater, external_keys)
 
 	return containedObject
 
