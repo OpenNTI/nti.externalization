@@ -213,7 +213,7 @@ def _recall( k, obj, ext_obj, kwargs ):
 		obj._v_updated_from_external_source = ext_obj
 	return obj
 
-def notifyModified(containedObject, externalObject, updater, external_keys=()):
+def notifyModified(containedObject, externalObject, updater=None, external_keys=()):
 	# try to provide external keys
 	if not external_keys:
 		external_keys = [k for k in externalObject.keys()]
