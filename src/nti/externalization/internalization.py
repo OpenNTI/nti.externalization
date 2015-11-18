@@ -284,9 +284,9 @@ def update_from_external_object( containedObject, externalObject,
 
 	:return: `containedObject` after updates from `externalObject`
 	"""
-
-	if pre_hook is None:
-		pre_hook = _pre_hook
+	
+	pre_hook = _pre_hook if pre_hook is None else pre_hook
+	object_hook = _object_hook if object_hook is None else object_hook
 
 	kwargs = dict(notify=notify,
 				  context=context, 
