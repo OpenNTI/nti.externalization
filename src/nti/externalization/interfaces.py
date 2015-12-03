@@ -25,8 +25,8 @@ class StandardExternalFields(object):
 	Namespace object defining constants whose values are the
 	keys used in external mappings.
 	"""
-	OID   = 'OID'
-	ID    = 'ID'
+	OID = 'OID'
+	ID = 'ID'
 	NTIID = 'NTIID'
 	LAST_MODIFIED = 'Last Modified'
 	CREATED_TIME = 'CreatedTime'
@@ -37,11 +37,11 @@ class StandardExternalFields(object):
 	LINKS = 'Links'
 	HREF = 'href'
 	ITEMS = 'Items'
-	
-	CTA_MIMETYPE = 'mimeType' # IContentTypeAware MimeType field
-	
-StandardExternalFields.ALL = (lambda : [ v for k,v in StandardExternalFields.__dict__.iteritems() 
-										if not k.startswith( '_' ) ])()
+
+	CTA_MIMETYPE = 'mimeType'  # IContentTypeAware MimeType field
+
+StandardExternalFields.ALL = (lambda : [ v for k, v in StandardExternalFields.__dict__.iteritems()
+										if not k.startswith('_') ])()
 
 class StandardInternalFields(object):
 	"""
@@ -65,20 +65,20 @@ class IInternalObjectExternalizer(interface.Interface):
 	"""
 
 	__external_can_create__ = interface.Attribute(
-		""" This must be set to true, generally at the class level, for objects
+		"""This must be set to true, generally at the class level, for objects
 		that can be created by specifying their Class name. """)
 
 	__external_class_name__ = interface.Attribute(
-		""" If present, the value is a string that is used for the 'Class' key in the
+		"""If present, the value is a string that is used for the 'Class' key in the
 		external dictionary. If not present, the local name of the object's class is
 		used instead. """)
 
 	def toExternalObject(**kwargs):
-		""" 
+		"""
 		Optional, see this :func:`~nti.externalization.externalization.to_external_object`.
 		"""
 
-IExternalObject = IInternalObjectExternalizer # b/c aliase
+IExternalObject = IInternalObjectExternalizer  # b/c aliase
 
 class INonExternalizableReplacer(interface.Interface):
 	"""
@@ -112,7 +112,7 @@ class IExternalObjectDecorator(interface.Interface):
 	These are called *after* :class:`.IExternalMappingDecorator`.
 	"""
 
-	def decorateExternalObject( origial, external ):
+	def decorateExternalObject(origial, external):
 		"""
 		Decorate the externalized object (which is probably a mapping,
 		though this is not guaranteed).
@@ -139,7 +139,7 @@ class IExternalMappingDecorator(interface.Interface):
 	These are called *before* :class:`.IExternalObjectDecorator`.
 	"""
 
-	def decorateExternalMapping( original, external ):
+	def decorateExternalMapping(original, external):
 		"""
 		Decorate the externalized object mapping.
 
@@ -158,19 +158,19 @@ class IExternalizedObject(interface.Interface):
 	transformation.
 	"""
 
-class ILocatedExternalMapping(IExternalizedObject,ILocation,IFullMapping):
+class ILocatedExternalMapping(IExternalizedObject, ILocation, IFullMapping):
 	"""
 	The externalization of an object as a dictionary, maintaining its location
 	information.
 	"""
 
-class ILocatedExternalSequence(IExternalizedObject,ILocation,ISequence):
+class ILocatedExternalSequence(IExternalizedObject, ILocation, ISequence):
 	"""
 	The externalization of an object as a sequence, maintaining its location
 	information.
 	"""
 
-@interface.implementer( ILocatedExternalMapping )
+@interface.implementer(ILocatedExternalMapping)
 class LocatedExternalDict(dict):
 	"""
 	A dictionary that implements :class:`~nti.externalization.interfaces.ILocatedExternalMapping`. Returned
@@ -185,7 +185,7 @@ class LocatedExternalDict(dict):
 	__acl__ = ()
 	mimeType = None
 
-@interface.implementer( ILocatedExternalSequence )
+@interface.implementer(ILocatedExternalSequence)
 class LocatedExternalList(list):
 	"""
 	A list that implements :class:`~nti.externalization.interfaces.ILocatedExternalSequence`. Returned
@@ -264,7 +264,7 @@ class IExternalizedObjectFactoryFinder(interface.Interface):
 	factories.
 	"""
 
-	def find_factory( externalized_object ):
+	def find_factory(externalized_object):
 		"""
 		Given an externalized object, return a :class:`zope.component.interfaces.IFactory` to create the proper
 		internal types.
@@ -278,7 +278,7 @@ class IExternalReferenceResolver(interface.Interface):
 	to something that can resolve the reference.
 	"""
 
-	def resolve( reference ):
+	def resolve(reference):
 		"""
 		Resolve the external reference and return it.
 		"""
@@ -302,7 +302,7 @@ class IInternalObjectUpdater(interface.Interface):
 		It should return the new value. Note that the function here is at most
 		a class or static method, not an instance method. """)
 
-	def updateFromExternalObject( externalObject, *args, **kwargs ):
+	def updateFromExternalObject(externalObject, *args, **kwargs):
 		"""
 		Update the object this is adapting from the external object.
 		Two alternate signatures are supported, one with ``dataserver`` instead of
@@ -314,7 +314,7 @@ class IInternalObjectUpdater(interface.Interface):
 			code that doesn't return at all.)
 		"""
 
-class IInternalObjectIO(IInternalObjectExternalizer,IInternalObjectUpdater):
+class IInternalObjectIO(IInternalObjectExternalizer, IInternalObjectUpdater):
 	"""
 	A single object responsible for both reading and writing internal objects
 	in external forms.
@@ -342,6 +342,6 @@ class IObjectModifiedFromExternalEvent(IObjectModifiedEvent):
 	"""
 	external_value = interface.Attribute("The external value")
 
-@interface.implementer( IObjectModifiedFromExternalEvent )
+@interface.implementer(IObjectModifiedFromExternalEvent)
 class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
 	external_value = None
