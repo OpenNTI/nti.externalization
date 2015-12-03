@@ -70,38 +70,41 @@ def _pytz_timezone(key):
 	except (KeyError, AttributeError):
 		return None
 
+def _local_tzinfo(local_tzname=None):
+	# They did not specify a timezone, assume they authored
+	# in the native timezone, meaning to use any DST rules in
+	# effect at the time specified, not the current time.
+	local_tzname = local_tzname or time.tzname
+	tzinfo = _pytz_timezone(local_tzname)
+
+	# Ok, not a value known to pytz. Is it a two-tuple like ('CST', 'CDT')
+	# that we can figure out the offset of ourself?
+	if (not tzinfo
+		and isinstance(local_tzname, tuple)
+		and len(local_tzname) == 2
+		and all((bool(x) for x in local_tzname))):
+		offset_hours = time.timezone // 3600
+		local_tzname = '%s%d%s' % (local_tzname[0], offset_hours, local_tzname[1])
+		tzinfo = _pytz_timezone(local_tzname)
+
+	if not tzinfo:
+		# well nuts. Do the best we can with the current info
+		# First, get the timezone name, using daylight name if appropriate
+		if time.daylight and time.altzone is not None and time.tzname[1]:
+			offset = time.altzone
+		else:
+			offset = time.timezone
+
+		add = '+' if offset > 0 else ''
+		local_tzname = 'Etc/GMT' + add + str((offset // 60 // 60))
+		tzinfo = pytz.timezone(local_tzname)
+	return tzinfo
+
 def _as_utc_naive(dt, assume_local=True, local_tzname=None):
 	# Now convert to GMT, but as a 'naive' object.
 	if not dt.tzinfo:
 		if assume_local:
-			# They did not specify a timezone, assume they authored
-			# in the native timezone, meaning to use any DST rules in
-			# effect at the time specified, not the current time.
-			local_tzname = local_tzname or time.tzname
-			tzinfo = _pytz_timezone(local_tzname)
-
-			# Ok, not a value known to pytz. Is it a two-tuple like ('CST', 'CDT')
-			# that we can figure out the offset of ourself?
-			if (not tzinfo
-				and isinstance(local_tzname, tuple)
-				and len(local_tzname) == 2
-				and all((bool(x) for x in local_tzname))):
-				offset_hours = time.timezone // 3600
-				local_tzname = '%s%d%s' % (local_tzname[0], offset_hours, local_tzname[1])
-				tzinfo = _pytz_timezone(local_tzname)
-
-			if not tzinfo:
-				# well nuts. Do the best we can with the current info
-				# First, get the timezone name, using daylight name if appropriate
-				if time.daylight and time.altzone is not None and time.tzname[1]:
-					offset = time.altzone
-				else:
-					offset = time.timezone
-
-				add = '+' if offset > 0 else ''
-				local_tzname = 'Etc/GMT' + add + str((offset // 60 // 60))
-				tzinfo = pytz.timezone(local_tzname)
-
+			tzinfo = _local_tzinfo(local_tzname)
 			dt = tzinfo.localize(dt)
 		else:
 			dt = dt.replace(tzinfo=pytz.UTC)
