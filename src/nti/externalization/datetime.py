@@ -16,7 +16,6 @@ logger = __import__('logging').getLogger(__name__)
 
 import sys
 import time
-from numbers import Number
 from datetime import datetime
 
 import pytz
@@ -148,7 +147,8 @@ def datetime_from_string(string, assume_local=False, local_tzname=None):
 	dt = _parse_with(isodate.parse_datetime, string)
 	return _as_utc_naive(dt, assume_local=assume_local, local_tzname=local_tzname)
 
-@component.adapter(Number)
+@component.adapter(int)
+@component.adapter(float)
 @interface.implementer(IDateTime)
 def datetime_from_timestamp(value, tz=None):
 	return datetime.fromtimestamp(value, tz=tz)

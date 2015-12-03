@@ -44,7 +44,8 @@
 	of transforms somewhere? -->
 	<adapter factory=".datetime._date_from_string" />
 	<adapter factory=".datetime.datetime_from_string" />
-	<adapter factory=".datetime.datetime_from_timestamp" />
+	<adapter factory=".datetime.datetime_from_timestamp" for="int" />
+	<adapter factory=".datetime.datetime_from_timestamp" for="float" />
 	
 	<!-- Do the reverse as well.-->
 	<adapter factory=".datetime._date_to_string" />
