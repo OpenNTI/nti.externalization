@@ -50,7 +50,7 @@ def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=Fal
 
 	try:
 		# See comments in to_external_ntiid_oid
-		return getattr( self, '_v_to_external_oid' )
+		return getattr(self, '_v_to_external_oid')
 	except AttributeError:
 		pass
 
@@ -67,7 +67,7 @@ def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=Fal
 		if add_to_connection:
 			try:
 				jar = IConnection(self)
-				jar.add( self )
+				jar.add(self)
 				oid = self._p_oid
 			except Exception:
 				return default
@@ -89,28 +89,27 @@ def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=Fal
 
 	if jar:
 		db_name = jar.db().database_name
-		oid = oid + b':' + db_name.encode( 'hex' )
+		oid = oid + b':' + db_name.encode('hex')
 
-	intutility = component.queryUtility( zc_intid.IIntIds )
+	intutility = component.queryUtility(zc_intid.IIntIds)
 	if intutility is not None:
-		intid = intutility.queryId( self )
+		intid = intutility.queryId(self)
 		if intid is None and add_to_intids:
-			intid = intutility.register( self )
+			intid = intutility.register(self)
 		if intid is not None:
 			if not jar:
-				oid = oid + b':' # Ensure intid is always the third part
-			oid = oid + b':' + integer_strings.to_external_string( intid )
+				oid = oid + b':'  # Ensure intid is always the third part
+			oid = oid + b':' + integer_strings.to_external_string(intid)
 
 	try:
-		setattr( self, str('_v_to_external_oid'), oid )
-	except (AttributeError,TypeError):
+		setattr(self, str('_v_to_external_oid'), oid)
+	except (AttributeError, TypeError):
 		pass
-
 	return oid
 
 to_external_oid = toExternalOID
 
-ParsedOID = collections.namedtuple('ParsedOID', ['oid', 'db_name', 'intid'] )
+ParsedOID = collections.namedtuple('ParsedOID', ['oid', 'db_name', 'intid'])
 
 def fromExternalOID(ext_oid):
 	"""
@@ -137,26 +136,26 @@ def fromExternalOID(ext_oid):
 		# returning bytes, and it could conceivably be exactly 8 chars long;
 		# however, a raw oid could also start with the two chars 0x and contain two colons
 		# so the format is a bit ambiguous...
-		return ParsedOID( ext_oid, '', None )
+		return ParsedOID(ext_oid, '', None)
 
-	parts = ext_oid.split( b':' ) if b':' in ext_oid else (ext_oid,)
+	parts = ext_oid.split(b':') if b':' in ext_oid else (ext_oid,)
 	oid_string = parts[0]
 	name_s = parts[1] if len(parts) > 1 else b""
 	intid_s = str(parts[2]) if len(parts) > 2 else None
 
 	# Translate the external format if needed
-	if oid_string.startswith( b'0x' ):
-		oid_string = oid_string[2:].decode( 'hex' )
-		name_s = name_s.decode( 'hex' )
+	if oid_string.startswith(b'0x'):
+		oid_string = oid_string[2:].decode('hex')
+		name_s = name_s.decode('hex')
 	# Recall that oids are padded to 8 with \x00
-	oid_string = oid_string.rjust( 8, b'\x00' )
+	oid_string = oid_string.rjust(8, b'\x00')
 	__traceback_info__ = ext_oid, oid_string, name_s, intid_s
 	if intid_s is not None:
-		intid = integer_strings.from_external_string( intid_s )
+		intid = integer_strings.from_external_string(intid_s)
 	else:
 		intid = None
 
-	return ParsedOID( oid_string, name_s, intid )
+	return ParsedOID(oid_string, name_s, intid)
 
 from_external_oid = fromExternalOID
 
@@ -182,12 +181,12 @@ def to_external_ntiid_oid(contained, default_oid=None,
 
 	__traceback_info__ = type(contained)
 
-	if callable( getattr( contained, 'to_external_ntiid_oid', None ) ):
+	if callable(getattr(contained, 'to_external_ntiid_oid', None)):
 		return contained.to_external_ntiid_oid()
 
 	# We really want the external OID, but for those weird time we may not be saved we'll
 	# allow the ID of the object, unless we are explicitly overridden
-	contained = removeAllProxies( contained )
+	contained = removeAllProxies(contained)
 
 	# By definition, these are persistent.Persistent objects, so a _v_ attribute
 	# is going to be volatile and thread-local (or nearly). If the object cache
@@ -196,11 +195,11 @@ def to_external_ntiid_oid(contained, default_oid=None,
 	# from one worker to the next).
 	# On large renderings, benchmarks show this can be worth ~10%
 	cache_key = str('_v_to_external_ntiid_oid_%s' % mask_creator)
-	ext_oid = getattr( contained, cache_key, None)
+	ext_oid = getattr(contained, cache_key, None)
 	if ext_oid:
 		return ext_oid
 
-	oid = toExternalOID( contained,
+	oid = toExternalOID(contained,
 						 default=default_oid,
 						 add_to_connection=add_to_connection,
 						 add_to_intids=add_to_intids)
@@ -210,17 +209,17 @@ def to_external_ntiid_oid(contained, default_oid=None,
 	if mask_creator:
 		creator = MASKED_EXTERNAL_CREATOR
 	else:
-		creator = getattr( contained, 'creator', DEFAULT_EXTERNAL_CREATOR )
+		creator = getattr(contained, 'creator', DEFAULT_EXTERNAL_CREATOR)
 
-	creator = (	creator
+	creator = (creator
 				if isinstance(creator, string_types)
-				else getattr(creator, 'username', DEFAULT_EXTERNAL_CREATOR) )
-	
+				else getattr(creator, 'username', DEFAULT_EXTERNAL_CREATOR))
+
 	ext_oid = ntiids.make_ntiid(provider=ntiids.make_provider_safe(creator),
 								specific=oid,
 								nttype=ntiids.TYPE_OID)
 	try:
 		setattr(contained, cache_key, ext_oid)
-	except (AttributeError,TypeError): # TypeError is a BrokenModified
+	except (AttributeError, TypeError):  # TypeError is a BrokenModified
 		pass
 	return ext_oid

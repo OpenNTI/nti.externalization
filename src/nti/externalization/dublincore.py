@@ -38,18 +38,18 @@ class DCExtendedExternalMappingDecorator(object):
 	Adds the extended properties of dublincore to external objects
 	as defined by :class:`zope.dublincore.interfaces.IDCExtended`.
 
-	.. note:: We are currently only mapping 'Creator' since that's 
+	.. note:: We are currently only mapping 'Creator' since that's
 	   the only field that ever gets populated.
 	"""
 
 	__metaclass__ = SingletonDecorator
 
-	def __init__( self, context ):
+	def __init__(self, context):
 		pass
 
-	def decorateExternalMapping( self, original, external ):
+	def decorateExternalMapping(self, original, external):
 		# TODO: Where should we get constants for this?
-		creators = getattr( original, 'creators', None )
+		creators = getattr(original, 'creators', None)
 		if 'DCCreator' not in external:
 			external['DCCreator'] = creators
 		if StandardExternalFields.CREATOR not in external and creators:
@@ -64,11 +64,11 @@ class DCDescriptivePropertiesExternalMappingDecorator(object):
 	"""
 	__metaclass__ = SingletonDecorator
 
-	def __init__( self, context ):
+	def __init__(self, context):
 		pass
 
-	def decorateExternalMapping( self, original, external ):
+	def decorateExternalMapping(self, original, external):
 		if 'DCTitle' not in external:
-			external['DCTitle'] = getattr( original, 'title', None )
+			external['DCTitle'] = getattr(original, 'title', None)
 		if 'DCDescription' not in external:
-			external['DCDescription'] = getattr( original, 'description', None )
+			external['DCDescription'] = getattr(original, 'description', None)
