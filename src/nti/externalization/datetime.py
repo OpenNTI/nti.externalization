@@ -15,11 +15,14 @@ __docformat__ = "restructuredtext en"
 logger = __import__('logging').getLogger(__name__)
 
 import sys
-import pytz
 import time
+from numbers import Number
+from datetime import datetime
+
+import pytz
 import isodate
 
-from zope import component 
+from zope import component
 from zope import interface
 
 from zope.interface.common.idatetime import IDate
@@ -32,15 +35,15 @@ from .interfaces import IInternalObjectExternalizer
 
 def _parse_with(func, string):
 	try:
-		return func( string )
+		return func(string)
 	except isodate.ISO8601Error:
 		_, v, tb = sys.exc_info()
-		e = InvalidValue( *v.args, value=string )
+		e = InvalidValue(*v.args, value=string)
 		raise e, None, tb
 
 @component.adapter(basestring)
 @interface.implementer(IDate)
-def _date_from_string( string ):
+def _date_from_string(string):
 	"""
 	This adapter allows any field which comes in as a string is
 	IOS8601 format to be transformed into a date. The schema field
@@ -59,12 +62,12 @@ def _date_from_string( string ):
 	#   return datetime.date( parsed[0], parsed[1], parsed[2] )
 	# accepts almost anything as a date (so it's great for human interfaces),
 	# but programatically we actually require ISO format
-	return _parse_with( isodate.parse_date, string )
+	return _parse_with(isodate.parse_date, string)
 
 def _pytz_timezone(key):
 	try:
 		return pytz.timezone(key)
-	except (KeyError,AttributeError):
+	except (KeyError, AttributeError):
 		return None
 
 def _as_utc_naive(dt, assume_local=True, local_tzname=None):
@@ -139,8 +142,13 @@ def datetime_from_string(string, assume_local=False, local_tzname=None):
 		or a two-tuple as given from :const:`time.timezone`. If not given,
 		local timezone will be determined automatically.
 	"""
-	dt =_parse_with(isodate.parse_datetime, string)
+	dt = _parse_with(isodate.parse_datetime, string)
 	return _as_utc_naive(dt, assume_local=assume_local, local_tzname=local_tzname)
+
+@component.adapter(Number)
+@interface.implementer(IDateTime)
+def datetime_from_timestamp(value, tz=None):
+	return datetime.fromtimestamp(value, tz=tz)
 
 @component.adapter(IDate)
 @interface.implementer(IInternalObjectExternalizer)
@@ -169,7 +177,7 @@ class _datetime_to_string(object):
 		# Convert to UTC, assuming that a missing timezone
 		# is already in UTC
 		dt = _as_utc_naive(self.date, assume_local=False)
-		return isodate.datetime_isoformat(dt) + 'Z' # indicate it is UTC on the wire
+		return isodate.datetime_isoformat(dt) + 'Z'  # indicate it is UTC on the wire
 
 @component.adapter(ITimeDelta)
 @interface.implementer(IInternalObjectExternalizer)
