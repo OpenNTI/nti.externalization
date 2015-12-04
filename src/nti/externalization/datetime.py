@@ -150,8 +150,8 @@ def datetime_from_string(string, assume_local=False, local_tzname=None):
 @component.adapter(int)
 @component.adapter(float)
 @interface.implementer(IDateTime)
-def datetime_from_timestamp(value, tz=None):
-	return datetime.fromtimestamp(value, tz=tz)
+def datetime_from_timestamp(value):
+	return datetime.utcfromtimestamp(value)
 
 @component.adapter(IDate)
 @interface.implementer(IInternalObjectExternalizer)
