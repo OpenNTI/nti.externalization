@@ -17,27 +17,26 @@ from nti.externalization import integer_strings
 from nti.externalization.tests import ExternalizationLayerTest
 
 class TestIntStrings(ExternalizationLayerTest):
-	
+
 	def test_round_trip(self):
 
-		def _t( i ):
-			ext = integer_strings.to_external_string( i )
+		def _t(i):
+			ext = integer_strings.to_external_string(i)
 			__traceback_info__ = i, ext
-			parsed = integer_strings.from_external_string( ext )
-			assert_that( parsed, is_( i ) )
+			parsed = integer_strings.from_external_string(ext)
+			assert_that(parsed, is_(i))
 
 		# Small values
-		for i in range(0,100):
-			_t( i )
+		for i in range(0, 100):
+			_t(i)
 
 		# Medium values
-		for i in range(2000,5000):
-			_t( i )
+		for i in range(2000, 5000):
+			_t(i)
 
 		# Big values
 		for i in range(sys.maxint - 2000, sys.maxint):
-			_t( i )
+			_t(i)
 
 	def test_decode_unicode(self):
-
-		assert_that( integer_strings.from_external_string( u'abcde' ), is_(204869188) )
+		assert_that(integer_strings.from_external_string(u'abcde'), is_(204869188))

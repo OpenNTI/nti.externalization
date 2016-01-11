@@ -15,17 +15,18 @@ import collections
 from six import string_types
 
 from zope import component
-from zope.security.management import system_user
 
-from zc import intid as zc_intid
+from zope.intid.interfaces import IIntIds
+
+from zope.security.management import system_user
 
 from ZODB.interfaces import IConnection
 
 from nti.common.proxy import removeAllProxies
 
-from nti.ntiids import ntiids
+from nti.externalization import integer_strings
 
-from . import integer_strings
+from nti.ntiids import ntiids
 
 def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=False):
 	"""
@@ -91,7 +92,7 @@ def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=Fal
 		db_name = jar.db().database_name
 		oid = oid + b':' + db_name.encode('hex')
 
-	intutility = component.queryUtility(zc_intid.IIntIds)
+	intutility = component.queryUtility(IIntIds)
 	if intutility is not None:
 		intid = intutility.queryId(self)
 		if intid is None and add_to_intids:
@@ -128,6 +129,7 @@ def fromExternalOID(ext_oid):
 	# in _p_oid, so we have to be careful with our literals here
 	# to avoid Unicode[en|de]codeError
 	__traceback_info__ = ext_oid
+
 	# Sometimes raw _p_oid values do contain a b':', so simply splitting
 	# on that is not reliable, so try to detect raw _p_oid directly
 	if 	isinstance(ext_oid, bytes) and len(ext_oid) == 8 and \
@@ -200,9 +202,9 @@ def to_external_ntiid_oid(contained, default_oid=None,
 		return ext_oid
 
 	oid = toExternalOID(contained,
-						 default=default_oid,
-						 add_to_connection=add_to_connection,
-						 add_to_intids=add_to_intids)
+						default=default_oid,
+						add_to_connection=add_to_connection,
+						add_to_intids=add_to_intids)
 	if not oid:
 		return None
 

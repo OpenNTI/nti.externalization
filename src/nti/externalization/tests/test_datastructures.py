@@ -10,6 +10,8 @@ __docformat__ = "restructuredtext en"
 from hamcrest import assert_that
 from hamcrest import has_property
 
+from nose.tools import assert_raises
+
 import sys
 
 from zope import interface
@@ -17,8 +19,6 @@ from zope import interface
 from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
 
 from nti.externalization.tests import ExternalizationLayerTest
-
-from nose.tools import assert_raises
 
 class TestDatastructures(ExternalizationLayerTest):
 	

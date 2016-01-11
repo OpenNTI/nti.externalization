@@ -20,4 +20,4 @@ from nti.externalization.tests import ExternalizationLayerTest
 class TestDate(ExternalizationLayerTest):
 
 	def test_exception(self):
-		assert_that( calling(IDate).with_args('xx'), raises(InvalidValue) )
+		assert_that(calling(IDate).with_args('xx'), raises(InvalidValue))
