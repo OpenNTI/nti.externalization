@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Support for singleton objects that are used as external
-object decorators.
+Support for singleton objects that are used as external object decorators.
 
 .. $Id$
 """

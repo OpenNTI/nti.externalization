@@ -16,26 +16,27 @@ import collections
 from zope import interface
 
 import persistent
+
 from persistent.list import PersistentList
 from persistent.wref import WeakRef as PWeakRef
 from persistent.mapping import PersistentMapping
 
 from nti.common.proxy import removeAllProxies
 
+from nti.externalization.datastructures import ExternalizableDictionaryMixin
+
+from nti.externalization.externalization import toExternalObject
+
+from nti.externalization.interfaces import IExternalObject
+
+from nti.externalization.oids import toExternalOID
+
 from nti.zodb.persistentproperty import PersistentPropertyHolder
-
-from .oids import toExternalOID
-
-from .interfaces import IExternalObject
-
-from .externalization import toExternalObject
-
-from .datastructures import ExternalizableDictionaryMixin
 
 # disable: accessing protected members
 # pylint: disable=W0212
 
-def getPersistentState( obj ):
+def getPersistentState(obj):
 	"""
 	For a :class:`persistent.Persistent` object, returns one of the
 	constants from the persistent module for its state:
@@ -67,9 +68,9 @@ def getPersistentState( obj ):
 	except AttributeError:
 		pass
 
-	unwrapped = removeAllProxies( obj )
+	unwrapped = removeAllProxies(obj)
 	if unwrapped is not obj:
-		return getPersistentState( unwrapped )
+		return getPersistentState(unwrapped)
 
 	try:
 		return obj._p_state
@@ -79,7 +80,7 @@ def getPersistentState( obj ):
 		except AttributeError:
 			return persistent.CHANGED
 
-def setPersistentStateChanged( obj ):
+def setPersistentStateChanged(obj):
 	""" Explicitly marks a persistent object as changed. """
 	try:
 		obj._p_changed = True
@@ -90,7 +91,7 @@ def _weakRef_toExternalObject(self):
 	val = self()
 	if val is None:
 		return None
-	return toExternalObject( val )
+	return toExternalObject(val)
 
 PWeakRef.toExternalObject = _weakRef_toExternalObject
 interface.classImplements(PWeakRef, IExternalObject)
@@ -99,7 +100,7 @@ def _weakRef_toExternalOID(self):
 	val = self()
 	if val is None:
 		return None
-	return toExternalOID( val )
+	return toExternalOID(val)
 
 PWeakRef.toExternalOID = _weakRef_toExternalOID
 
@@ -111,11 +112,11 @@ class PersistentExternalizableDictionary(PersistentPropertyHolder,
 	with each value in the dict having been externalized with
 	:func:`toExternalObject`.
 	"""
-	def __init__(self, data=None, **kwargs ):
-		super(PersistentExternalizableDictionary, self).__init__( data, **kwargs )
+	def __init__(self, data=None, **kwargs):
+		super(PersistentExternalizableDictionary, self).__init__(data, **kwargs)
 
 	def toExternalDictionary(self, mergeFrom=None, *args, **kwargs):
-		result = super(PersistentExternalizableDictionary,self).toExternalDictionary(self, *args, **kwargs)
+		result = super(PersistentExternalizableDictionary, self).toExternalDictionary(self, *args, **kwargs)
 		for key, value in self.iteritems():
 			result[key] = toExternalObject(value, *args, **kwargs)
 		return result
@@ -129,9 +130,9 @@ class PersistentExternalizableList(PersistentPropertyHolder, PersistentList):
 
 	def __init__(self, initlist=None):
 		# Must use new-style super call to get right behaviour
-		super(PersistentExternalizableList,self).__init__(initlist)
+		super(PersistentExternalizableList, self).__init__(initlist)
 
-	def toExternalList( self ):
+	def toExternalList(self):
 		result = [toExternalObject(x) for x in self if x is not None]
 		return result
 
@@ -154,18 +155,18 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 
 	def __init__(self, initlist=None):
 		if initlist is not None:
-			initlist = [self.__wrap( x ) for x in initlist]
-		super(PersistentExternalizableWeakList,self).__init__(initlist)
+			initlist = [self.__wrap(x) for x in initlist]
+		super(PersistentExternalizableWeakList, self).__init__(initlist)
 
-	def __getitem__(self, i ):
-		return super(PersistentExternalizableWeakList,self).__getitem__( i )()
+	def __getitem__(self, i):
+		return super(PersistentExternalizableWeakList, self).__getitem__(i)()
 
 	# NOTE: __iter__ is implemented with __getitem__ so we don't reimplement.
 	# However, __eq__ isn't, it wants to directly compare lists
-	def __eq__( self, other ):
+	def __eq__(self, other):
 		# If we just compare lists, weak refs will fail badly
 		# if they're compared with non-weak refs
-		if not isinstance( other, collections.Sequence ):
+		if not isinstance(other, collections.Sequence):
 			return False
 
 		result = False
@@ -177,17 +178,17 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 					break
 		return result
 
-	def __wrap( self, obj ):
-		return obj if isinstance( obj, PWeakRef ) else PWeakRef( obj )
+	def __wrap(self, obj):
+		return obj if isinstance(obj, PWeakRef) else PWeakRef(obj)
 
-	def remove(self,value):
-		super(PersistentExternalizableWeakList,self).remove( self.__wrap( PWeakRef(value) ) )
+	def remove(self, value):
+		super(PersistentExternalizableWeakList, self).remove(self.__wrap(PWeakRef(value)))
 
 	def __setitem__(self, i, item):
-		super(PersistentExternalizableWeakList,self).__setitem__( i, self.__wrap( PWeakRef( item ) ) )
+		super(PersistentExternalizableWeakList, self).__setitem__(i, self.__wrap(PWeakRef(item)))
 
 	def __setslice__(self, i, j, other):
-		raise TypeError( 'Not supported' ) # pragma: no cover
+		raise TypeError('Not supported')  # pragma: no cover
 
 	# Unfortunately, these are not implemented in terms of the primitives, so
 	# we need to overide each one. They can throw exceptions, so we're careful
@@ -198,31 +199,31 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 		# Note that the builtin list only accepts other lists,
 		# but the UserList from which we are descended accepts
 		# any iterable.
-		result = super(PersistentExternalizableWeakList,self).__iadd__([self.__wrap(PWeakRef(o)) for o in other])
+		result = super(PersistentExternalizableWeakList, self).__iadd__([self.__wrap(PWeakRef(o)) for o in other])
 		return result
 
 	def __imul__(self, n):
-		result = super(PersistentExternalizableWeakList,self).__imul__(n)
+		result = super(PersistentExternalizableWeakList, self).__imul__(n)
 		return result
 
 	def append(self, item):
-		super(PersistentExternalizableWeakList,self).append(self.__wrap( PWeakRef(item) ) )
+		super(PersistentExternalizableWeakList, self).append(self.__wrap(PWeakRef(item)))
 
 	def insert(self, i, item):
-		super(PersistentExternalizableWeakList,self).insert( i, self.__wrap( PWeakRef(item)) )
+		super(PersistentExternalizableWeakList, self).insert(i, self.__wrap(PWeakRef(item)))
 
 	def pop(self, i=-1):
-		rtn = super(PersistentExternalizableWeakList,self).pop( i )
+		rtn = super(PersistentExternalizableWeakList, self).pop(i)
 		return rtn()
 
 	def extend(self, other):
-		for x in other: self.append( x )
+		for x in other: self.append(x)
 
-	def count( self, item ):
-		return super(PersistentExternalizableWeakList,self).count( self.__wrap( PWeakRef( item ) ) )
+	def count(self, item):
+		return super(PersistentExternalizableWeakList, self).count(self.__wrap(PWeakRef(item)))
 
-	def index( self, item, *args ):
-		return super(PersistentExternalizableWeakList,self).index( self.__wrap( PWeakRef( item ) ), *args )
+	def index(self, item, *args):
+		return super(PersistentExternalizableWeakList, self).index(self.__wrap(PWeakRef(item)), *args)
 
 def NoPickle(cls):
 	"""
