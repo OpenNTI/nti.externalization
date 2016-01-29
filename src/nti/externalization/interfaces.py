@@ -13,10 +13,10 @@ logger = __import__('logging').getLogger(__name__)
 
 from zope import interface
 
+from zope.component.interfaces import IFactory
+
 from zope.interface.common.sequence import ISequence
 from zope.interface.common.mapping import IFullMapping
-
-from zope.component.interfaces import IFactory
 
 from zope.location import ILocation
 
@@ -27,6 +27,7 @@ class StandardExternalFields(object):
 	"""
 	OID = 'OID'
 	ID = 'ID'
+	INTID = 'INTID'
 	NTIID = 'NTIID'
 	LAST_MODIFIED = 'Last Modified'
 	CREATED_TIME = 'CreatedTime'
