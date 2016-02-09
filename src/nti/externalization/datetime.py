@@ -28,9 +28,9 @@ from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
 from zope.interface.common.idatetime import ITimeDelta
 
-from nti.schema.interfaces import InvalidValue
+from nti.externalization.interfaces import IInternalObjectExternalizer
 
-from .interfaces import IInternalObjectExternalizer
+from nti.schema.interfaces import InvalidValue
 
 def _parse_with(func, string):
 	try:

@@ -15,6 +15,7 @@ try:
 	
 	ThreadLocalManager = ThreadLocalManager
 	get_current_request = get_current_request
+
 except ImportError:
 	import threading
 	

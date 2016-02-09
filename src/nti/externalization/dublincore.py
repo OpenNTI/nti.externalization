@@ -22,10 +22,10 @@ from zope import interface
 from zope.dublincore.interfaces import IDCExtended
 from zope.dublincore.interfaces import IDCDescriptiveProperties
 
-from .singleton import SingletonDecorator
+from nti.externalization.interfaces import StandardExternalFields
+from nti.externalization.interfaces import IExternalMappingDecorator
 
-from .interfaces import StandardExternalFields
-from .interfaces import IExternalMappingDecorator
+from nti.externalization.singleton import SingletonDecorator
 
 # Note that its fairly common for things to claim to implement these interfaces,
 # but only provide a subset of the properties. (mostly due to programming errors).
