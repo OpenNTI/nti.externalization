@@ -15,8 +15,9 @@ from zope import interface
 
 from zope.component.interfaces import IFactory
 
-from zope.interface.common.sequence import ISequence
 from zope.interface.common.mapping import IFullMapping
+
+from zope.interface.common.sequence import ISequence
 
 from zope.location import ILocation
 

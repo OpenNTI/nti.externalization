@@ -32,21 +32,21 @@ import persistent
 
 import BTrees.OOBTree
 
-from nti.common.string import safestr
+from nti.common.string import to_unicode
+
+from nti.externalization.interfaces import IExternalObject
+from nti.externalization.interfaces import LocatedExternalDict
+from nti.externalization.interfaces import StandardExternalFields
+from nti.externalization.interfaces import StandardInternalFields
+from nti.externalization.interfaces import IExternalObjectDecorator
+from nti.externalization.interfaces import ILocatedExternalSequence
+from nti.externalization.interfaces import IExternalMappingDecorator
+from nti.externalization.interfaces import INonExternalizableReplacer
+from nti.externalization.interfaces import INonExternalizableReplacement 
+
+from nti.externalization.oids import to_external_ntiid_oid
 
 from nti.ntiids import ntiids
-
-from .oids import to_external_ntiid_oid
-
-from .interfaces import IExternalObject
-from .interfaces import LocatedExternalDict
-from .interfaces import StandardExternalFields
-from .interfaces import StandardInternalFields
-from .interfaces import IExternalObjectDecorator
-from .interfaces import ILocatedExternalSequence
-from .interfaces import IExternalMappingDecorator
-from .interfaces import INonExternalizableReplacer
-from .interfaces import INonExternalizableReplacement 
 
 # Local for speed
 StandardExternalFields_ID = StandardExternalFields.ID
@@ -354,7 +354,7 @@ def _choose_field(result, self, ext_name,
 		if value is not None:
 			# If the creator is the system user, catch it here
 			if ext_name is StandardExternalFields_CREATOR and is_system_user(value):
-				value = safestr(SYSTEM_USER_NAME)
+				value = to_unicode(SYSTEM_USER_NAME)
 				result[ext_name] = value
 				return value
 			value = converter( value )

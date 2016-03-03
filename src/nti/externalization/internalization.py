@@ -36,14 +36,14 @@ from zope.schema.interfaces import WrongContainedType
 
 from persistent.interfaces import IPersistent
 
-from .interfaces import IFactory
-from .interfaces import IMimeObjectFactory
-from .interfaces import IClassObjectFactory
-from .interfaces import IInternalObjectUpdater
-from .interfaces import StandardExternalFields
-from .interfaces import IExternalReferenceResolver
-from .interfaces import ObjectModifiedFromExternalEvent
-from .interfaces import IExternalizedObjectFactoryFinder
+from nti.externalization.interfaces import IFactory
+from nti.externalization.interfaces import IMimeObjectFactory
+from nti.externalization.interfaces import IClassObjectFactory
+from nti.externalization.interfaces import IInternalObjectUpdater
+from nti.externalization.interfaces import StandardExternalFields
+from nti.externalization.interfaces import IExternalReferenceResolver
+from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
+from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
 
 LEGACY_FACTORY_SEARCH_MODULES = set()
 
@@ -480,7 +480,7 @@ def validate_field_value( self, field_name, field, value ):
 			# right. Raise the original SchemaValidationError.
 			raise exc_info[0], exc_info[1], exc_info[2]
 
-	if (field.readonly
+	if (	field.readonly
 		and field.get(self) is None
 		and field.queryTaggedValue('_ext_allow_initial_set')):
 		if value is not None:

@@ -18,8 +18,9 @@ import sys
 import time
 from datetime import datetime
 
-import pytz
 import isodate
+
+import pytz
 
 from zope import component
 from zope import interface
