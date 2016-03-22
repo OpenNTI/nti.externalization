@@ -212,7 +212,8 @@ def _recall(k, obj, ext_obj, kwargs):
 		obj._v_updated_from_external_source = ext_obj
 	return obj
 
-def notifyModified(containedObject, externalObject, updater=None, external_keys=(), **kwargs):
+def notifyModified(containedObject, externalObject, updater=None, external_keys=(),
+				   eventFactory=ObjectModifiedFromExternalEvent, **kwargs):
 	# try to provide external keys
 	if not external_keys:
 		external_keys = [k for k in externalObject.keys()]
@@ -231,7 +232,7 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
 			iface_providing_attr = iface_attr.interface
 		descriptions[iface_providing_attr].append(k)
 	attributes = [Attributes(iface, *keys) for iface, keys in descriptions.items()]
-	event = ObjectModifiedFromExternalEvent(containedObject, *attributes, **kwargs)
+	event = eventFactory(containedObject, *attributes, **kwargs)
 	event.external_value = externalObject
 	# Let the updater have its shot at modifying the event, too, adding
 	# interfaces or attributes. (Note: this was added to be able to provide
@@ -333,8 +334,8 @@ def update_from_external_object(containedObject, externalObject,
 			externalObject[k] = _recall(k, factory(), v, kwargs) if factory else v
 
 	updater = None
-	if 	hasattr(containedObject, 'updateFromExternalObject') and \
-		not getattr(containedObject, '__ext_ignore_updateFromExternalObject__', False):
+	if 		hasattr(containedObject, 'updateFromExternalObject') \
+		and not getattr(containedObject, '__ext_ignore_updateFromExternalObject__', False):
 		# legacy support. The __ext_ignore_updateFromExternalObject__ allows a transitition to an adapter
 		# without changing existing callers and without triggering infinite recursion
 		updater = containedObject
