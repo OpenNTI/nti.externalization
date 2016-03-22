@@ -348,6 +348,7 @@ class IObjectModifiedFromExternalEvent(IObjectModifiedEvent):
 @interface.implementer(IObjectModifiedFromExternalEvent)
 class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
 	
+	kwargs = None
 	external_value = None
 
 	def __init__(self, obj, *descriptions, **kwargs):
