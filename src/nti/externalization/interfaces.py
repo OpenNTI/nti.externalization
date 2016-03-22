@@ -342,8 +342,14 @@ class IObjectModifiedFromExternalEvent(IObjectModifiedEvent):
 	"""
 	An object has been updated from an external value.
 	"""
+	kwargs = interface.Attribute("The key word arguments")
 	external_value = interface.Attribute("The external value")
 
 @interface.implementer(IObjectModifiedFromExternalEvent)
 class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
+	
 	external_value = None
+
+	def __init__(self, obj, *descriptions, **kwargs):
+		super(ObjectModifiedFromExternalEvent,self).__init__(obj, *descriptions)
+		self.kwargs = kwargs
