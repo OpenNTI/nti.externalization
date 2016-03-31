@@ -153,7 +153,8 @@ class _ExternalizationState(object):
 		# and thus ensure no overlapping ids
 		return {}
 
-def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=True):
+def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=True,
+							  decorate_callback=None):
 	__traceback_info__ = obj
 	
 	orig_obj = obj
@@ -228,6 +229,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 		if decorate:
 			for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
 				decorator.decorateExternalObject( orig_obj, result )
+		elif decorate_callback is not None and callable(decorate_callback):
+			decorate_callback(orig_obj, result)
 
 		# Request specific decorating, if given, is more specific than plain object
 		# decorating, so it gets to go last.
@@ -255,7 +258,8 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 					  default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
 					  request=_NotGiven,
 					  decorate=True,
-					  useCache=True):
+					  useCache=True,
+					  decorate_callback=None):
 	""" Translates the object into a form suitable for
 	external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
 	and :const:`MAPPING_TYPES` for details on what we can handle by default.
@@ -279,7 +283,7 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 		of. If given, then the object decorators will also look for subscribers
 		to the object plus the request (like traversal adapters); this is a good way to
 		separate out request or user specific code.
-
+	:param decorate_callback: Callable to be invoked in case there is no decaration
 	"""
 
 	# Catch the primitives up here, quickly
@@ -309,7 +313,8 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 
 	try:
 		return _to_external_object_state( obj, state, top_level=True,
-										  decorate=decorate, useCache=useCache)
+										  decorate=decorate, useCache=useCache,
+										  decorate_callback=decorate_callback)
 	finally:
 		_manager.pop()
 
@@ -421,11 +426,12 @@ def _ext_class_if_needed(self, result):
 												 'nti.externalization.interfaces' )):
 		result[StandardExternalFields_CLASS] = self.__class__.__name__
 
-from ._pyramid import get_current_request
+from nti.externalization._pyramid import get_current_request
 
 def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
 									 registry=component, decorate=True,
-									 request=_NotGiven, useCache=True):
+									 request=_NotGiven, useCache=True,
+									 decorate_callback=NameError):
 	"""
 	Returns a dictionary representing the standard externalization of
 	the object. This impl takes care of the standard attributes
@@ -450,8 +456,8 @@ def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
 	if request is _NotGiven:
 		request = get_current_request()
 
-	result_id = _choose_field( result, self, StandardExternalFields_ID,
-							fields=(StandardInternalFields_ID, StandardExternalFields_ID) )
+	result_id = _choose_field(result, self, StandardExternalFields_ID,
+							  fields=(StandardInternalFields_ID, StandardExternalFields_ID) )
 	# As we transition over to structured IDs that contain OIDs, we'll try to use that
 	# for both the ID and OID portions
 	if ntiids.is_ntiid_of_type( result_id, ntiids.TYPE_OID ):
@@ -500,6 +506,8 @@ def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
 
 	if decorate:
 		decorate_external_mapping( self, result, registry=registry, request=request )
+	elif decorate_callback is not None and callable(decorate_callback):
+		decorate_callback(self, result)
 
 	return result
 
