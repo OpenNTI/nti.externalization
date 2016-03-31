@@ -79,7 +79,7 @@ def is_system_user(obj):
 # the name that was established at the top level.
 _NotGiven = object()
 
-from ._pyramid import ThreadLocalManager
+from nti.externalization._pyramid import ThreadLocalManager
 
 _manager = ThreadLocalManager(default=lambda: {'name': _NotGiven,
 											   'memos': None})
@@ -169,8 +169,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 
 		# This is for legacy code support, to allow existing methods to move to adapters
 		# and call us without infinite recursion
-		obj_has_usable_external_object = hasattr(obj, 'toExternalObject') and \
-										 not getattr( obj, '__ext_ignore_toExternalObject__', False )
+		obj_has_usable_external_object = 	 hasattr(obj, 'toExternalObject') \
+										 and not getattr( obj, '__ext_ignore_toExternalObject__', False )
 
 		if not obj_has_usable_external_object and not IExternalObject.providedBy( obj ):
 			adapter = state.registry.queryAdapter(obj, IExternalObject, default=None, 
@@ -187,10 +187,12 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 		result = obj
 		if obj_has_usable_external_object: # either an adapter or the original object
 			result = obj.toExternalObject(request=state.request, name=state.name,
-										  decorate=decorate, useCache=useCache)
+										  decorate=decorate, useCache=useCache,
+										  decorate_callback=decorate_callback)
 		elif hasattr( obj, "toExternalDictionary" ):
 			result = obj.toExternalDictionary(request=state.request, name=state.name,
-											  decorate=decorate, useCache=useCache)
+											  decorate=decorate, useCache=useCache,
+											  decorate_callback=decorate_callback)
 		elif hasattr( obj, "toExternalList" ):
 			result = obj.toExternalList()
 		elif isinstance(obj, MAPPING_TYPES ):
@@ -198,7 +200,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 													 registry=state.registry, 
 													 request=state.request,
 													 decorate=decorate,
-													 useCache=useCache)
+													 useCache=useCache,
+													 decorate_callback=decorate_callback)
 			if obj.__class__ is dict:
 				result.pop( 'Class', None )
 			# Note that we recurse on the original items, not the things newly
@@ -207,11 +210,16 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 			# is an IExternalObjectDecorator that does that
 			for key, value in obj.items():
 				result[key] = \
-					_to_external_object_state(value, state, decorate=decorate, useCache=useCache) \
+					_to_external_object_state(value, state, decorate=decorate, 
+											  useCache=useCache,
+											  decorate_callback=decorate_callback) \
 					if not isinstance(value, _primitives) else value
 		elif isinstance( obj, SEQUENCE_TYPES ) or IFiniteSequence.providedBy( obj ):
-			result = [ (_to_external_object_state(x, state, decorate=decorate, useCache=useCache) \
-					    if not isinstance(x, _primitives) else x) for x in obj ]
+			result = [ 
+				(_to_external_object_state(x, state, decorate=decorate, 
+										   useCache=useCache, 
+										   decorate_callback=decorate_callback)
+				 if not isinstance(x, _primitives) else x) for x in obj ]
 			result = state.registry.getAdapter(result, ILocatedExternalSequence)
 		# PList doesn't support None values, JSON does. The closest
 		# coersion I can think of is False.
@@ -428,10 +436,10 @@ def _ext_class_if_needed(self, result):
 
 from nti.externalization._pyramid import get_current_request
 
-def to_standard_external_dictionary( self, mergeFrom=None, name=_NotGiven,
-									 registry=component, decorate=True,
-									 request=_NotGiven, useCache=True,
-									 decorate_callback=NameError):
+def to_standard_external_dictionary(self, mergeFrom=None, name=_NotGiven,
+									registry=component, decorate=True,
+									request=_NotGiven, useCache=True,
+									decorate_callback=NameError):
 	"""
 	Returns a dictionary representing the standard externalization of
 	the object. This impl takes care of the standard attributes
