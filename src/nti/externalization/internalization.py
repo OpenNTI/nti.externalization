@@ -125,7 +125,7 @@ def default_externalized_object_factory_finder(externalized_object):
 
 		if not factory and StandardExternalFields_CLASS in externalized_object:
 			class_name = externalized_object[StandardExternalFields_CLASS]
-			factory = component.queryAdapter(externalized_object, 
+			factory = component.queryAdapter(externalized_object,
 											 IClassObjectFactory,
 											 name=class_name)
 			if not factory:
@@ -403,9 +403,9 @@ def validate_field_value(self, field_name, field, value):
 		try:
 			value = field.schema(value)
 			field.validate(value)
-		except (LookupError, TypeError, ValidationError):
-			# Nope. TypeError means we couldn't adapt, and a
-			# validation error means we could adapt, but it still wasn't
+		except (LookupError, TypeError, ValidationError, AttributeError):
+			# Nope. TypeError (or AttrError - Variant) means we couldn't adapt,
+			# and a validation error means we could adapt, but it still wasn't
 			# right. Raise the original SchemaValidationError.
 			raise exc_info[0], exc_info[1], exc_info[2]
 	except WrongType as e:
