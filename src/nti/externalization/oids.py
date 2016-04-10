@@ -23,9 +23,9 @@ from zope.security.management import system_user
 
 from ZODB.interfaces import IConnection
 
-from nti.common.proxy import removeAllProxies
+from nti.common import integer_strings
 
-from nti.externalization import integer_strings
+from nti.common.proxy import removeAllProxies
 
 from nti.ntiids import ntiids
 
