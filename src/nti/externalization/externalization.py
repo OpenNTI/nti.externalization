@@ -42,7 +42,7 @@ from nti.externalization.interfaces import IExternalObjectDecorator
 from nti.externalization.interfaces import ILocatedExternalSequence
 from nti.externalization.interfaces import IExternalMappingDecorator
 from nti.externalization.interfaces import INonExternalizableReplacer
-from nti.externalization.interfaces import INonExternalizableReplacement 
+from nti.externalization.interfaces import INonExternalizableReplacement
 
 from nti.externalization.oids import to_external_ntiid_oid
 
@@ -72,7 +72,7 @@ SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 def is_system_user(obj):
 	result = bool(IPrincipal.providedBy(obj) and obj.id == system_user.id)
 	return result
-		
+
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
 # and they call back into us, and otherwise we would lose
@@ -81,13 +81,12 @@ _NotGiven = object()
 
 from nti.externalization._pyramid import ThreadLocalManager
 
-_manager = ThreadLocalManager(default=lambda: {'name': _NotGiven,
-											   'memos': None})
+_manager = ThreadLocalManager(default=lambda: {'name': _NotGiven, 'memos': None})
 
 # Things that can be directly externalized
-_primitives = six.string_types + (numbers.Number,bool)
+_primitives = six.string_types + (numbers.Number, bool)
 
-def catch_replace_action( obj, exc ):
+def catch_replace_action(obj, exc):
 	"""
 	Replaces the external component object `obj` with an object noting a broken object.
 	"""
@@ -96,23 +95,23 @@ def catch_replace_action( obj, exc ):
 @interface.implementer(INonExternalizableReplacement)
 class _NonExternalizableObject(dict): pass
 
-def DefaultNonExternalizableReplacer( obj ):
-	logger.debug("Asked to externalize non-externalizable object %s, %s", 
-				 type(obj), obj )
-	result = _NonExternalizableObject( 	Class='NonExternalizableObject', 
-										InternalType=str(type(obj)) )
+def DefaultNonExternalizableReplacer(obj):
+	logger.debug("Asked to externalize non-externalizable object %s, %s", type(obj), obj)
+	result = _NonExternalizableObject(Class='NonExternalizableObject',
+									  InternalType=str(type(obj)))
 	return result
 
 class NonExternalizableObjectError(TypeError): pass
 
-def DevmodeNonExternalizableObjectReplacer( obj ):
+def DevmodeNonExternalizableObjectReplacer(obj):
 	"""
 	When devmode is active, non-externalizable objects raise an exception.
 	"""
-	raise NonExternalizableObjectError("Asked to externalize non-externalizable object %s, %s" % (type(obj), obj ) )
+	raise NonExternalizableObjectError("Asked to externalize non-externalizable object %s, %s" % 
+									   (type(obj), obj))
 
 @interface.implementer(INonExternalizableReplacer)
-def _DevmodeNonExternalizableObjectReplacer( obj ):
+def _DevmodeNonExternalizableObjectReplacer(obj):
 	return DevmodeNonExternalizableObjectReplacer
 
 #: The types that we will treat as sequences for externalization purposes. These
@@ -121,15 +120,15 @@ def _DevmodeNonExternalizableObjectReplacer( obj ):
 #: by iterating it and mapping onto a list. This allows :class:`~z3c.batching.interfaces.IBatch`
 #: to be directly externalized.
 SEQUENCE_TYPES = (persistent.list.PersistentList,
-				  collections.Set, 
+				  collections.Set,
 				  list,
 				  tuple)
 
 #: The types that we will treat as mappings for externalization purposes. These
 #: all map onto a dict.
-MAPPING_TYPES  = (persistent.mapping.PersistentMapping,
-				  BTrees.OOBTree.OOBTree,
-				  collections.Mapping)
+MAPPING_TYPES = (persistent.mapping.PersistentMapping,
+				 BTrees.OOBTree.OOBTree,
+				 collections.Mapping)
 
 from zope.cachedescriptors.property import CachedProperty
 
@@ -139,10 +138,9 @@ class _ExternalizationState(object):
 	request = None
 	registry = None
 
-	def __init__( self, **kwargs ):
-
+	def __init__(self, **kwargs):
 		for k, v in kwargs.iteritems():
-			setattr( self, k, v )
+			setattr(self, k, v)
 
 	@CachedProperty
 	def memo(self):
@@ -156,7 +154,7 @@ class _ExternalizationState(object):
 def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=True,
 							  decorate_callback=None):
 	__traceback_info__ = obj
-	
+
 	orig_obj = obj
 	orig_obj_id = id(obj)
 	if useCache and orig_obj_id in state.memo:
@@ -170,54 +168,54 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 		# This is for legacy code support, to allow existing methods to move to adapters
 		# and call us without infinite recursion
 		obj_has_usable_external_object = 	 hasattr(obj, 'toExternalObject') \
-										 and not getattr( obj, '__ext_ignore_toExternalObject__', False )
+										 and not getattr(obj, '__ext_ignore_toExternalObject__', False)
 
-		if not obj_has_usable_external_object and not IExternalObject.providedBy( obj ):
-			adapter = state.registry.queryAdapter(obj, IExternalObject, default=None, 
-												  name=state.name )
+		if not obj_has_usable_external_object and not IExternalObject.providedBy(obj):
+			adapter = state.registry.queryAdapter(obj, IExternalObject, default=None,
+												  name=state.name)
 			if not adapter and state.name != '':
 				# try for the default, but allow passing name of None to disable (?)
 				adapter = state.registry.queryAdapter(obj, IExternalObject,
-													  default=None, name='' )
+													  default=None, name='')
 			if adapter:
 				obj = adapter
 				obj_has_usable_external_object = True
 
 		# Note that for speed, before calling 'recall' we are performing the primitive check
 		result = obj
-		if obj_has_usable_external_object: # either an adapter or the original object
+		if obj_has_usable_external_object:  # either an adapter or the original object
 			result = obj.toExternalObject(request=state.request, name=state.name,
 										  decorate=decorate, useCache=useCache,
 										  decorate_callback=decorate_callback)
-		elif hasattr( obj, "toExternalDictionary" ):
+		elif hasattr(obj, "toExternalDictionary"):
 			result = obj.toExternalDictionary(request=state.request, name=state.name,
 											  decorate=decorate, useCache=useCache,
 											  decorate_callback=decorate_callback)
-		elif hasattr( obj, "toExternalList" ):
+		elif hasattr(obj, "toExternalList"):
 			result = obj.toExternalList()
-		elif isinstance(obj, MAPPING_TYPES ):
+		elif isinstance(obj, MAPPING_TYPES):
 			result = to_standard_external_dictionary(obj, name=state.name,
-													 registry=state.registry, 
+													 registry=state.registry,
 													 request=state.request,
 													 decorate=decorate,
 													 useCache=useCache,
 													 decorate_callback=decorate_callback)
 			if obj.__class__ is dict:
-				result.pop( 'Class', None )
+				result.pop('Class', None)
 			# Note that we recurse on the original items, not the things newly
 			# added.
 			# NOTE: This means that Links added here will not be externalized. There
 			# is an IExternalObjectDecorator that does that
 			for key, value in obj.items():
 				result[key] = \
-					_to_external_object_state(value, state, decorate=decorate, 
+					_to_external_object_state(value, state, decorate=decorate,
 											  useCache=useCache,
 											  decorate_callback=decorate_callback) \
 					if not isinstance(value, _primitives) else value
-		elif isinstance( obj, SEQUENCE_TYPES ) or IFiniteSequence.providedBy( obj ):
-			result = [ 
-				(_to_external_object_state(x, state, decorate=decorate, 
-										   useCache=useCache, 
+		elif isinstance(obj, SEQUENCE_TYPES) or IFiniteSequence.providedBy(obj):
+			result = [
+				(_to_external_object_state(x, state, decorate=decorate,
+										   useCache=useCache,
 										   decorate_callback=decorate_callback)
 				 if not isinstance(x, _primitives) else x) for x in obj ]
 			result = state.registry.getAdapter(result, ILocatedExternalSequence)
@@ -231,20 +229,20 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 			# TODO: Should this live here, or at a higher level where the ultimate
 			# external target/use-case is known?
 			replacer = state.default_non_externalizable_replacer
-			result = state.registry.queryAdapter(obj, INonExternalizableReplacer, 
+			result = state.registry.queryAdapter(obj, INonExternalizableReplacer,
 												 default=replacer)(obj)
 
 		if decorate:
 			for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
-				decorator.decorateExternalObject( orig_obj, result )
+				decorator.decorateExternalObject(orig_obj, result)
 		elif decorate_callback is not None and callable(decorate_callback):
 			decorate_callback(orig_obj, result)
 
 		# Request specific decorating, if given, is more specific than plain object
 		# decorating, so it gets to go last.
 		if decorate and state.request is not None and state.request is not _NotGiven:
-			for decorator in state.registry.subscribers( (orig_obj, state.request), IExternalObjectDecorator):
-				decorator.decorateExternalObject( orig_obj, result )
+			for decorator in state.registry.subscribers((orig_obj, state.request), IExternalObjectDecorator):
+				decorator.decorateExternalObject(orig_obj, result)
 
 		if useCache:
 			state.memo[orig_obj_id] = (orig_obj, result)
@@ -257,11 +255,11 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 		# NOTE: we cannot try to to-string the object, it may try to call back to us
 		# NOTE2: In case we encounter a proxy (zope.container.contained.ContainedProxy)
 		# the type(o) is not reliable. Only the __class__ is.
-		logger.exception("Exception externalizing component object %s/%s", 
-						 type(obj), obj.__class__ )
-		return state.catch_component_action( obj, t )
+		logger.exception("Exception externalizing component object %s/%s",
+						 type(obj), obj.__class__)
+		return state.catch_component_action(obj, t)
 
-def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
+def toExternalObject(obj, coerceNone=False, name=_NotGiven, registry=component,
 					  catch_components=(), catch_component_action=None,
 					  default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
 					  request=_NotGiven,
@@ -299,8 +297,8 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 		return obj
 
 	v = dict(locals())
-	v.pop( 'obj' )
-	state = _ExternalizationState( **v )
+	v.pop('obj')
+	state = _ExternalizationState(**v)
 
 	if name is _NotGiven:
 		name = _manager.get()['name']
@@ -311,7 +309,7 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 	if memos is None:
 		memos = defaultdict(dict)
 
-	_manager.push( {'name': name, 'memos': memos} )
+	_manager.push({'name': name, 'memos': memos})
 	state.name = name
 	state.memo = memos[name]
 
@@ -320,25 +318,25 @@ def toExternalObject( obj, coerceNone=False, name=_NotGiven, registry=component,
 	state.request = request
 
 	try:
-		return _to_external_object_state( obj, state, top_level=True,
-										  decorate=decorate, useCache=useCache,
-										  decorate_callback=decorate_callback)
+		return _to_external_object_state(obj, state, top_level=True,
+										 decorate=decorate, useCache=useCache,
+										 decorate_callback=decorate_callback)
 	finally:
 		_manager.pop()
 
 to_external_object = toExternalObject
 
-def stripSyntheticKeysFromExternalDictionary( external ):
+def stripSyntheticKeysFromExternalDictionary(external):
 	""" Given a mutable dictionary, removes all the external keys
 	that might have been added by :func:`to_standard_external_dictionary` and echoed back. """
 	for key in _syntheticKeys():
-		external.pop( key, None )
+		external.pop(key, None)
 	return external
 
-def _syntheticKeys( ):
+def _syntheticKeys():
 	return ('OID', 'ID', 'Last Modified', 'Creator', 'ContainerId', 'Class')
 
-def _isMagicKey( key ):
+def _isMagicKey(key):
 	""" For our mixin objects that have special keys, defines
 	those keys that are special and not settable by the user. """
 	return key in _syntheticKeys()
@@ -347,8 +345,8 @@ isSyntheticKey = _isMagicKey
 
 from calendar import timegm as _calendar_gmtime
 
-def _datetime_to_epoch( dt ):
-	return _calendar_gmtime( dt.utctimetuple() ) if dt is not None else None
+def _datetime_to_epoch(dt):
+	return _calendar_gmtime(dt.utctimetuple()) if dt is not None else None
 
 def _choose_field(result, self, ext_name,
 				  converter=lambda x: x,
@@ -370,7 +368,7 @@ def _choose_field(result, self, ext_name,
 				value = to_unicode(SYSTEM_USER_NAME)
 				result[ext_name] = value
 				return value
-			value = converter( value )
+			value = converter(value)
 			if value is not None:
 				result[ext_name] = value
 				return value
@@ -382,7 +380,7 @@ def _choose_field(result, self, ext_name,
 			return _choose_field(result, self, ext_name,
 								 converter=sup_converter, fields=sup_fields)
 
-def to_standard_external_last_modified_time( context, default=None, _write_into=None ):
+def to_standard_external_last_modified_time(context, default=None, _write_into=None):
 	"""
 	Find and return a number representing the time since the epoch
 	in fractional seconds at which the ``context`` was last modified.
@@ -395,12 +393,12 @@ def to_standard_external_last_modified_time( context, default=None, _write_into=
 	# The _write_into argument is for the benefit of to_standard_external_dictionary
 	holder = _write_into if _write_into is not None else dict()
 
-	_choose_field( holder, context, StandardExternalFields_LAST_MODIFIED,
-				   fields=(StandardInternalFields_LAST_MODIFIED, StandardInternalFields_LAST_MODIFIEDU),
-				   sup_iface=IDCTimes, sup_fields=('modified',), sup_converter=_datetime_to_epoch)
-	return holder.get( StandardExternalFields_LAST_MODIFIED, default)
+	_choose_field(holder, context, StandardExternalFields_LAST_MODIFIED,
+				  fields=(StandardInternalFields_LAST_MODIFIED, StandardInternalFields_LAST_MODIFIEDU),
+				  sup_iface=IDCTimes, sup_fields=('modified',), sup_converter=_datetime_to_epoch)
+	return holder.get(StandardExternalFields_LAST_MODIFIED, default)
 
-def to_standard_external_created_time( context, default=None, _write_into=None ):
+def to_standard_external_created_time(context, default=None, _write_into=None):
 	"""
 	Find and return a number representing the time since the epoch
 	in fractional seconds at which the ``context`` was created.
@@ -413,12 +411,11 @@ def to_standard_external_created_time( context, default=None, _write_into=None )
 	# The _write_into argument is for the benefit of to_standard_external_dictionary
 	holder = _write_into if _write_into is not None else dict()
 
-	_choose_field( holder, context, StandardExternalFields_CREATED_TIME,
-				   fields=(StandardInternalFields_CREATED_TIME,),
-				   sup_iface=IDCTimes, sup_fields=('created',), sup_converter=_datetime_to_epoch)
+	_choose_field(holder, context, StandardExternalFields_CREATED_TIME,
+				  fields=(StandardInternalFields_CREATED_TIME,),
+				  sup_iface=IDCTimes, sup_fields=('created',), sup_converter=_datetime_to_epoch)
 
-	return holder.get( StandardExternalFields_CREATED_TIME, default )
-
+	return holder.get(StandardExternalFields_CREATED_TIME, default)
 
 def _ext_class_if_needed(self, result):
 	if StandardExternalFields_CLASS in result:
@@ -428,10 +425,10 @@ def _ext_class_if_needed(self, result):
 	if cls:
 		result[StandardExternalFields_CLASS] = cls
 	elif (not self.__class__.__name__.startswith('_')
-		  and self.__class__.__module__ not in ( 'nti.externalization',
-												 'nti.externalization.datastructures',
-												 'nti.externalization.persistence',
-												 'nti.externalization.interfaces' )):
+		  and self.__class__.__module__ not in ('nti.externalization',
+												'nti.externalization.datastructures',
+												'nti.externalization.persistence',
+												'nti.externalization.interfaces')):
 		result[StandardExternalFields_CLASS] = self.__class__.__name__
 
 from nti.externalization._pyramid import get_current_request
@@ -459,89 +456,88 @@ def to_standard_external_dictionary(self, mergeFrom=None, name=_NotGiven,
 	result = LocatedExternalDict()
 
 	if mergeFrom:
-		result.update( mergeFrom )
+		result.update(mergeFrom)
 
 	if request is _NotGiven:
 		request = get_current_request()
 
 	result_id = _choose_field(result, self, StandardExternalFields_ID,
-							  fields=(StandardInternalFields_ID, StandardExternalFields_ID) )
+							  fields=(StandardInternalFields_ID, StandardExternalFields_ID))
 	# As we transition over to structured IDs that contain OIDs, we'll try to use that
 	# for both the ID and OID portions
-	if ntiids.is_ntiid_of_type( result_id, ntiids.TYPE_OID ):
+	if ntiids.is_ntiid_of_type(result_id, ntiids.TYPE_OID):
 		# If we are trying to use OIDs as IDs, it's possible that the
 		# ids are in the old, version 1 format, without an intid component. If that's the case,
 		# then update them on the fly, but only for notes because odd things happen to other
 		# objects (chat rooms?) if we do this to them
 		if self.__class__.__name__ == 'Note':
 			result_id = result[StandardExternalFields_ID]
-			std_oid = to_external_ntiid_oid( self )
-			if std_oid and std_oid.startswith( result_id ):
+			std_oid = to_external_ntiid_oid(self)
+			if std_oid and std_oid.startswith(result_id):
 				result[StandardExternalFields_ID] = std_oid
 		result[StandardExternalFields_OID] = result[StandardExternalFields_ID]
 	else:
-		oid = to_external_ntiid_oid( self, default_oid=None ) #toExternalOID( self )
+		oid = to_external_ntiid_oid(self, default_oid=None)  # toExternalOID( self )
 		if oid:
 			result[StandardExternalFields_OID] = oid
 
-	_choose_field( result, self, StandardExternalFields_CREATOR,
-				   fields=(StandardInternalFields_CREATOR, StandardExternalFields_CREATOR),
-				   converter=unicode )
+	_choose_field(result, self, StandardExternalFields_CREATOR,
+				  fields=(StandardInternalFields_CREATOR, StandardExternalFields_CREATOR),
+				  converter=unicode)
 
-	to_standard_external_last_modified_time( self, _write_into=result )
-	to_standard_external_created_time( self, _write_into=result )
+	to_standard_external_last_modified_time(self, _write_into=result)
+	to_standard_external_created_time(self, _write_into=result)
 
 	_ext_class_if_needed(self, result)
 
 	containerId = _choose_field(result, self, StandardExternalFields_CONTAINER_ID,
-				   				fields=(StandardInternalFields_CONTAINER_ID,) ) 
-	if containerId: # alias per mobile client request 20150625
+				   				fields=(StandardInternalFields_CONTAINER_ID,))
+	if containerId:  # alias per mobile client request 20150625
 		result[StandardInternalFields_CONTAINER_ID] = containerId
 
 	try:
-		_choose_field( result, self, StandardExternalFields_NTIID,
-					   fields=(StandardInternalFields_NTIID, StandardExternalFields_NTIID) )
+		_choose_field(result, self, StandardExternalFields_NTIID,
+					  fields=(StandardInternalFields_NTIID, StandardExternalFields_NTIID))
 		# During the transition, if there is not an NTIID, but we can find one as the ID or OID,
 		# provide that
 		if StandardExternalFields_NTIID not in result:
 			for field in (StandardExternalFields_ID, StandardExternalFields_OID):
-				if ntiids.is_valid_ntiid_string( result.get( field ) ):
+				if ntiids.is_valid_ntiid_string(result.get(field)):
 					result[StandardExternalFields_NTIID] = result[field]
 					break
 	except ntiids.InvalidNTIIDError:
-		logger.exception( "Failed to get NTIID for object %s", type(self) ) # printing self probably wants to externalize
-
+		logger.exception("Failed to get NTIID for object %s", type(self))  # printing self probably wants to externalize
 
 	if decorate:
-		decorate_external_mapping( self, result, registry=registry, request=request )
+		decorate_external_mapping(self, result, registry=registry, request=request)
 	elif decorate_callback is not None and callable(decorate_callback):
 		decorate_callback(self, result)
 
 	return result
 
-def decorate_external_mapping( self, result, registry=component, request=_NotGiven ):
-	for decorator in registry.subscribers( (self,), IExternalMappingDecorator ):
-		decorator.decorateExternalMapping( self, result )
+def decorate_external_mapping(self, result, registry=component, request=_NotGiven):
+	for decorator in registry.subscribers((self,), IExternalMappingDecorator):
+		decorator.decorateExternalMapping(self, result)
 
 	if request is _NotGiven:
 		request = get_current_request()
 
 	if request is not None:
-		for decorator in registry.subscribers( (self, request), IExternalMappingDecorator ):
-			decorator.decorateExternalMapping( self, result )
+		for decorator in registry.subscribers((self, request), IExternalMappingDecorator):
+			decorator.decorateExternalMapping(self, result)
 
 toExternalDictionary = to_standard_external_dictionary
-deprecation.deprecated('toExternalDictionary', 'Prefer to_standard_external_dictionary' )
+deprecation.deprecated('toExternalDictionary', 'Prefer to_standard_external_dictionary')
 
-def to_minimal_standard_external_dictionary( self, mergeFrom=None, **kwargs ):
+def to_minimal_standard_external_dictionary(self, mergeFrom=None, **kwargs):
 	"Does no decoration. Useful for non-'object' types. `self` should have a `mime_type` field."
 
 	result = LocatedExternalDict()
 	if mergeFrom:
-		result.update( mergeFrom )
+		result.update(mergeFrom)
 	_ext_class_if_needed(self, result)
 
-	mime_type = getattr( self, 'mime_type', None )
+	mime_type = getattr(self, 'mime_type', None)
 	if mime_type:
 		result[StandardExternalFields_MIMETYPE] = mime_type
 	return result
@@ -552,8 +548,7 @@ def is_nonstr_iter(v):
 def removed_unserializable(ext):
 
 	def _is_sequence(m):
-		return 	not isinstance(m, collections.Mapping) \
-				and is_nonstr_iter(m)
+		return not isinstance(m, collections.Mapping) and is_nonstr_iter(m)
 
 	def _clean(m):
 		if isinstance(m, collections.Mapping):
@@ -589,10 +584,10 @@ zope.deferredimport.initialize()
 zope.deferredimport.deprecatedFrom(
 	"Import from .persistence",
 	"nti.externalization.persistence",
-	"NoPickle" )
+	"NoPickle")
 
-EXT_FORMAT_JSON = 'json' #: Constant requesting JSON format data
-EXT_FORMAT_PLIST = 'plist' #: Constant requesting PList (XML) format data
+EXT_FORMAT_JSON = 'json'  	#: Constant requesting JSON format data
+EXT_FORMAT_PLIST = 'plist'  #: Constant requesting PList (XML) format data
 
 zope.deferredimport.deprecatedFrom(
 	"Import from .representation",
