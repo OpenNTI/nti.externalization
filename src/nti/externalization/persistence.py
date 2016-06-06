@@ -18,8 +18,10 @@ from zope import interface
 import persistent
 
 from persistent.list import PersistentList
-from persistent.wref import WeakRef as PWeakRef
+
 from persistent.mapping import PersistentMapping
+
+from persistent.wref import WeakRef as PWeakRef
 
 from nti.common.proxy import removeAllProxies
 

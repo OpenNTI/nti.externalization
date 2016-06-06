@@ -95,7 +95,6 @@ class JsonRepresenter(object):
 					  sort_keys=__debug__,  # Makes testing easier
 					  default=_second_pass_to_external_object)
 
-
 	def dump(self, obj, fp=None):
 		"""
 		Given an object that is known to already be in an externalized form,
