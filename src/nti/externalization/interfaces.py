@@ -39,6 +39,8 @@ class StandardExternalFields(object):
 	LINKS = 'Links'
 	HREF = 'href'
 	ITEMS = 'Items'
+	TOTAL = 'Total'
+	ITEM_COUNT = 'ItemCount'
 
 	CTA_MIMETYPE = 'mimeType'  # IContentTypeAware MimeType field
 
