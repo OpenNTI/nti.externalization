@@ -32,8 +32,6 @@ import persistent
 
 import BTrees.OOBTree
 
-from nti.common.string import to_unicode
-
 from nti.externalization.interfaces import IExternalObject
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
@@ -85,6 +83,13 @@ _manager = ThreadLocalManager(default=lambda: {'name': _NotGiven, 'memos': None}
 
 # Things that can be directly externalized
 _primitives = six.string_types + (numbers.Number, bool)
+
+def to_unicode(s, encoding='utf-8', err='strict'):
+	"""
+	Decode a byte sequence and unicode result
+	"""
+	s = s.decode(encoding, err) if isinstance(s, bytes) else s
+	return unicode(s) if s is not None else None
 
 def catch_replace_action(obj, exc):
 	"""

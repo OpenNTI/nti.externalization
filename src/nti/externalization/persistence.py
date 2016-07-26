@@ -23,8 +23,6 @@ from persistent.mapping import PersistentMapping
 
 from persistent.wref import WeakRef as PWeakRef
 
-from nti.common.proxy import removeAllProxies
-
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
 
 from nti.externalization.externalization import toExternalObject
@@ -32,6 +30,8 @@ from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import IExternalObject
 
 from nti.externalization.oids import toExternalOID
+
+from nti.externalization.proxy import removeAllProxies
 
 from nti.zodb.persistentproperty import PersistentPropertyHolder
 

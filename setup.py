@@ -66,7 +66,6 @@ setup(
 		'zope.preference',
 		'zope.schema',
 		'zope.security',
-		'nti.common',
 		'nti.ntiids',
 		'nti.zodb'
 	],
