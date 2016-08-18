@@ -67,6 +67,7 @@ setup(
 		'zope.schema',
 		'zope.security',
 		'nti.ntiids',
+		'nti.schema',
 		'nti.zodb'
 	],
 	extras_require={
