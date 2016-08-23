@@ -46,7 +46,9 @@ def _isMagicKey(key):
 isSyntheticKey = _isMagicKey
 
 class ExternalizableDictionaryMixin(object):
-	""" Implements a toExternalDictionary method as a base for subclasses. """
+	""" 
+	Implements a toExternalDictionary method as a base for subclasses.
+	"""
 
 	#: If true, then when asked for the standard dictionary, we will instead
 	#: produce the *minimal* dictionary. See :func:`~to_minimal_standard_external_dictionary`

@@ -13,15 +13,13 @@
 	<include package="zope.preference" file="meta.zcml" />
 	<include package="zope.preference" />
 
-	<subscriber
-		provides=".interfaces.IExternalMappingDecorator"
-		for="zope.dublincore.interfaces.IDCExtended"
-		factory=".dublincore.DCExtendedExternalMappingDecorator" />
+	<subscriber	provides=".interfaces.IExternalMappingDecorator"
+				for="zope.dublincore.interfaces.IDCExtended"
+				factory=".dublincore.DCExtendedExternalMappingDecorator" />
 		
-	<subscriber
-		provides=".interfaces.IExternalMappingDecorator"
-		for="zope.dublincore.interfaces.IDCDescriptiveProperties"
-		factory=".dublincore.DCDescriptivePropertiesExternalMappingDecorator" />
+	<subscriber	provides=".interfaces.IExternalMappingDecorator"
+				for="zope.dublincore.interfaces.IDCDescriptiveProperties"
+				factory=".dublincore.DCDescriptivePropertiesExternalMappingDecorator" />
 
 	<adapter for=""
 			 provides=".interfaces.ILocatedExternalMapping"
