@@ -9,7 +9,7 @@
 			name="registerMimeFactories"
 			schema="nti.externalization.zcml.IRegisterInternalizationMimeFactoriesDirective"
 			handler="nti.externalization.zcml.registerMimeFactories" />
-			
+
 		<meta:directive
 			name="registerAutoPackageIO"
 			schema="nti.externalization.zcml.IAutoPackageExternalizationDirective"
