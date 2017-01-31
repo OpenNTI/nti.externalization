@@ -129,6 +129,12 @@ SEQUENCE_TYPES = (persistent.list.PersistentList,
 				  list,
 				  tuple)
 
+try:
+	from brownie.datastructures.sets import OrderedSet
+	SEQUENCE_TYPES += (OrderedSet,)
+except ImportError:
+	pass
+
 #: The types that we will treat as mappings for externalization purposes. These
 #: all map onto a dict.
 MAPPING_TYPES = (persistent.mapping.PersistentMapping,
