@@ -235,13 +235,13 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 
 		elif isinstance(obj, SEQUENCE_TYPES) or IFiniteSequence.providedBy(obj):
 			result = []
-			for x in obj:
+			for value in obj:
 				if not isinstance(value, _primitives):
-					ext_obj = _to_external_object_state(x, state, decorate=decorate,
+					ext_obj = _to_external_object_state(value, state, decorate=decorate,
 											  			useCache=useCache,
 											  			decorate_callback=decorate_callback)
 				else:
-					ext_obj = x
+					ext_obj = value
 				result.append(ext_obj)
 			result = state.registry.getAdapter(result, ILocatedExternalSequence)
 		# PList doesn't support None values, JSON does. The closest
