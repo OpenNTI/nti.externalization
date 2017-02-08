@@ -156,14 +156,28 @@ class _ExternalizationState(object):
 		# and thus ensure no overlapping ids
 		return {}
 
+class _RecursiveCallState(dict):
+	pass
+
+_marker = object()
+
 def _to_external_object_state(obj, state, top_level=False, decorate=True, useCache=True,
 							  decorate_callback=None):
 	__traceback_info__ = obj
 
 	orig_obj = obj
 	orig_obj_id = id(obj)
-	if useCache and orig_obj_id in state.memo:
-		return state.memo[orig_obj_id][1]
+	if useCache:
+		value = state.memo.get(orig_obj_id, None)
+		result = value[1] if value is not None else None
+		if result is None: # mark
+			state.memo[orig_obj_id] = (orig_obj, _marker)
+		elif result is not _marker:
+			return result
+		elif obj is not None:
+			logger.warn("Recursive call to object %s.", orig_obj_id)
+			result = to_standard_external_dictionary(obj, decorate=False, useCache=False)
+			return _RecursiveCallState(result)
 
 	try:
 		# TODO: This is needless for the mapping types and sequence types. rework to avoid.
@@ -207,22 +221,28 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 													 decorate_callback=decorate_callback)
 			if obj.__class__ is dict:
 				result.pop('Class', None)
-			# Note that we recurse on the original items, not the things newly
-			# added.
+			# Note that we recurse on the original items, not the things newly added.
 			# NOTE: This means that Links added here will not be externalized. There
 			# is an IExternalObjectDecorator that does that
 			for key, value in obj.items():
-				result[key] = \
-					_to_external_object_state(value, state, decorate=decorate,
-											  useCache=useCache,
-											  decorate_callback=decorate_callback) \
-					if not isinstance(value, _primitives) else value
+				if not isinstance(value, _primitives):
+					ext_obj = _to_external_object_state(value, state, decorate=decorate,
+											  			useCache=useCache,
+											  			decorate_callback=decorate_callback)
+				else:
+					ext_obj = value
+				result[key] = ext_obj
+
 		elif isinstance(obj, SEQUENCE_TYPES) or IFiniteSequence.providedBy(obj):
-			result = [
-				(_to_external_object_state(x, state, decorate=decorate,
-										   useCache=useCache,
-										   decorate_callback=decorate_callback)
-				 if not isinstance(x, _primitives) else x) for x in obj ]
+			result = []
+			for x in obj:
+				if not isinstance(value, _primitives):
+					ext_obj = _to_external_object_state(x, state, decorate=decorate,
+											  			useCache=useCache,
+											  			decorate_callback=decorate_callback)
+				else:
+					ext_obj = x
+				result.append(ext_obj)
 			result = state.registry.getAdapter(result, ILocatedExternalSequence)
 		# PList doesn't support None values, JSON does. The closest
 		# coersion I can think of is False.
@@ -237,19 +257,21 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 			result = state.registry.queryAdapter(obj, INonExternalizableReplacer,
 												 default=replacer)(obj)
 
-		if decorate:
-			for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
-				decorator.decorateExternalObject(orig_obj, result)
-		elif decorate_callback is not None and callable(decorate_callback):
-			decorate_callback(orig_obj, result)
+		if not isinstance(result, _RecursiveCallState):
+			if decorate:
+				for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
+					decorator.decorateExternalObject(orig_obj, result)
+			elif decorate_callback is not None and callable(decorate_callback):
+				decorate_callback(orig_obj, result)
+	
+			# Request specific decorating, if given, is more specific than plain object
+			# decorating, so it gets to go last.
+			if decorate and state.request is not None and state.request is not _NotGiven:
+				for decorator in state.registry.subscribers((orig_obj, state.request),
+															IExternalObjectDecorator):
+					decorator.decorateExternalObject(orig_obj, result)
 
-		# Request specific decorating, if given, is more specific than plain object
-		# decorating, so it gets to go last.
-		if decorate and state.request is not None and state.request is not _NotGiven:
-			for decorator in state.registry.subscribers((orig_obj, state.request), IExternalObjectDecorator):
-				decorator.decorateExternalObject(orig_obj, result)
-
-		if useCache:
+		if useCache and not isinstance(result, _RecursiveCallState): # save result
 			state.memo[orig_obj_id] = (orig_obj, result)
 		return result
 	except state.catch_components as t:

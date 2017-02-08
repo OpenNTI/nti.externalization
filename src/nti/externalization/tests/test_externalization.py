@@ -308,6 +308,26 @@ class TestToExternalObject(ExternalizationLayerTest):
 		assert_that(ext_val[0],
 					 is_(same_instance(ext_val[1])))
 
+	def test_memo_recursive(self):
+
+		@interface.implementer(IExternalObject)
+		class Test(object):
+			children = []
+			
+			def toExternalObject(self, **kwargs):
+				# a new dict each time we're called;
+				# we only want to be called once
+				result = {}
+				for n, x in enumerate(self.children or ()):
+					result[str(n)] = toExternalObject(x)
+				return result
+
+		test = Test()
+		test.children = [Test(), test]
+		ext_val = toExternalObject(test)
+		assert_that(ext_val, has_entry('0', is_({})))
+		assert_that(ext_val, has_entry('1', has_entry('Class', 'Test')))
+		
 	def test_memo_changes_names(self):
 		# if we're called with a different name,
 		# the memo changes too
