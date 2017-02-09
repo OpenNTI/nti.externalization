@@ -175,7 +175,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 		elif result is not _marker:
 			return result
 		elif obj is not None:
-			logger.warn("Recursive call to object %s.", orig_obj_id)
+			logger.warn("Recursive call to object %s.", obj)
 			result = to_standard_external_dictionary(obj, decorate=False, useCache=False)
 			return _RecursiveCallState(result)
 
