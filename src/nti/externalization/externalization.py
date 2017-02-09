@@ -257,21 +257,20 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 			result = state.registry.queryAdapter(obj, INonExternalizableReplacer,
 												 default=replacer)(obj)
 
-		if not isinstance(result, _RecursiveCallState):
-			if decorate:
-				for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
-					decorator.decorateExternalObject(orig_obj, result)
-			elif decorate_callback is not None and callable(decorate_callback):
-				decorate_callback(orig_obj, result)
-	
-			# Request specific decorating, if given, is more specific than plain object
-			# decorating, so it gets to go last.
-			if decorate and state.request is not None and state.request is not _NotGiven:
-				for decorator in state.registry.subscribers((orig_obj, state.request),
-															IExternalObjectDecorator):
-					decorator.decorateExternalObject(orig_obj, result)
+		if decorate:
+			for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
+				decorator.decorateExternalObject(orig_obj, result)
+		elif decorate_callback is not None and callable(decorate_callback):
+			decorate_callback(orig_obj, result)
 
-		if useCache and not isinstance(result, _RecursiveCallState): # save result
+		# Request specific decorating, if given, is more specific than plain object
+		# decorating, so it gets to go last.
+		if decorate and state.request is not None and state.request is not _NotGiven:
+			for decorator in state.registry.subscribers((orig_obj, state.request),
+														IExternalObjectDecorator):
+				decorator.decorateExternalObject(orig_obj, result)
+
+		if useCache: # save result
 			state.memo[orig_obj_id] = (orig_obj, result)
 		return result
 	except state.catch_components as t:
