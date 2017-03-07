@@ -29,7 +29,7 @@ from nti.externalization.proxy import removeAllProxies
 
 from nti.ntiids import ntiids
 
-def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=False):
+def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=False, use_cache=True):
 	"""
 	For a persistent object, returns its persistent OID in a pasreable
 	external format (see :func:`fromExternalOID`). If the object has not been saved, and
@@ -50,11 +50,12 @@ def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=Fal
 	except AttributeError:
 		pass
 
-	try:
-		# See comments in to_external_ntiid_oid
-		return getattr(self, '_v_to_external_oid')
-	except AttributeError:
-		pass
+	if use_cache:
+		try:
+			# See comments in to_external_ntiid_oid
+			return getattr(self, '_v_to_external_oid')
+		except AttributeError:
+			pass
 
 	# because if it was proxied, we should still read the right thing above;
 	# this saves time
@@ -92,7 +93,6 @@ def toExternalOID(self, default=None, add_to_connection=False, add_to_intids=Fal
 	if jar:
 		db_name = jar.db().database_name
 		oid = oid + b':' + db_name.encode('hex')
-
 	intutility = component.queryUtility(IIntIds)
 	if intutility is not None:
 		intid = intutility.queryId(self)
@@ -168,7 +168,8 @@ DEFAULT_EXTERNAL_CREATOR = system_user.id
 def to_external_ntiid_oid(contained, default_oid=None,
 						  add_to_connection=False,
 						  add_to_intids=False,
-						  mask_creator=False):
+						  mask_creator=False,
+						  use_cache=True):
 	"""
 	:return: An NTIID string utilizing the object's creator and persistent
 		id.
@@ -198,14 +199,16 @@ def to_external_ntiid_oid(contained, default_oid=None,
 	# from one worker to the next).
 	# On large renderings, benchmarks show this can be worth ~10%
 	cache_key = str('_v_to_external_ntiid_oid_%s' % mask_creator)
-	ext_oid = getattr(contained, cache_key, None)
-	if ext_oid:
-		return ext_oid
+	if use_cache:
+		ext_oid = getattr(contained, cache_key, None)
+		if ext_oid:
+			return ext_oid
 
 	oid = toExternalOID(contained,
 						default=default_oid,
 						add_to_connection=add_to_connection,
-						add_to_intids=add_to_intids)
+						add_to_intids=add_to_intids,
+						use_cache=use_cache)
 	if not oid:
 		return None
 
