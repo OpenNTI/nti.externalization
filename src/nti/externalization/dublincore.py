@@ -27,48 +27,49 @@ from nti.externalization.interfaces import IExternalMappingDecorator
 
 from nti.externalization.singleton import SingletonDecorator
 
+
 # Note that its fairly common for things to claim to implement these interfaces,
 # but only provide a subset of the properties. (mostly due to programming errors).
 # Hence the use of getattr below, to protect against this.
-
 @component.adapter(IDCExtended)
 @interface.implementer(IExternalMappingDecorator)
 class DCExtendedExternalMappingDecorator(object):
-	"""
-	Adds the extended properties of dublincore to external objects
-	as defined by :class:`zope.dublincore.interfaces.IDCExtended`.
+    """
+    Adds the extended properties of dublincore to external objects
+    as defined by :class:`zope.dublincore.interfaces.IDCExtended`.
 
-	.. note:: We are currently only mapping 'Creator' since that's
-	   the only field that ever gets populated.
-	"""
+    .. note:: We are currently only mapping 'Creator' since that's
+       the only field that ever gets populated.
+    """
 
-	__metaclass__ = SingletonDecorator
+    __metaclass__ = SingletonDecorator
 
-	def __init__(self, context):
-		pass
+    def __init__(self, context=None):
+        pass
 
-	def decorateExternalMapping(self, original, external):
-		# TODO: Where should we get constants for this?
-		creators = getattr(original, 'creators', None)
-		if 'DCCreator' not in external:
-			external['DCCreator'] = creators
-		if StandardExternalFields.CREATOR not in external and creators:
-			external[StandardExternalFields.CREATOR] = creators[0]
+    def decorateExternalMapping(self, original, external):
+        # TODO: Where should we get constants for this?
+        creators = getattr(original, 'creators', None)
+        if 'DCCreator' not in external:
+            external['DCCreator'] = creators
+        if StandardExternalFields.CREATOR not in external and creators:
+            external[StandardExternalFields.CREATOR] = creators[0]
+
 
 @component.adapter(IDCDescriptiveProperties)
 @interface.implementer(IExternalMappingDecorator)
 class DCDescriptivePropertiesExternalMappingDecorator(object):
-	"""
-	Supports the 'DCTitle' and 'DCDescription' fields, as defined in
-	:class:`zope.dublincore.interfaces.IDCDescriptiveProperties`.
-	"""
-	__metaclass__ = SingletonDecorator
+    """
+    Supports the 'DCTitle' and 'DCDescription' fields, as defined in
+    :class:`zope.dublincore.interfaces.IDCDescriptiveProperties`.
+    """
+    __metaclass__ = SingletonDecorator
 
-	def __init__(self, context):
-		pass
+    def __init__(self, context=None):
+        pass
 
-	def decorateExternalMapping(self, original, external):
-		if 'DCTitle' not in external:
-			external['DCTitle'] = getattr(original, 'title', None)
-		if 'DCDescription' not in external:
-			external['DCDescription'] = getattr(original, 'description', None)
+    def decorateExternalMapping(self, original, external):
+        if 'DCTitle' not in external:
+            external['DCTitle'] = getattr(original, 'title', None)
+        if 'DCDescription' not in external:
+            external['DCDescription'] = getattr(original, 'description', None)
