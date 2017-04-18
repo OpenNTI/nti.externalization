@@ -41,7 +41,9 @@ _VERSION = b'$'
 # and i and I, leaving the digits 1 and 0
 _REMOVED = b'oOQlLiI'
 _REPLACE = b'0001111'
-_VOCABULARY = b''.join(reversed(sorted(list(set(string.ascii_letters + string.digits) - set(_REMOVED)))))
+_VOCABULARY = b''.join(
+    reversed(sorted(list(set(string.ascii_letters + string.digits) - set(_REMOVED))))
+)
 
 # We translate the letters we removed
 _TRANSTABLE = string.maketrans(_REMOVED, _REPLACE)
@@ -50,6 +52,7 @@ _TRANSTABLE = string.maketrans(_REMOVED, _REPLACE)
 _BASE = len(_VOCABULARY)
 
 _ZERO_MARKER = b'@'  # Zero is special
+
 
 def from_external_string(key):
     """
@@ -70,7 +73,8 @@ def from_external_string(key):
         # valid key, will work
         key = key.encode('ascii')
 
-    key = key[:-1] if key[-1] == _VERSION else key  # strip the version if needed
+    # strip the version if needed
+    key = key[:-1] if key[-1] == _VERSION else key
     key = string.translate(key, _TRANSTABLE)  # translate bad chars
 
     if key == _ZERO_MARKER:
@@ -80,6 +84,7 @@ def from_external_string(key):
     for idx, char in enumerate(reversed(key)):
         int_sum += _VOCABULARY.index(char) * pow(_BASE, idx)
     return int_sum
+
 
 def to_external_string(integer):
     """
