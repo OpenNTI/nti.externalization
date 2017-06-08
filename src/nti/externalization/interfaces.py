@@ -43,8 +43,6 @@ class StandardExternalFields(object):
     TOTAL = 'Total'
     ITEM_COUNT = 'ItemCount'
 
-    CTA_MIMETYPE = 'mimeType'  # IContentTypeAware MimeType field
-
 
 StandardExternalFields.ALL = (lambda: [v for k, v in StandardExternalFields.__dict__.iteritems()
                                        if not k.startswith('_')])()

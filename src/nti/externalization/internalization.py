@@ -49,7 +49,7 @@ LEGACY_FACTORY_SEARCH_MODULES = set()
 
 StandardExternalFields_CLASS = StandardExternalFields.CLASS
 StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
-StandardExternalFields_CTA_MIMETYPE = StandardExternalFields.CTA_MIMETYPE
+
 
 def register_legacy_search_module(module_name):
 	"""
