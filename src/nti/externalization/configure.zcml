@@ -29,7 +29,7 @@
 			 provides=".interfaces.ILocatedExternalSequence"
 			 factory=".interfaces.LocatedExternalList" />
 
-	<adapter for="dolmen.builtins.IList"
+	<adapter for=".interfaces.IList"
 			 provides=".interfaces.ILocatedExternalSequence"
 			 factory=".interfaces.LocatedExternalList" />
 

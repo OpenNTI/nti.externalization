@@ -383,3 +383,20 @@ class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
     def __init__(self, obj, *descriptions, **kwargs):
         super(ObjectModifiedFromExternalEvent, self).__init__(obj, *descriptions)
         self.kwargs = kwargs
+
+
+class IIterable(interface.Interface):
+    """
+    Base interface for iterable types.
+    """
+
+    def __iter__():
+        """Return an iterator object.
+        """
+
+
+class IList(IIterable):
+    """
+    Marker interface for lists
+    """
+interface.classImplements(list, IList)
