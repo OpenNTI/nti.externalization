@@ -174,7 +174,7 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
 		result = False
 		if len(self) == len(other):
 			result = True
-			for i in xrange(len(self)):
+			for i in range(len(self)):
 				if self[i] != other[i]:
 					result = False
 					break
