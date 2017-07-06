@@ -3,7 +3,7 @@ sudo: false
 python:
   - 2.7
   - 3.6
-  - pypy-5.4.1
+  - pypy-5.8.0
 dist: trusty
 script:
   - coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress --all
@@ -16,8 +16,6 @@ install:
   - pip install -U setuptools
   - pip install -U coveralls coverage
 
-# cache: pip seems not to work if `install` is replaced (https://github.com/travis-ci/travis-ci/issues/3239)
-cache: pip
+ciache: pip
 
 before_cache:
-

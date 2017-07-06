@@ -1,2 +1,10 @@
+*.py[cod]
+
 /.project
 /.pydevproject
+/.settings/
+
+# Distribution / packaging
+build/
+dist/
+/.tox/
