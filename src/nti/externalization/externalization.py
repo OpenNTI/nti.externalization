@@ -369,6 +369,7 @@ def get_externals():
 	state = dict(_manager.get())
 	[state.pop(x, None) for x in ('request', 'registry', 'name', 'memos')]
 	return state
+getExternals = get_externals
 
 
 def get_external_param(name, default=None):
@@ -379,6 +380,7 @@ def get_external_param(name, default=None):
 		return get_externals()[name]
 	except KeyError:
 		return default
+getExternalParam = get_external_param
 
 
 def stripSyntheticKeysFromExternalDictionary(external):
