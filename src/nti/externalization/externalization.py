@@ -285,14 +285,20 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True, useCac
 						 type(obj), obj.__class__)
 		return state.catch_component_action(obj, t)
 
-def toExternalObject(obj, coerceNone=False, name=_NotGiven, registry=component,
-					  catch_components=(), catch_component_action=None,
-					  default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
-					  request=_NotGiven,
-					  decorate=True,
-					  useCache=True,
-					  decorate_callback=None):
-	""" Translates the object into a form suitable for
+def toExternalObject(obj, 
+					 coerceNone=False, 
+					 name=_NotGiven, 
+					 registry=component,
+					 catch_components=(), 
+					 catch_component_action=None,
+					 default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
+					 request=_NotGiven,
+					 decorate=True,
+					 useCache=True,
+					 decorate_callback=None,
+					 **kwargs):
+	""" 
+	Translates the object into a form suitable for
 	external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
 	and :const:`MAPPING_TYPES` for details on what we can handle by default.
 
@@ -323,7 +329,9 @@ def toExternalObject(obj, coerceNone=False, name=_NotGiven, registry=component,
 		return obj
 
 	v = dict(locals())
-	v.pop('obj')
+	v.pop('obj', None)
+	for name in kwargs.keys():
+		v.pop(name)
 	state = _ExternalizationState(**v)
 
 	if name is _NotGiven:
@@ -335,7 +343,10 @@ def toExternalObject(obj, coerceNone=False, name=_NotGiven, registry=component,
 	if memos is None:
 		memos = defaultdict(dict)
 
-	_manager.push({'name': name, 'memos': memos})
+	data = dict(kwargs)
+	data.update({'name': name, 'memos': memos})
+	_manager.push(data)
+
 	state.name = name
 	state.memo = memos[name]
 
@@ -349,12 +360,24 @@ def toExternalObject(obj, coerceNone=False, name=_NotGiven, registry=component,
 										 decorate_callback=decorate_callback)
 	finally:
 		_manager.pop()
-
 to_external_object = toExternalObject
 
+
+def get_externalization_param(name, default=None):
+	"""
+	Return the currently value for a externalization param or default 
+	"""
+	try:
+		return _manager.get()[name]
+	except KeyError:
+		return default
+
+
 def stripSyntheticKeysFromExternalDictionary(external):
-	""" Given a mutable dictionary, removes all the external keys
-	that might have been added by :func:`to_standard_external_dictionary` and echoed back. """
+	""" 
+	Given a mutable dictionary, removes all the external keys
+	that might have been added by :func:`to_standard_external_dictionary` and echoed back. 
+	"""
 	for key in _syntheticKeys():
 		external.pop(key, None)
 	return external
