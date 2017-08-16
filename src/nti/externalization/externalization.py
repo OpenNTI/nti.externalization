@@ -331,7 +331,7 @@ def toExternalObject(obj,
 	v = dict(locals())
 	v.pop('obj', None)
 	for name in kwargs.keys():
-		v.pop(name)
+		v.pop(name, None)
 	state = _ExternalizationState(**v)
 
 	if name is _NotGiven:
