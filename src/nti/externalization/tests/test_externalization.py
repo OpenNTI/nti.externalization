@@ -34,6 +34,7 @@ from zope import component
 from ZODB.broken import Broken
 
 from nti.externalization import externalization
+
 from nti.externalization.internalization import _search_for_external_factory
 
 from nti.externalization.interfaces import EXT_REPR_YAML
@@ -192,6 +193,16 @@ class TestFunctions(ExternalizationLayerTest):
 		assert_that(ext, has_entry('a', is_([3, 4])))
 		assert_that(ext, has_entry('z', is_(none())))
 		assert_that(ext, has_entry('b', has_entry('c', is_([None, 1]))))
+		
+	def test_get_external_param(self):
+		externalization._manager.push({'foo':'var'})
+		try:
+			value = externalization.get_external_param('foo')
+			assert_that(value, is_('var'))
+			value = externalization.get_external_param('unknown')
+			assert_that(value, is_(none()))
+		finally:
+			externalization._manager.pop()
 
 class TestPersistentExternalizableWeakList(unittest.TestCase):
 

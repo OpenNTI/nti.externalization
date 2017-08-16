@@ -362,12 +362,21 @@ def toExternalObject(obj,
 to_external_object = toExternalObject
 
 
-def get_externalization_param(name, default=None):
+def get_externals():
 	"""
-	Return the currently value for a externalization param or default 
+	Return the externalization params
+	"""
+	state = dict(_manager.get())
+	[state.pop(x, None) for x in ('request', 'registry', 'name', 'memos')]
+	return state
+
+
+def get_external_param(name, default=None):
+	"""
+	Return the currently value for an externalization param or default 
 	"""
 	try:
-		return _manager.get()[name]
+		return get_externals()[name]
 	except KeyError:
 		return default
 
