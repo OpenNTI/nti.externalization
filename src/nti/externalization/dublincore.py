@@ -11,7 +11,7 @@ of :mod:`zope.dublincore.interfaces`.
 .. $Id$
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -48,7 +48,6 @@ class DCExtendedExternalMappingDecorator(object):
         pass
 
     def decorateExternalMapping(self, original, external):
-        # TODO: Where should we get constants for this?
         creators = getattr(original, 'creators', None)
         if 'DCCreator' not in external:
             external['DCCreator'] = creators
