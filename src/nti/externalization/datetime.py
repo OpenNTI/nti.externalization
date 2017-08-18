@@ -9,7 +9,7 @@ module for types of objects.
 .. $Id$
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -173,7 +173,7 @@ class _date_to_string(object):
     def __init__(self, date):
         self.date = date
 
-    def toExternalObject(self, **kwargs):
+    def toExternalObject(self, **unused_kwargs):
         return isodate.date_isoformat(self.date)
 
 
@@ -187,7 +187,7 @@ class _datetime_to_string(object):
     def __init__(self, date):
         self.date = date
 
-    def toExternalObject(self, **kwargs):
+    def toExternalObject(self, **unused_kwargs):
         # Convert to UTC, assuming that a missing timezone
         # is already in UTC
         dt = _as_utc_naive(self.date, assume_local=False)
@@ -211,5 +211,5 @@ class _duration_to_string(object):
     def __init__(self, date):
         self.date = date
 
-    def toExternalObject(self, **kwargs):
+    def toExternalObject(self, **unused_kwargs):
         return isodate.duration_isoformat(self.date)
