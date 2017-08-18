@@ -6,7 +6,7 @@ Externalization Interfaces
 .. $Id$
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -27,21 +27,21 @@ class StandardExternalFields(object):
     Namespace object defining constants whose values are the
     keys used in external mappings.
     """
-    OID = 'OID'
-    ID = 'ID'
-    INTID = 'INTID'
-    NTIID = 'NTIID'
-    LAST_MODIFIED = 'Last Modified'
-    CREATED_TIME = 'CreatedTime'
-    CREATOR = 'Creator'
-    CONTAINER_ID = 'ContainerId'
-    CLASS = 'Class'
-    MIMETYPE = 'MimeType'
-    LINKS = 'Links'
-    HREF = 'href'
-    ITEMS = 'Items'
-    TOTAL = 'Total'
-    ITEM_COUNT = 'ItemCount'
+    ID = u'ID'
+    OID = u'OID'
+    HREF = u'href'
+    INTID = u'INTID'
+    NTIID = u'NTIID'
+    CREATOR = u'Creator'
+    CONTAINER_ID = u'ContainerId'
+    CREATED_TIME = u'CreatedTime'
+    LAST_MODIFIED = u'Last Modified'
+    CLASS = u'Class'
+    LINKS = u'Links'
+    MIMETYPE = u'MimeType'
+    ITEMS = u'Items'
+    TOTAL = u'Total'
+    ITEM_COUNT = u'ItemCount'
 
 
 StandardExternalFields.ALL = (lambda: [v for k, v in StandardExternalFields.__dict__.iteritems()
@@ -54,14 +54,14 @@ class StandardInternalFields(object):
     property/attribute names looked for on internal objects.
     """
 
-    ID = 'id'
-    NTIID = 'ntiid'
+    ID = u'id'
+    NTIID = u'ntiid'
 
-    CREATOR = 'creator'
-    LAST_MODIFIED = 'lastModified'
-    LAST_MODIFIEDU = 'LastModified'
-    CREATED_TIME = 'createdTime'
-    CONTAINER_ID = 'containerId'
+    CREATOR = u'creator'
+    CREATED_TIME = u'createdTime'
+    CONTAINER_ID = u'containerId'
+    LAST_MODIFIED = u'lastModified'
+    LAST_MODIFIEDU = u'LastModified'
 
 
 class IInternalObjectExternalizer(interface.Interface):
@@ -72,12 +72,12 @@ class IInternalObjectExternalizer(interface.Interface):
 
     __external_can_create__ = interface.Attribute(
         """This must be set to true, generally at the class level, for objects
-		that can be created by specifying their Class name. """)
+		that can be created by specifying their Class name.""")
 
     __external_class_name__ = interface.Attribute(
         """If present, the value is a string that is used for the 'Class' key in the
 		external dictionary. If not present, the local name of the object's class is
-		used instead. """)
+		used instead.""")
 
     def toExternalObject(**kwargs):
         """
@@ -195,7 +195,7 @@ class LocatedExternalDict(dict):
     `mime_type` value of None.
     """
 
-    __name__ = ''
+    __name__ = u''
     __parent__ = None
     __acl__ = ()
     mimeType = None
@@ -211,7 +211,7 @@ class LocatedExternalList(list):
     `mimeType` value of None.
     """
 
-    __name__ = ''
+    __name__ = u''
     __parent__ = None
     __acl__ = ()
     mimeType = None
@@ -260,11 +260,14 @@ class IExternalObjectIO(IExternalObjectRepresenter,
 
 
 #: Constant requesting JSON format data
-EXT_REPR_JSON = 'json'
+EXT_REPR_JSON = u'json'
+
 #: Constant requesting PList (XML) format data
-EXT_REPR_PLIST = 'plist'
+EXT_REPR_PLIST = u'plist'
+
 #: Constant requesting YAML format data
-EXT_REPR_YAML = 'yaml'
+EXT_REPR_YAML = u'yaml'
+
 
 # Creating and updating new and existing objects given external forms
 
