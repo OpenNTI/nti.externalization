@@ -6,7 +6,7 @@ Support for singleton objects that are used as external object decorators.
 .. $Id$
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -53,7 +53,7 @@ class SingletonDecorator(type):
 
         the_instance = ctor(cls)
 
-        def __new__(cls, context=None, request=None):
+        def __new__(cls, unused_context=None, unused_request=None):
             return the_instance
         cls.__new__ = staticmethod(__new__)
 

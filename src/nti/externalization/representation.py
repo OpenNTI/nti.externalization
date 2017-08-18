@@ -6,7 +6,7 @@ External representation support.
 .. $Id$
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -160,8 +160,6 @@ class _ExtDumper(yaml.SafeDumper):  # pylint:disable=R0904
 
     Therefore we must register their base types as multi-representers.
     """
-
-
 _ExtDumper.add_multi_representer(list, _ExtDumper.represent_list)
 _ExtDumper.add_multi_representer(dict, _ExtDumper.represent_dict)
 _ExtDumper.add_multi_representer(unicode, _ExtDumper.represent_unicode)
@@ -177,7 +175,7 @@ class _UnicodeLoader(yaml.SafeLoader):  # pylint:disable=R0904
         return self.construct_scalar(node)
 
 
-_UnicodeLoader.add_constructor('tag:yaml.org,2002:str',
+_UnicodeLoader.add_constructor(u'tag:yaml.org,2002:str',
                                _UnicodeLoader.construct_yaml_str)
 
 
