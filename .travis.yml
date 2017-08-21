@@ -3,11 +3,11 @@ sudo: false
 python:
   - 2.7
   - 3.6
-  - pypy-5.8.0
-dist: trusty
+  - pypy-5.4.1
 script:
   - coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress --all
 after_success:
+  - coveralls
 notifications:
   email: dev-regression-tests@nextthought.com
 
@@ -15,7 +15,9 @@ install:
   - pip install -U pip
   - pip install -U setuptools
   - pip install -U coveralls coverage
+  - pip install -U -e ".[test]"
 
-ciache: pip
+cache: pip
 
 before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
