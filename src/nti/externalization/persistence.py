@@ -121,10 +121,9 @@ class PersistentExternalizableDictionary(PersistentPropertyHolder,
     """
 
     def __init__(self, data=None, **kwargs):
-        super(PersistentExternalizableDictionary,
-              self).__init__(data, **kwargs)
+        super(PersistentExternalizableDictionary, self).__init__(data, **kwargs)
 
-    def toExternalDictionary(self, mergeFrom=None, *args, **kwargs):
+    def toExternalDictionary(self, *args, **kwargs):
         result = super(PersistentExternalizableDictionary, self).toExternalDictionary(self, *args, **kwargs)
         for key, value in self.iteritems():
             result[key] = toExternalObject(value, *args, **kwargs)
