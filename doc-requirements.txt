@@ -1,4 +1,5 @@
-setuptools >= 36.0.1
+setuptools >= 33.1.1
 zope.interface
 zope.proxy
 repoze.sphinx.autointerface
+sphinx_rtd_theme
