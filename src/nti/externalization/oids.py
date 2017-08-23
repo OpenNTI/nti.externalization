@@ -148,6 +148,7 @@ def fromExternalOID(ext_oid):
         # so the format is a bit ambiguous...
         return ParsedOID(ext_oid, '', None)
 
+    ext_oid = bytes_(ext_oid) if not isinstance(ext_oid, bytes) else ext_oid
     parts = ext_oid.split(b':') if b':' in ext_oid else (ext_oid,)
     oid_string = parts[0]
     name_s = parts[1] if len(parts) > 1 else b""
