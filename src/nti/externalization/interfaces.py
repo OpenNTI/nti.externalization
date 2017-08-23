@@ -54,14 +54,14 @@ class StandardInternalFields(object):
     property/attribute names looked for on internal objects.
     """
 
-    ID = u'id'
-    NTIID = u'ntiid'
+    ID = 'id'
+    NTIID = 'ntiid'
 
-    CREATOR = u'creator'
-    CREATED_TIME = u'createdTime'
-    CONTAINER_ID = u'containerId'
-    LAST_MODIFIED = u'lastModified'
-    LAST_MODIFIEDU = u'LastModified'
+    CREATOR = 'creator'
+    CREATED_TIME = 'createdTime'
+    CONTAINER_ID = 'containerId'
+    LAST_MODIFIED = 'lastModified'
+    LAST_MODIFIEDU = 'LastModified'
 
 
 class IInternalObjectExternalizer(interface.Interface):
