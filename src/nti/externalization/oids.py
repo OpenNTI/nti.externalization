@@ -140,8 +140,8 @@ def fromExternalOID(ext_oid):
 
     # Sometimes raw _p_oid values do contain a b':', so simply splitting
     # on that is not reliable, so try to detect raw _p_oid directly
-    if isinstance(ext_oid, bytes) and len(ext_oid) == 8 and \
-            not ext_oid.startswith(b'0x') and ext_oid.count(b':') != 2:
+    if      isinstance(ext_oid, bytes) and len(ext_oid) == 8 and \
+        not ext_oid.startswith(b'0x') and ext_oid.count(b':') != 2:
         # The last conditions might be overkill, but toExternalOID is actually
         # returning bytes, and it could conceivably be exactly 8 chars long;
         # however, a raw oid could also start with the two chars 0x and contain two colons
