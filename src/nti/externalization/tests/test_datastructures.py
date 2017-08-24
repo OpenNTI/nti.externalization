@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 # disable: accessing protected members, too many methods
@@ -20,39 +20,49 @@ from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
 
 from nti.externalization.tests import ExternalizationLayerTest
 
+
 class TestDatastructures(ExternalizationLayerTest):
-	
-	def test_finding_linear_interface(self):
 
-		class IRoot(interface.Interface): pass
-		class IChild(IRoot): pass
-		class IGrandChild(IChild): pass
+    def test_finding_linear_interface(self):
 
-		class ISister(IRoot): pass
+        class IRoot(interface.Interface):
+            pass
 
-		@interface.implementer(IGrandChild,ISister)
-		class Inconsistent(object): pass
+        class IChild(IRoot):
+            pass
 
-		mod = sys.modules[__name__]
+        class IGrandChild(IChild):
+            pass
 
-		class IO(ModuleScopedInterfaceObjectIO):
-			_ext_search_module = mod
+        class ISister(IRoot):
+            pass
 
-		with assert_raises( TypeError ):
-			IO( Inconsistent() )
+        @interface.implementer(IGrandChild, ISister)
+        class Inconsistent(object):
+            pass
 
+        mod = sys.modules[__name__]
 
-		@interface.implementer(ISister)
-		class Sister(object): pass
+        class IO(ModuleScopedInterfaceObjectIO):
+            _ext_search_module = mod
 
-		@interface.implementer(IGrandChild)
-		class InconsistentGrandChild(Sister): pass
+        with assert_raises(TypeError):
+            IO(Inconsistent())
 
-		with assert_raises( TypeError ):
-			IO( InconsistentGrandChild() )
+        @interface.implementer(ISister)
+        class Sister(object):
+            pass
 
-		@interface.implementer(IGrandChild)
-		class Consistent(object): pass
+        @interface.implementer(IGrandChild)
+        class InconsistentGrandChild(Sister):
+            pass
 
-		io = IO( Consistent() )
-		assert_that( io, has_property( '_iface', IGrandChild ) )
+        with assert_raises(TypeError):
+            IO(InconsistentGrandChild())
+
+        @interface.implementer(IGrandChild)
+        class Consistent(object):
+            pass
+
+        io = IO(Consistent())
+        assert_that(io, has_property('_iface', IGrandChild))
