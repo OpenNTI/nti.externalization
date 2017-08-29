@@ -328,7 +328,7 @@ class IInternalObjectUpdater(interface.Interface):
 		forms to internal forms, this attribute is a map from key path to
 		a function of three arguments, the dataserver, the parsed object, and the value to resolve.
 		It should return the new value. Note that the function here is at most
-		a class or static method, not an instance method. """)
+		a class or static method, not an instance method.""")
 
     def updateFromExternalObject(externalObject, *args, **kwargs):
         """
