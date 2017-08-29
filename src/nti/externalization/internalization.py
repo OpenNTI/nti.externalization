@@ -7,7 +7,7 @@ model objects.
 .. $Id$
 """
 
-from __future__ import print_function, unicode_literals, absolute_import, division
+from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -97,11 +97,11 @@ def _search_for_external_factory(typeName, search_set=None):
                 module = resolve(module_name)
             except (AttributeError, ImportError):
                 # This is a programming error, so that's why we log it
-                logger.exception(
-                    "Failed to resolve legacy factory search module %s", module_name)
+                logger.exception("Failed to resolve legacy factory search module %s", 
+                                 module_name)
 
-        result = _find_class_in_dict(className,
-                                     getattr(module, '__dict__', _EMPTY_DICT) if mod_dict is None else mod_dict)
+        value = getattr(module, '__dict__', _EMPTY_DICT) if mod_dict is None else mod_dict
+        result = _find_class_in_dict(className, value)
         if result:
             break
 
@@ -384,8 +384,8 @@ def update_from_external_object(containedObject, externalObject,
             updated = updater.updateFromExternalObject(externalObject, 
                                                        context=context)
         elif argspec.keywords or 'dataserver' in argspec.args:
-            updated = updater.updateFromExternalObject(
-                externalObject, dataserver=context)
+            updated = updater.updateFromExternalObject(externalObject, 
+                                                       dataserver=context)
         else:
             updated = updater.updateFromExternalObject(externalObject)
 
