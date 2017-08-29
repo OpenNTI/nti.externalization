@@ -388,7 +388,7 @@ def validate_field_value(self, field_name, field, value):
 	__traceback_info__ = field_name, value
 	field = field.bind(self)
 	try:
-		if isinstance(value, unicode) and IFromUnicode.providedBy(field):
+		if isinstance(value, six.text_type) and IFromUnicode.providedBy(field):
 			value = field.fromUnicode(value)  # implies validation
 		else:
 			field.validate(value)
