@@ -14,8 +14,9 @@ logger = __import__('logging').getLogger(__name__)
 
 from zope import interface
 
-from zope.component.factory import Factory
 from zope.component import zcml as component_zcml
+
+from zope.component.factory import Factory
 
 from zope.configuration.fields import Tokens
 from zope.configuration.fields import GlobalObject
