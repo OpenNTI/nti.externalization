@@ -83,8 +83,6 @@ class IInternalObjectExternalizer(interface.Interface):
         """
         Optional, see this :func:`~nti.externalization.externalization.to_external_object`.
         """
-
-
 IExternalObject = IInternalObjectExternalizer  # b/c aliase
 
 
@@ -107,6 +105,23 @@ class INonExternalizableReplacement(interface.Interface):
     for a non-externalized object.
     """
 
+
+class IExternalOID(interface.Interface):
+    """
+    Used as an adapter to provide an OID to externalized object
+    """
+
+    def setOID(origial, external):
+        """
+        Decorate the externalized object with its OID.
+
+        :param original: The object that is being externalized.
+                Passed to facilitate using non-classes as decorators.
+        :param external: The externalization of that object, produced
+                by an implementation of :class:`~nti.externalization.interfaces.IInternalObjectExternalizer` or
+                default rules.
+        :return: OID.
+        """
 
 class IExternalObjectDecorator(interface.Interface):
     """
