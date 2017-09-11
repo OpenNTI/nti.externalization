@@ -11,10 +11,13 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
+import six
 import collections
 
 from zope import component
 from zope import interface
+
+from nti.externalization._compat import to_unicode
 
 from nti.externalization.interfaces import EXT_REPR_JSON
 from nti.externalization.interfaces import EXT_REPR_YAML
@@ -128,10 +131,6 @@ class JsonRepresenter(object):
         # the hooks gets to be complicated if it correctly catches everything (inside arrays,
         # for example; the function below misses them) so decoding to unicode up front
         # is simpler
-        # def _read_body_strings_unicode(pairs):
-        #     return dict( ( (k, (unicode(v, request.charset) if isinstance(v, str) else v))
-        #                    for k, v
-        #                    in pairs) )
 
         if isinstance(stream, bytes):
             stream = stream.decode('utf-8')
@@ -140,9 +139,9 @@ class JsonRepresenter(object):
         # Depending on whether the simplejson C speedups are active, we can still
         # get back a non-unicode string if the object was a naked string. (If the python
         # version is used, it returns unicode; the C version returns str.)
-        if isinstance(value, str):
+        if isinstance(value, six.binary_type):
             # we know it's simple ascii or it would have produced unicode
-            value = unicode(value, 'utf-8')
+            value = to_unicode(value)
         return value
 to_json_representation_externalized = JsonRepresenter().dump
 
