@@ -44,6 +44,7 @@ setup(
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'setuptools',
+        'BTrees',
 		'isodate',
 		'nti.ntiids',
 		'nti.schema',
@@ -54,6 +55,7 @@ setup(
 		'simplejson',
 		'six',
 		'ZODB',
+        'zope.annotation',
 		'zope.cachedescriptors',
 		'zope.component',
 		'zope.configuration',
