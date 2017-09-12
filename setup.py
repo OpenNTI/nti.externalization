@@ -66,6 +66,7 @@ setup(
         'zope.dottedname',
         'zope.dublincore',
         'zope.event',
+        'zope.hookable',
         'zope.interface',
         'zope.intid',
         'zope.lifecycleevent',
