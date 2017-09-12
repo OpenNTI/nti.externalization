@@ -111,7 +111,7 @@ class IExternalOID(interface.Interface):
     Used as an adapter to provide an OID to externalized object
     """
 
-    def setOID(origial, external):
+    def setOID(original, external):
         """
         Decorate the externalized object with its OID.
 
