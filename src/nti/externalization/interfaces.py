@@ -106,23 +106,6 @@ class INonExternalizableReplacement(interface.Interface):
     """
 
 
-class IExternalOID(interface.Interface):
-    """
-    Used as an adapter to provide an OID to externalized object
-    """
-
-    def setOID(original, external):
-        """
-        Decorate the externalized object with its OID.
-
-        :param original: The object that is being externalized.
-                Passed to facilitate using non-classes as decorators.
-        :param external: The externalization of that object, produced
-                by an implementation of :class:`~nti.externalization.interfaces.IInternalObjectExternalizer` or
-                default rules.
-        :return: OID.
-        """
-
 class IExternalObjectDecorator(interface.Interface):
     """
     Used as a subscription adapter (of the object or the object and
