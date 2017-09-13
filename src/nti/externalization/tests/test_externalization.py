@@ -36,8 +36,8 @@ from zope import interface
 
 from ZODB.broken import Broken
 
-from nti.externalization.datastructures import ExternalizableDictionaryMixin
 from nti.externalization.datastructures import ExternalizableInstanceDict
+from nti.externalization.datastructures import ExternalizableDictionaryMixin
 
 from nti.externalization.externalization import EXT_FORMAT_JSON
 from nti.externalization.externalization import EXT_FORMAT_PLIST
@@ -45,6 +45,7 @@ from nti.externalization.externalization import EXT_FORMAT_PLIST
 from nti.externalization.externalization import _manager
 from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
 
+from nti.externalization.externalization import set_external_oid
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.externalization import get_external_param
 from nti.externalization.externalization import catch_replace_action
@@ -123,6 +124,10 @@ class TestFunctions(ExternalizationLayerTest):
         oid = b'\x00\x00\x00\x00\x00\x00\x00\x01'
         assert_that(fromExternalOID(oid), 
                     contains(same_instance(oid), '', None))
+        
+    def test_hookable(self):
+        assert_that(set_external_oid, 
+                    has_attr('implementation', is_not(none())))
 
     def test_to_external_representation_none_handling(self):
         d = {'a': 1, 'None': None}
