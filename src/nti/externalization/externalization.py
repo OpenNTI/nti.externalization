@@ -548,7 +548,7 @@ def setOID(self, result):
             std_oid = to_external_ntiid_oid(self)
             if std_oid and std_oid.startswith(result_id):
                 result[StandardExternalFields_ID] = std_oid
-        result[StandardExternalFields_OID] = result[StandardExternalFields_ID]
+        oid = result[StandardExternalFields_OID] = result[StandardExternalFields_ID]
     else:
         oid = to_external_ntiid_oid(self, default_oid=None)
         if oid:
