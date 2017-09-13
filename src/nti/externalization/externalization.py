@@ -19,6 +19,8 @@ from zope import component
 from zope import interface
 from zope import deprecation
 
+from zope.hookable import hookable
+
 from zope.interface.common.sequence import IFiniteSequence
 
 from zope.dublincore.interfaces import IDCTimes
@@ -531,6 +533,31 @@ def _ext_class_if_needed(self, result):
 from nti.externalization._pyramid import get_current_request
 
 
+def setOID(self, result):
+    result_id = _choose_field(result, self, StandardExternalFields_ID,
+                              fields=(StandardInternalFields_ID, StandardExternalFields_ID))
+    # As we transition over to structured IDs that contain OIDs, we'll try to use that
+    # for both the ID and OID portions
+    if ntiids.is_ntiid_of_type(result_id, ntiids.TYPE_OID):
+        # If we are trying to use OIDs as IDs, it's possible that the
+        # ids are in the old, version 1 format, without an intid component. If that's the case,
+        # then update them on the fly, but only for notes because odd things happen to other
+        # objects (chat rooms?) if we do this to them
+        if self.__class__.__name__ == 'Note':
+            result_id = result[StandardExternalFields_ID]
+            std_oid = to_external_ntiid_oid(self)
+            if std_oid and std_oid.startswith(result_id):
+                result[StandardExternalFields_ID] = std_oid
+        result[StandardExternalFields_OID] = result[StandardExternalFields_ID]
+    else:
+        oid = to_external_ntiid_oid(self, default_oid=None)
+        if oid:
+            result[StandardExternalFields_OID] = oid
+    return oid
+
+set_external_oid = hookable(setOID)
+
+
 def to_standard_external_dictionary(self, mergeFrom=None,
                                     registry=component,
                                     decorate=True,
@@ -561,25 +588,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
     if request is _NotGiven:
         request = get_current_request()
 
-    result_id = _choose_field(result, self, StandardExternalFields_ID,
-                              fields=(StandardInternalFields_ID, StandardExternalFields_ID))
-    # As we transition over to structured IDs that contain OIDs, we'll try to use that
-    # for both the ID and OID portions
-    if ntiids.is_ntiid_of_type(result_id, ntiids.TYPE_OID):
-        # If we are trying to use OIDs as IDs, it's possible that the
-        # ids are in the old, version 1 format, without an intid component. If that's the case,
-        # then update them on the fly, but only for notes because odd things happen to other
-        # objects (chat rooms?) if we do this to them
-        if self.__class__.__name__ == 'Note':
-            result_id = result[StandardExternalFields_ID]
-            std_oid = to_external_ntiid_oid(self)
-            if std_oid and std_oid.startswith(result_id):
-                result[StandardExternalFields_ID] = std_oid
-        result[StandardExternalFields_OID] = result[StandardExternalFields_ID]
-    else:
-        oid = to_external_ntiid_oid(self, default_oid=None)
-        if oid:
-            result[StandardExternalFields_OID] = oid
+    set_external_oid(self, result)
 
     _choose_field(result, self, StandardExternalFields_CREATOR,
                   fields=(StandardInternalFields_CREATOR,
