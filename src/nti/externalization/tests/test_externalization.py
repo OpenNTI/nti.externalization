@@ -45,11 +45,11 @@ from nti.externalization.externalization import EXT_FORMAT_PLIST
 from nti.externalization.externalization import _manager
 from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
 
-from nti.externalization.externalization import set_external_oid
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.externalization import get_external_param
 from nti.externalization.externalization import catch_replace_action
 from nti.externalization.externalization import removed_unserializable
+from nti.externalization.externalization import set_external_identifiers
 from nti.externalization.externalization import to_standard_external_dictionary
 
 from nti.externalization.interfaces import EXT_REPR_YAML
@@ -126,7 +126,7 @@ class TestFunctions(ExternalizationLayerTest):
                     contains(same_instance(oid), '', None))
         
     def test_hookable(self):
-        assert_that(set_external_oid, 
+        assert_that(set_external_identifiers, 
                     has_attr('implementation', is_not(none())))
 
     def test_to_external_representation_none_handling(self):
