@@ -46,9 +46,7 @@ from nti.externalization.interfaces import IExternalMappingDecorator
 from nti.externalization.interfaces import INonExternalizableReplacer
 from nti.externalization.interfaces import INonExternalizableReplacement
 
-from nti.externalization.oids import to_external_ntiid_oid
-
-from nti.ntiids import ntiids
+from nti.externalization.oids import to_external_oid
 
 # Local for speed
 StandardExternalFields_ID = StandardExternalFields.ID
@@ -425,21 +423,21 @@ def _isMagicKey(key):
     those keys that are special and not settable by the user.
     """
     return key in _syntheticKeys()
-
-
 isSyntheticKey = _isMagicKey
+
 
 from calendar import timegm as _calendar_gmtime
 
 
-def _datetime_to_epoch(dt):
+def datetime_to_epoch(dt):
     return _calendar_gmtime(dt.utctimetuple()) if dt is not None else None
+_datetime_to_epoch = datetime_to_epoch
 
 
-def _choose_field(result, self, ext_name,
-                  converter=lambda x: x,
-                  fields=(),
-                  sup_iface=None, sup_fields=(), sup_converter=lambda x: x):
+def choose_field(result, self, ext_name,
+                 converter=lambda x: x,
+                 fields=(),
+                 sup_iface=None, sup_fields=(), sup_converter=lambda x: x):
 
     for x in fields:
         try:
@@ -469,6 +467,7 @@ def _choose_field(result, self, ext_name,
             return _choose_field(result, self, ext_name,
                                  converter=sup_converter,
                                  fields=sup_fields)
+_choose_field = choose_field
 
 
 def to_standard_external_last_modified_time(context, default=None, _write_into=None):
@@ -533,29 +532,13 @@ def _ext_class_if_needed(self, result):
 from nti.externalization._pyramid import get_current_request
 
 
-def setOID(self, result):
-    result_id = _choose_field(result, self, StandardExternalFields_ID,
-                              fields=(StandardInternalFields_ID, StandardExternalFields_ID))
-    # As we transition over to structured IDs that contain OIDs, we'll try to use that
-    # for both the ID and OID portions
-    if ntiids.is_ntiid_of_type(result_id, ntiids.TYPE_OID):
-        # If we are trying to use OIDs as IDs, it's possible that the
-        # ids are in the old, version 1 format, without an intid component. If that's the case,
-        # then update them on the fly, but only for notes because odd things happen to other
-        # objects (chat rooms?) if we do this to them
-        if self.__class__.__name__ == 'Note':
-            result_id = result[StandardExternalFields_ID]
-            std_oid = to_external_ntiid_oid(self)
-            if std_oid and std_oid.startswith(result_id):
-                result[StandardExternalFields_ID] = std_oid
-        oid = result[StandardExternalFields_OID] = result[StandardExternalFields_ID]
-    else:
-        oid = to_external_ntiid_oid(self, default_oid=None)
-        if oid:
-            result[StandardExternalFields_OID] = oid
-    return oid
-
-set_external_oid = hookable(setOID)
+def setExternalIdentifiers(self, result):
+    ntiid = oid = to_unicode(to_external_oid(self))
+    if ntiid:
+        result[StandardExternalFields_OID] = oid
+        result[StandardExternalFields_NTIID] = ntiid
+    return (oid, ntiid)
+set_external_identifiers = hookable(setExternalIdentifiers)
 
 
 def to_standard_external_dictionary(self, mergeFrom=None,
@@ -588,7 +571,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
     if request is _NotGiven:
         request = get_current_request()
 
-    set_external_oid(self, result)
+    set_external_identifiers(self, result)
 
     _choose_field(result, self, StandardExternalFields_CREATOR,
                   fields=(StandardInternalFields_CREATOR,
@@ -604,20 +587,6 @@ def to_standard_external_dictionary(self, mergeFrom=None,
                                 fields=(StandardInternalFields_CONTAINER_ID,))
     if containerId:  # alias per mobile client request 20150625
         result[StandardInternalFields_CONTAINER_ID] = containerId
-
-    try:
-        _choose_field(result, self, StandardExternalFields_NTIID,
-                      fields=(StandardInternalFields_NTIID, StandardExternalFields_NTIID))
-        # During the transition, if there is not an NTIID, but we can find one as the ID or OID,
-        # provide that
-        if StandardExternalFields_NTIID not in result:
-            for field in (StandardExternalFields_ID, StandardExternalFields_OID):
-                if ntiids.is_valid_ntiid_string(result.get(field)):
-                    result[StandardExternalFields_NTIID] = result[field]
-                    break
-    except ntiids.InvalidNTIIDError:
-        # printing self probably wants to externalize
-        logger.exception("Failed to get NTIID for object %s", type(self))
 
     if decorate:
         decorate_external_mapping(self, result, registry=registry,
@@ -718,3 +687,9 @@ zope.deferredimport.deprecatedFrom(
     "to_json_representation_externalized",
     "make_repr",
     "WithRepr")
+
+zope.deferredimport.initialize()
+zope.deferredimport.deprecatedFrom(
+    "Import from .nti.ntiids.oids",
+    "nti.ntiids.oids",
+    "to_external_ntiid_oid")
