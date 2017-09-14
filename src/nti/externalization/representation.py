@@ -122,9 +122,9 @@ class JsonRepresenter(object):
             return simplejson.dumps(obj, **self._DUMP_ARGS)
 
     def load(self, stream):
-        # We need all string values to be unicode objects. simplejson (the usual implementation
-        # we get from anyjson) is different from the built-in json and returns strings
-        # that can be represented as ascii as str objects if the input was a bytestring.
+        # We need all string values to be unicode objects. simplejson is different from 
+        # the built-in json and returns strings that can be represented as ascii as str 
+        # objects if the input was a bytestring. 
         # The only way to get it to return unicode is if the input is unicode, or
         # to use a hook to do so incrementally. The hook saves allocating the entire request body
         # as a unicode string in memory and is marginally faster in some cases. However,
