@@ -27,7 +27,11 @@ import sys
 import json
 import plistlib
 import unittest
-import UserDict
+
+try:
+    from UserDict import UserDict
+except ImportError:
+    from collections import UserDict
 
 import persistent
 
@@ -150,7 +154,7 @@ class TestFunctions(ExternalizationLayerTest):
                     is_('- {k: v}\n- {k2: foo}\n'))
 
     def test_external_class_name(self):
-        class C(UserDict.UserDict, ExternalizableDictionaryMixin):
+        class C(UserDict, ExternalizableDictionaryMixin):
             pass
         assert_that(toExternalObject(C()), has_entry('Class', 'C'))
         C.__external_class_name__ = 'ExternalC'
