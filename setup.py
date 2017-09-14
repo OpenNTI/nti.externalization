@@ -48,7 +48,6 @@ setup(
         'setuptools',
         'BTrees',
         'isodate',
-        'nti.ntiids',
         'nti.schema',
         'nti.zodb',
         'persistent',
