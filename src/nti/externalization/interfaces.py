@@ -44,7 +44,7 @@ class StandardExternalFields(object):
     ITEM_COUNT = u'ItemCount'
 
 
-StandardExternalFields.ALL = (lambda: [v for k, v in StandardExternalFields.__dict__.iteritems()
+StandardExternalFields.ALL = (lambda: [v for k, v in StandardExternalFields.__dict__.items()
                                        if not k.startswith('_')])()
 
 

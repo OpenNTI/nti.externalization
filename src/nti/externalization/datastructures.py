@@ -286,11 +286,11 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
             return "<%s.%s %s>" % (self.__class__.__module__,
                                    self.__class__.__name__,
                                    getattr(self, 'creator', ''))
-        except POSError, cse:
+        except POSError as cse:
             return '<%s(Ghost, %s)>' % (self.__class__.__name__, cse)
-        except (ValueError, LookupError), e:  # Things like invalid NTIID, missing registrations
+        except (ValueError, LookupError) as e:  # Things like invalid NTIID, missing registrations
             return '<%s(%s)>' % (self.__class__.__name__, e)
-        except (AttributeError), e:  # Another weird database-related issue
+        except AttributeError as e:  # Another weird database-related issue
             return '<%s(%s)>' % (self.__class__.__name__, e)
 
 
