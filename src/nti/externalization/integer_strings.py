@@ -31,6 +31,12 @@ logger = __import__('logging').getLogger(__name__)
 
 import six
 import string
+try:
+    from string import maketrans
+    from string import translate
+except ImportError:
+    maketrans = str.maketrans
+    translate = str.translate
 
 # In the first version of the protocol, the version marker, which would
 # come at the end, is always omitted. Subsequent versions will append
@@ -47,7 +53,7 @@ _VOCABULARY = ''.join(
 )
 
 # We translate the letters we removed
-_TRANSTABLE = string.maketrans(_REMOVED, _REPLACE)
+_TRANSTABLE = maketrans(_REMOVED, _REPLACE)
 
 # Leaving us a base vocabulary to map integers into
 _BASE = len(_VOCABULARY)
@@ -67,7 +73,7 @@ def from_external_string(key):
     if not key:
         raise ValueError("Improper key")
 
-    if isinstance(key, six.text_type):
+    if six.PY2 and isinstance(key, six.text_type):
         # Unicode keys cause problems: The _TRANSTABLE is coerced
         # to Unicode, which fails because it contains non-ASCII values.
         # So instead, we encode the unicode string to ascii, which, if it is a
@@ -76,7 +82,7 @@ def from_external_string(key):
 
     # strip the version if needed
     key = key[:-1] if key[-1] == _VERSION else key
-    key = string.translate(key, _TRANSTABLE)  # translate bad chars
+    key = translate(key, _TRANSTABLE)  # translate bad chars
 
     if key == _ZERO_MARKER:
         return 0

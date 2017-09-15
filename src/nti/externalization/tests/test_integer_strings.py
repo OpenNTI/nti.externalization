@@ -16,6 +16,11 @@ import unittest
 from nti.externalization.integer_strings import to_external_string
 from nti.externalization.integer_strings import from_external_string
 
+try:
+    maxint = sys.maxint
+except AttributeError:
+    maxint = sys.maxsize
+
 
 class TestIntStrings(unittest.TestCase):
 
@@ -36,7 +41,7 @@ class TestIntStrings(unittest.TestCase):
             _t(i)
 
         # Big values
-        for i in range(sys.maxint - 2000, sys.maxint):
+        for i in range(maxint - 2000, maxint):
             _t(i)
 
     def test_decode_unicode(self):
