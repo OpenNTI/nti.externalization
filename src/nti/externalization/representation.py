@@ -161,7 +161,8 @@ class _ExtDumper(yaml.SafeDumper):  # pylint:disable=R0904
     """
 _ExtDumper.add_multi_representer(list, _ExtDumper.represent_list)
 _ExtDumper.add_multi_representer(dict, _ExtDumper.represent_dict)
-_ExtDumper.add_multi_representer(unicode, _ExtDumper.represent_unicode)
+if six.PY2:
+    _ExtDumper.add_multi_representer(unicode, _ExtDumper.represent_unicode)
 
 
 class _UnicodeLoader(yaml.SafeLoader):  # pylint:disable=R0904
