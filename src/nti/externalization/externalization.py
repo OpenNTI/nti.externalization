@@ -60,7 +60,6 @@ StandardExternalFields_CREATED_TIME = StandardExternalFields.CREATED_TIME
 StandardExternalFields_LAST_MODIFIED = StandardExternalFields.LAST_MODIFIED
 
 StandardInternalFields_ID = StandardInternalFields.ID
-StandardInternalFields_NTIID = StandardInternalFields.NTIID
 StandardInternalFields_CREATOR = StandardInternalFields.CREATOR
 StandardInternalFields_CONTAINER_ID = StandardInternalFields.CONTAINER_ID
 StandardInternalFields_CREATED_TIME = StandardInternalFields.CREATED_TIME
