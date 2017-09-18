@@ -8,6 +8,7 @@ include TODO
 include babel.cfg
 include nose2.cfg
 include tox.ini
+include .travis.yml
 include *.txt
 include .nti_cover_package
 recursive-include doc *.py

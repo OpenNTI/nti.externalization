@@ -3,9 +3,10 @@ sudo: false
 python:
   - 2.7
   - 3.6
-  - pypy-5.4.1
+  - pypy
+  - pypy3
 script:
-  - coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress --all
+  - coverage run -m zope.testrunner
 after_success:
   - coveralls
 notifications:

@@ -11,8 +11,6 @@ from hamcrest import is_
 from hamcrest import assert_that
 from hamcrest import same_instance
 
-from nose.tools import assert_raises
-
 from nti.externalization.singleton import SingletonDecorator
 
 from nti.externalization.tests import ExternalizationLayerTest
@@ -36,8 +34,8 @@ class TestSingleton(ExternalizationLayerTest):
                     is_(same_instance(X('other_context', 'other_request'))))
 
         x = X()
-        with assert_raises(AttributeError):
+        with self.assertRaises(AttributeError):
             x.b = 1
 
-        with assert_raises(AttributeError):
+        with self.assertRaises(AttributeError):
             getattr(x, '__dict__')
