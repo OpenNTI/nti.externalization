@@ -10,8 +10,6 @@ __docformat__ = "restructuredtext en"
 from hamcrest import assert_that
 from hamcrest import has_property
 
-from nose.tools import assert_raises
-
 import sys
 
 from zope import interface
@@ -46,7 +44,7 @@ class TestDatastructures(ExternalizationLayerTest):
         class IO(ModuleScopedInterfaceObjectIO):
             _ext_search_module = mod
 
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             IO(Inconsistent())
 
         @interface.implementer(ISister)
@@ -57,7 +55,7 @@ class TestDatastructures(ExternalizationLayerTest):
         class InconsistentGrandChild(Sister):
             pass
 
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             IO(InconsistentGrandChild())
 
         @interface.implementer(IGrandChild)
