@@ -19,7 +19,7 @@ def _read(fname):
 
 setup(
     name='nti.externalization',
-    version=_read('version.txt').strip(),
+    version='1.0.0.dev0',
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI Externalization",
@@ -78,6 +78,11 @@ setup(
     ],
     extras_require={
         'test': TESTS_REQUIRE,
+        'docs': [
+            'Sphinx',
+            'repoze.sphinx.autointerface',
+            'sphinx_rtd_theme',
+        ]
     },
     entry_points=entry_points,
 )

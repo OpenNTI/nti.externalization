@@ -1,4 +1,6 @@
 setuptools >= 33.1.1
+persistent
+BTrees
 zope.interface
 zope.proxy
 repoze.sphinx.autointerface
