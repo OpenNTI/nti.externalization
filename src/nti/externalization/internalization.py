@@ -10,13 +10,13 @@ model objects.
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
-logger = __import__('logging').getLogger(__name__)
-
-import six
 import sys
 import inspect
 import numbers
 import collections
+
+import six
+from six import reraise
 
 from zope import component
 from zope import interface
@@ -44,6 +44,8 @@ from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import IExternalReferenceResolver
 from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
+
+logger = __import__('logging').getLogger(__name__)
 
 LEGACY_FACTORY_SEARCH_MODULES = set()
 
@@ -97,7 +99,7 @@ def _search_for_external_factory(typeName, search_set=None):
                 module = resolve(module_name)
             except (AttributeError, ImportError):
                 # This is a programming error, so that's why we log it
-                logger.exception("Failed to resolve legacy factory search module %s", 
+                logger.exception("Failed to resolve legacy factory search module %s",
                                  module_name)
 
         value = getattr(module, '__dict__', _EMPTY_DICT) if mod_dict is None else mod_dict
@@ -122,12 +124,12 @@ def default_externalized_object_factory_finder(externalized_object):
                                              name=mime_type)
             if not factory:
                 # What about a named utility?
-                factory = component.queryUtility(IMimeObjectFactory, 
+                factory = component.queryUtility(IMimeObjectFactory,
                                                  name=mime_type)
 
             if not factory:
                 # Is there a default?
-                factory = component.queryAdapter(externalized_object, 
+                factory = component.queryAdapter(externalized_object,
                                                  IMimeObjectFactory)
 
         if not factory and StandardExternalFields_CLASS in externalized_object:
@@ -164,7 +166,7 @@ def find_factory_for(externalized_object, registry=component):
     Given a :class:`IExternalizedObject`, locate and return a factory
     to produce a Python object to hold its contents.
     """
-    factory_finder = registry.getAdapter(externalized_object, 
+    factory_finder = registry.getAdapter(externalized_object,
                                          IExternalizedObjectFactoryFinder)
     return factory_finder.find_factory(externalized_object)
 
@@ -202,7 +204,7 @@ def _resolve_externals(object_io, updating_object, externalObject,
         elif len(inspect.getargspec(resolver_func)[0]) == 4:  # instance method
             _resolver_func = resolver_func
 
-            def resolver_func(x, y, z): 
+            def resolver_func(x, y, z):
                 return _resolver_func(object_io, x, y, z)
 
         externalObject[ext_key] = resolver_func(context, externalObject,
@@ -381,10 +383,10 @@ def update_from_external_object(containedObject, externalObject,
         # The signature may vary.
         argspec = inspect.getargspec(updater.updateFromExternalObject)
         if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
-            updated = updater.updateFromExternalObject(externalObject, 
+            updated = updater.updateFromExternalObject(externalObject,
                                                        context=context)
         elif argspec.keywords or 'dataserver' in argspec.args:
-            updated = updater.updateFromExternalObject(externalObject, 
+            updated = updater.updateFromExternalObject(externalObject,
                                                        dataserver=context)
         else:
             updated = updater.updateFromExternalObject(externalObject)
@@ -436,7 +438,9 @@ def validate_field_value(self, field_name, field, value):
             # Nope. TypeError (or AttrError - Variant) means we couldn't adapt,
             # and a validation error means we could adapt, but it still wasn't
             # right. Raise the original SchemaValidationError.
-            raise exc_info[0], exc_info[1], exc_info[2]
+            reraise(*exc_info)
+        finally:
+            del exc_info
     except WrongType as e:
         # Like SchemaNotProvided, but for a primitive type,
         # most commonly a date
@@ -454,7 +458,7 @@ def validate_field_value(self, field_name, field, value):
             value = component.getAdapter(value, schema)
         except (LookupError, TypeError):
             # No registered adapter, darn
-            raise exc_info[0], exc_info[1], exc_info[2]
+            raise reraise(*exc_info)
         except ValidationError as e:
             # Found an adapter, but it does its own validation,
             # and that validation failed (eg, IDate below)
@@ -462,6 +466,8 @@ def validate_field_value(self, field_name, field, value):
             # so go with it after ensuring it has a field
             e.field = field
             raise
+        finally:
+            del exc_info
 
         # Lets try again with the adapted value
         return validate_field_value(self, field_name, field, value)
@@ -499,7 +505,11 @@ def validate_field_value(self, field_name, field, value):
             # to raise the original error. If we could adapt,
             # but the converter does its own validation (e.g., fromObject)
             # then we want to let that validation error rise
-            raise exc_info[0], exc_info[1], exc_info[2]
+            try:
+                raise reraise(*exc_info)
+            finally:
+                del exc_info
+
 
         # Now try to set the converted value
         try:
@@ -508,7 +518,9 @@ def validate_field_value(self, field_name, field, value):
             # Nope. TypeError means we couldn't adapt, and a
             # validation error means we could adapt, but it still wasn't
             # right. Raise the original SchemaValidationError.
-            raise exc_info[0], exc_info[1], exc_info[2]
+            raise reraise(*exc_info)
+        finally:
+            del exc_info
 
     if (    field.readonly
         and field.get(self) is None

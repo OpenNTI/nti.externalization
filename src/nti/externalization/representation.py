@@ -9,10 +9,11 @@ External representation support.
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
-logger = __import__('logging').getLogger(__name__)
+import collections
+import plistlib
 
 import six
-import collections
+from six import iteritems
 
 from zope import component
 from zope import interface
@@ -59,7 +60,10 @@ def to_json_representation(obj):
 # Plist
 
 
-import plistlib
+
+# The API changed in Python 3.4
+_plist_dump = getattr(plistlib, 'dump', None) or plistlib.writePlist
+_plist_dumps = getattr(plistlib, 'dumps', None) or plistlib.writePlistToString
 
 
 @interface.named(EXT_REPR_PLIST)
@@ -67,23 +71,23 @@ import plistlib
 class PlistRepresenter(object):
 
     def stripNoneFromExternal(self, obj):
-        """ 
+        """
         Given an already externalized object, strips ``None`` values.
         """
-        if isinstance(obj, list) or isinstance(obj, tuple):
+        if isinstance(obj, (list, tuple)):
             obj = [self.stripNoneFromExternal(x) for x in obj if x is not None]
         elif isinstance(obj, collections.Mapping):
             obj = {k: self.stripNoneFromExternal(v)
-                   for k, v in obj.iteritems()
+                   for k, v in iteritems(obj)
                    if v is not None and k is not None}
         return obj
 
     def dump(self, obj, fp=None):
         ext = self.stripNoneFromExternal(obj)
         if fp is not None:
-            plistlib.writePlist(ext, fp)
+            _plist_dump(ext, fp)
         else:
-            return plistlib.writePlistToString(ext)
+            return _plist_dumps(ext)
 
 
 # JSON
@@ -122,9 +126,9 @@ class JsonRepresenter(object):
             return simplejson.dumps(obj, **self._DUMP_ARGS)
 
     def load(self, stream):
-        # We need all string values to be unicode objects. simplejson is different from 
-        # the built-in json and returns strings that can be represented as ascii as str 
-        # objects if the input was a bytestring. 
+        # We need all string values to be unicode objects. simplejson is different from
+        # the built-in json and returns strings that can be represented as ascii as str
+        # objects if the input was a bytestring.
         # The only way to get it to return unicode is if the input is unicode, or
         # to use a hook to do so incrementally. The hook saves allocating the entire request body
         # as a unicode string in memory and is marginally faster in some cases. However,
@@ -161,9 +165,10 @@ class _ExtDumper(yaml.SafeDumper):  # pylint:disable=R0904
     """
 _ExtDumper.add_multi_representer(list, _ExtDumper.represent_list)
 _ExtDumper.add_multi_representer(dict, _ExtDumper.represent_dict)
-if six.PY2:
-    _ExtDumper.add_multi_representer(six.text_type, _ExtDumper.represent_unicode)
-
+if str is bytes:
+    _ExtDumper.add_multi_representer(unicode, _ExtDumper.represent_unicode)
+else:
+    _ExtDumper.add_multi_representer(str, _ExtDumper.represent_str)
 
 class _UnicodeLoader(yaml.SafeLoader):  # pylint:disable=R0904
 
@@ -196,7 +201,7 @@ from ZODB.POSException import ConnectionStateError
 
 def make_repr(default=None):
     if default is None:
-        def default(self): 
+        def default(self):
             return "%s().__dict__.update( %s )" % (self.__class__.__name__, self.__dict__)
 
     def __repr__(self):

@@ -40,16 +40,16 @@ def _syntheticKeys():
 
 
 def _isMagicKey(key):
-    """ 
+    """
     For our mixin objects that have special keys, defines
-    those keys that are special and not settable by the user. 
+    those keys that are special and not settable by the user.
     """
     return key in _syntheticKeys()
 isSyntheticKey = _isMagicKey
 
 
 class ExternalizableDictionaryMixin(object):
-    """ 
+    """
     Implements a toExternalDictionary method as a base for subclasses.
     """
 
@@ -78,7 +78,7 @@ class ExternalizableDictionaryMixin(object):
                                                       **kwargs)
 
     def stripSyntheticKeysFromExternalDictionary(self, external):
-        """ 
+        """
         Given a mutable dictionary, removes all the external keys
         that might have been added by toExternalDictionary and echoed back.
         """
@@ -235,18 +235,18 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         if      StandardExternalFields.CONTAINER_ID in parsed \
             and getattr(ext_self, StandardInternalFields.CONTAINER_ID, parsed) is None:
-            setattr(ext_self, 
+            setattr(ext_self,
                     StandardInternalFields.CONTAINER_ID,
                     parsed[StandardExternalFields.CONTAINER_ID])
         if      StandardExternalFields.CREATOR in parsed \
             and getattr(ext_self, StandardExternalFields.CREATOR, parsed) is None:
-            setattr(ext_self, 
+            setattr(ext_self,
                     StandardExternalFields.CREATOR,
                     parsed[StandardExternalFields.CREATOR])
         if (    StandardExternalFields.ID in parsed
             and getattr(ext_self, StandardInternalFields.ID, parsed) is None
             and self._ext_accept_external_id(ext_self, parsed)):
-            setattr(ext_self, 
+            setattr(ext_self,
                     StandardInternalFields.ID,
                     parsed[StandardExternalFields.ID])
 
@@ -368,7 +368,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         # does show up in the profiling data
         cache = _InterfaceCache.cache_for(self, ext_self)
         if not cache.iface:
-            cache.iface = self._ext_find_schema(ext_self, 
+            cache.iface = self._ext_find_schema(ext_self,
                                                 iface_upper_bound or self._ext_iface_upper_bound)
         self._iface = cache.iface
 
@@ -382,7 +382,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
     @property
     def schema(self):
-        """ 
+        """
         The schema we will use to guide the process
         """
         return self._iface
@@ -460,10 +460,9 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             try:
                 raise errors[0][1]
             except SchemaNotProvided as e:
-                exc_info = sys.exc_info()
                 if not e.args:  # zope.schema doesn't fill in the details, which sucks
                     e.args = (errors[0][0],)
-                raise exc_info[0], exc_info[1], exc_info[2]
+                raise
 
     def toExternalObject(self, mergeFrom=None, **kwargs):
         ext_class_name = None
@@ -472,7 +471,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             if callable(ext_class_name):
                 # Even though the tagged value may have come from a superclass,
                 # give the actual class (interface) we're using
-                ext_class_name = ext_class_name(self._iface, 
+                ext_class_name = ext_class_name(self._iface,
                                                 self._ext_replacement())
             if ext_class_name:
                 break
@@ -526,7 +525,7 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
                                 "Searching module %s and considered %s on object %s of class %s and type %s"
                                 % (most_derived, iface, self._ext_search_module,
                                    list(self._ext_schemas_to_consider(ext_self)),
-                                   ext_self, ext_self.__class__, 
+                                   ext_self, ext_self.__class__,
                                    type(ext_self)))
 
         return most_derived
