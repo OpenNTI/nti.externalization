@@ -27,6 +27,9 @@ class SingletonDecorator(type):
     A singleton class has only one instance which is returned every time the
     class is instantiated.
 
+    .. note:: We cannot be used with :func:`six.with_metaclass` because it introduces
+              temporary classes. You'll need to use the metaclass constructor directly.
+
     ** Developer notes **
             The class is instanciated immediately at the point where it is defined
             by calling cls.__new__(cls). This instance is cached and cls.__new__ is

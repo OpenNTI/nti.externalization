@@ -55,7 +55,7 @@ setup(
         'PyYAML',
         'pytz',
         'simplejson',
-        'six',
+        'six >= 1.11.0', # for the reference cycle fix in reraise()
         'ZODB',
         'zope.annotation',
         'zope.cachedescriptors',

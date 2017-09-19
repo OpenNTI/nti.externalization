@@ -7,6 +7,8 @@ __docformat__ = "restructuredtext en"
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 
+from six import with_metaclass
+
 from hamcrest import is_
 from hamcrest import assert_that
 from hamcrest import same_instance
@@ -20,8 +22,9 @@ class TestSingleton(ExternalizationLayerTest):
 
     def test_singleton_decorator(self):
 
-        class X(object):
-            __metaclass__ = SingletonDecorator
+        # Torturous way of getting a metaclass in a Py2/Py3 compatible
+        # way.
+        X = SingletonDecorator('X', (object,), {})
 
         # No context
         assert_that(X(), is_(same_instance(X())))

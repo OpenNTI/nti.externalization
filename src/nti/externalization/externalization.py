@@ -8,12 +8,12 @@ Functions related to actually externalizing objects.
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
-logger = __import__('logging').getLogger(__name__)
-
-import six
 import numbers
 import collections
 from collections import defaultdict
+
+import six
+from six import iteritems
 
 from zope import component
 from zope import interface
@@ -47,6 +47,8 @@ from nti.externalization.interfaces import INonExternalizableReplacer
 from nti.externalization.interfaces import INonExternalizableReplacement
 
 from nti.externalization.oids import to_external_oid
+
+logger = __import__('logging').getLogger(__name__)
 
 # Local for speed
 StandardExternalFields_ID = StandardExternalFields.ID
@@ -151,7 +153,7 @@ class _ExternalizationState(object):
     registry = None
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
+        for k, v in iteritems(kwargs):
             setattr(self, k, v)
 
     @CachedProperty
@@ -316,7 +318,7 @@ def toExternalObject(obj,
                      decorate_callback=None,
                      default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
                      **kwargs):
-    """ 
+    """
     Translates the object into a form suitable for
     external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
     and :const:`MAPPING_TYPES` for details on what we can handle by default.
@@ -393,7 +395,7 @@ getExternals = get_externals
 
 def get_external_param(name, default=None):
     """
-    Return the currently value for an externalization param or default 
+    Return the currently value for an externalization param or default
     """
     try:
         return get_externals()[name]
@@ -403,9 +405,9 @@ getExternalParam = get_external_param
 
 
 def stripSyntheticKeysFromExternalDictionary(external):
-    """ 
+    """
     Given a mutable dictionary, removes all the external keys
-    that might have been added by :func:`to_standard_external_dictionary` and echoed back. 
+    that might have been added by :func:`to_standard_external_dictionary` and echoed back.
     """
     for key in _syntheticKeys():
         external.pop(key, None)
@@ -417,7 +419,7 @@ def _syntheticKeys():
 
 
 def _isMagicKey(key):
-    """ 
+    """
     For our mixin objects that have special keys, defines
     those keys that are special and not settable by the user.
     """

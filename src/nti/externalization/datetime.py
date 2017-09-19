@@ -12,15 +12,13 @@ module for types of objects.
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
-logger = __import__('logging').getLogger(__name__)
-
 import sys
 import time
 from datetime import datetime
 
 import isodate
-
 import pytz
+import six
 
 from zope import component
 from zope import interface
@@ -37,13 +35,14 @@ from nti.schema.interfaces import InvalidValue
 def _parse_with(func, string):
     try:
         return func(string)
-    except isodate.ISO8601Error:
-        _, v, tb = sys.exc_info()
-        e = InvalidValue(*v.args, value=string)
-        raise e, None, tb
+    except isodate.ISO8601Error as e:
+        e = InvalidValue(*e.args, value=string)
+        six.reraise(InvalidValue, e, sys.exc_info()[2])
 
-
-@component.adapter(basestring)
+_input_type = (str if sys.version_info[0] >= 3 else basestring)
+# XXX: This should really be either unicode or str on Python 2. We need to *know*
+# what our input type is. All the tests pass on Python 3 with this registered to 'str'.
+@component.adapter(_input_type)
 @interface.implementer(IDate)
 def _date_from_string(string):
     """
@@ -89,7 +88,7 @@ def _local_tzinfo(local_tzname=None):
         and all((bool(x) for x in local_tzname))):
         offset_hours = time.timezone // 3600
         local_tzname = '%s%d%s' % (local_tzname[0],
-                                   offset_hours, 
+                                   offset_hours,
                                    local_tzname[1])
         tzinfo = _pytz_timezone(local_tzname)
 
@@ -120,7 +119,7 @@ def _as_utc_naive(dt, assume_local=True, local_tzname=None):
     return dt
 
 
-@component.adapter(basestring)
+@component.adapter(_input_type)
 @interface.implementer(IDateTime)
 def datetime_from_string(string, assume_local=False, local_tzname=None):
     """

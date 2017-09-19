@@ -97,7 +97,7 @@ class TestFunctions(ExternalizationLayerTest):
         T._p_state = 42
         assert_that(getPersistentState(T()), is_(42))
 
-        def f(unused_s): 
+        def f(unused_s):
             return 99
         T.getPersistentState = f
         del T._p_state
@@ -110,27 +110,27 @@ class TestFunctions(ExternalizationLayerTest):
 
         t = T()
         t._p_oid = b'\x00\x01'
-        assert_that(toExternalOID(t), is_('0x01'))
+        assert_that(toExternalOID(t), is_(b'0x01'))
 
         t._p_jar = t
         db = T()
         db.database_name = 'foo'
         t.db = lambda: db
         del t._v_to_external_oid
-        assert_that(toExternalOID(t), is_('0x01:666f6f'))
+        assert_that(toExternalOID(t), is_(b'0x01:666f6f'))
 
-        assert_that(fromExternalOID('0x01:666f6f')[0], 
+        assert_that(fromExternalOID('0x01:666f6f')[0],
                     is_(b'\x00\x00\x00\x00\x00\x00\x00\x01'))
         assert_that(fromExternalOID('0x01:666f6f')[0], is_(bytes))
-        assert_that(fromExternalOID('0x01:666f6f')[1], is_('foo'))
+        assert_that(fromExternalOID('0x01:666f6f')[1], is_(b'foo'))
 
         # Given a plain OID, we return just the plain OID
         oid = b'\x00\x00\x00\x00\x00\x00\x00\x01'
-        assert_that(fromExternalOID(oid), 
+        assert_that(fromExternalOID(oid),
                     contains(same_instance(oid), '', None))
-        
+
     def test_hookable(self):
-        assert_that(set_external_identifiers, 
+        assert_that(set_external_identifiers,
                     has_attr('implementation', is_not(none())))
 
     def test_to_external_representation_none_handling(self):
@@ -139,16 +139,18 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(json.loads(to_external_representation(d, EXT_FORMAT_JSON)),
                     is_(d))
         # PList strips it
-        assert_that(plistlib.readPlistFromString(to_external_representation(d, EXT_FORMAT_PLIST)),
+        # The api changed in Python 3.4
+        read_plist = getattr(plistlib, 'loads', getattr(plistlib, 'readPlistFromString', None))
+        assert_that(read_plist(to_external_representation(d, EXT_FORMAT_PLIST)),
                     is_({'a': 1}))
 
     def test_to_external_representation_yaml(self):
         l = LocatedExternalList()
         l.append(LocatedExternalDict(k='v'))
 
-        class SubUnicode(unicode):
+        class SubUnicode(str if bytes is not str else unicode):
             pass
-        l.append(LocatedExternalDict(k2=SubUnicode('foo')))
+        l.append(LocatedExternalDict(k2=SubUnicode(u'foo')))
 
         assert_that(to_external_representation(l, EXT_REPR_YAML),
                     is_('- {k: v}\n- {k2: foo}\n'))
@@ -163,9 +165,9 @@ class TestFunctions(ExternalizationLayerTest):
     def test_broken(self):
         # Without the devmode hooks
         gsm = component.getGlobalSiteManager()
-        gsm.unregisterAdapter(factory=_DevmodeNonExternalizableObjectReplacer, 
+        gsm.unregisterAdapter(factory=_DevmodeNonExternalizableObjectReplacer,
                               required=())
-        gsm.unregisterAdapter(factory=_DevmodeNonExternalizableObjectReplacer, 
+        gsm.unregisterAdapter(factory=_DevmodeNonExternalizableObjectReplacer,
                               required=(interface.Interface,))
 
         assert_that(toExternalObject(Broken(), registry=gsm),
@@ -179,8 +181,8 @@ class TestFunctions(ExternalizationLayerTest):
             def toExternalObject(self, **unused_kwargs):
                 assert False
 
-        assert_that(toExternalObject([Raises()], 
-                                    catch_components=(AssertionError,), 
+        assert_that(toExternalObject([Raises()],
+                                    catch_components=(AssertionError,),
                                     catch_component_action=catch_replace_action),
                     is_([catch_replace_action(None, None)]))
 
@@ -198,7 +200,7 @@ class TestFunctions(ExternalizationLayerTest):
         x.FooBar = Y
 
         # Something with a __dict__ already
-        assert_that(_search_for_external_factory('FooBar', search_set=[x]), 
+        assert_that(_search_for_external_factory('FooBar', search_set=[x]),
                     same_instance(Y))
 
         # Something in sysmodules
@@ -206,12 +208,12 @@ class TestFunctions(ExternalizationLayerTest):
         assert n not in sys.modules
         sys.modules[n] = x
 
-        assert_that(_search_for_external_factory('FooBar', search_set=[n]), 
+        assert_that(_search_for_external_factory('FooBar', search_set=[n]),
                     same_instance(Y))
 
         del sys.modules[n]
         # something unresolvable
-        assert_that(_search_for_external_factory('FooBar', search_set=[n]), 
+        assert_that(_search_for_external_factory('FooBar', search_set=[n]),
                     is_(none()))
 
     def test_removed_unserializable(self):
@@ -262,7 +264,7 @@ class TestPersistentExternalizableWeakList(unittest.TestCase):
 class TestExternalizableInstanceDict(ExternalizationLayerTest):
 
     class C(ExternalizableInstanceDict):
- 
+
         def __init__(self):
             super(TestExternalizableInstanceDict.C, self).__init__()
             self.A1 = None
@@ -410,9 +412,9 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(X(), verifiably_provides(dub_interfaces.IDCTimes))
 
         ex_dic = to_standard_external_dictionary(X())
-        assert_that(ex_dic, 
+        assert_that(ex_dic,
                     has_entry(StandardExternalFields.LAST_MODIFIED, is_(Number)))
-        assert_that(ex_dic, 
+        assert_that(ex_dic,
                     has_entry(StandardExternalFields.CREATED_TIME, is_(Number)))
 
 
