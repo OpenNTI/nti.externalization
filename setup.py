@@ -80,12 +80,19 @@ setup(
         'zope.security',
     ],
     extras_require={
+        ':platform_python_implementation=="CPython"': [
+            'cytoolz >= 0.8.2',
+        ],
+        ':platform_python_implementation=="PyPy"': [
+            'toolz',
+        ],
         'test': TESTS_REQUIRE,
         'docs': [
             'Sphinx',
             'repoze.sphinx.autointerface',
             'sphinx_rtd_theme',
-        ]
+        ],
+
     },
     entry_points=entry_points,
 )

@@ -20,6 +20,11 @@ from ZODB.POSException import POSKeyError
 import persistent
 import six
 
+try:
+    from cytoolz import identity
+except ImportError: # PyPy pragma: no cover
+    from toolz import identity
+
 from zope import component
 from zope import deprecation
 from zope import interface
@@ -400,9 +405,9 @@ _datetime_to_epoch = datetime_to_epoch
 
 
 def choose_field(result, self, ext_name,
-                 converter=lambda _: _,
+                 converter=identity,
                  fields=(),
-                 sup_iface=None, sup_fields=(), sup_converter=lambda _: _):
+                 sup_iface=None, sup_fields=(), sup_converter=identity):
 
     for x in fields:
         try:
