@@ -12,43 +12,46 @@ from numbers import Number
 import sys
 import unittest
 
-try:
-    from collections import UserDict
-except ImportError:
-    from UserDict import UserDict # Python 2
-
-
+import fudge
 from ZODB.broken import Broken
 import persistent
 from zope import component
 from zope import interface
 from zope.dublincore import interfaces as dub_interfaces
+from zope.testing.cleanup import CleanUp
 
-from nti.externalization.datastructures import ExternalizableDictionaryMixin
-from nti.externalization.datastructures import ExternalizableInstanceDict
-from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
-from nti.externalization.externalization import catch_replace_action
-from nti.externalization.externalization import removed_unserializable
-from nti.externalization.externalization import set_external_identifiers
-from nti.externalization.externalization import to_standard_external_dictionary
-from nti.externalization.externalization import toExternalObject
-from nti.externalization.interfaces import EXT_REPR_JSON
-from nti.externalization.interfaces import EXT_REPR_YAML
-from nti.externalization.interfaces import IExternalObject
-from nti.externalization.interfaces import IExternalObjectDecorator
-from nti.externalization.interfaces import LocatedExternalDict
-from nti.externalization.interfaces import LocatedExternalList
-from nti.externalization.interfaces import StandardExternalFields
-from nti.externalization.internalization import _search_for_external_factory
-from nti.externalization.oids import fromExternalOID
-from nti.externalization.oids import toExternalOID
-from nti.externalization.persistence import NoPickle
-from nti.externalization.persistence import PersistentExternalizableWeakList
-from nti.externalization.persistence import getPersistentState
-from nti.externalization.representation import to_external_representation
-from nti.externalization.tests import ExternalizationLayerTest
-from nti.externalization.tests import assert_does_not_pickle
+from nti.externalization.externalization import stripSyntheticKeysFromExternalDictionary
 from nti.testing.matchers import verifiably_provides
+from nti.testing.matchers import is_true
+from nti.testing.matchers import is_false
+
+from . import ExternalizationLayerTest
+from ..datastructures import ExternalizableDictionaryMixin
+from ..datastructures import ExternalizableInstanceDict
+from ..externalization import NonExternalizableObjectError
+from ..externalization import _DevmodeNonExternalizableObjectReplacer
+from ..externalization import catch_replace_action
+from ..externalization import choose_field
+from ..externalization import isSyntheticKey
+from ..externalization import removed_unserializable
+from ..externalization import set_external_identifiers
+from ..externalization import to_standard_external_dictionary
+from ..externalization import toExternalObject
+from ..interfaces import EXT_REPR_JSON
+from ..interfaces import EXT_REPR_YAML
+from ..interfaces import IExternalObject
+from ..interfaces import IExternalObjectDecorator
+from ..interfaces import LocatedExternalDict
+from ..interfaces import LocatedExternalList
+from ..interfaces import StandardExternalFields
+from ..internalization import _search_for_external_factory
+from ..oids import fromExternalOID
+from ..oids import toExternalOID
+from ..persistence import NoPickle
+from ..persistence import PersistentExternalizableWeakList
+from ..persistence import getPersistentState
+from ..representation import to_external_representation
+from ..testing import assert_does_not_pickle
 
 from hamcrest import assert_that
 from hamcrest import calling
@@ -63,8 +66,15 @@ from hamcrest import raises
 from hamcrest import same_instance
 from hamcrest import has_property as has_attr
 
+try:
+    from collections import UserDict
+except ImportError:
+    from UserDict import UserDict # Python 2
+
+
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
+# pylint: disable=attribute-defined-outside-init,inherit-non-class
 
 does_not = is_not
 
@@ -112,7 +122,7 @@ class TestFunctions(ExternalizationLayerTest):
         db = T()
         db.database_name = 'foo'
         t.db = lambda: db
-        del t._v_to_external_oid
+        del t._v_to_external_oid # pylint:disable=no-member
         assert_that(toExternalOID(t), is_(b'0x01:666f6f'))
 
         assert_that(fromExternalOID('0x01:666f6f')[0],
@@ -125,9 +135,18 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(fromExternalOID(oid),
                     contains(same_instance(oid), '', None))
 
-    def test_hookable(self):
+    def test_hookable_set_external_identifiers(self):
         assert_that(set_external_identifiers,
                     has_attr('implementation', is_not(none())))
+
+    def test_set_external_identifiers(self):
+        class T(object):
+            def toExternalOID(self):
+                return b'abc'
+
+        result = {}
+        set_external_identifiers(T(), result)
+        assert_that(result, is_({'OID': u'abc', 'NTIID': u'abc'}))
 
     def test_to_external_representation_none_handling(self):
         d = {'a': 1, 'None': None}
@@ -173,8 +192,8 @@ class TestFunctions(ExternalizationLayerTest):
                 assert False
 
         assert_that(toExternalObject([Raises()],
-                                    catch_components=(AssertionError,),
-                                    catch_component_action=catch_replace_action),
+                                     catch_components=(AssertionError,),
+                                     catch_component_action=catch_replace_action),
                     is_([catch_replace_action(None, None)]))
 
         # Default doesn't catch
@@ -217,6 +236,125 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(ext, has_entry('a', is_([3, 4])))
         assert_that(ext, has_entry('z', is_(none())))
         assert_that(ext, has_entry('b', has_entry('c', is_([None, 1]))))
+
+
+        assert_that(removed_unserializable((1, 2, 3)),
+                    is_([1, 2, 3]))
+
+        assert_that(removed_unserializable([[(1, 2, 3)]]),
+                    is_([[[1, 2, 3]]]))
+
+    def test_devmode_non_externalizable_object_replacer(self):
+        assert_that(calling(_DevmodeNonExternalizableObjectReplacer(None)).with_args(self),
+                    raises(NonExternalizableObjectError, "Asked to externalize non-externalizable"))
+
+
+    def test_stripSyntheticKeysFromExternalDictionary(self):
+        assert_that(stripSyntheticKeysFromExternalDictionary({'Creator': 42}),
+                    is_({}))
+
+    def test_isSyntheticKey(self):
+        assert_that(isSyntheticKey('OID'), is_true())
+        assert_that(isSyntheticKey('key'), is_false())
+
+    def test_choose_field_POSKeyError_ignored(self):
+        from ZODB.POSException import POSKeyError
+        class Raises(object):
+            def __getattr__(self, name):
+                raise POSKeyError(name)
+
+        assert_that(choose_field({}, Raises(), 'ext_name',
+                                 fields=('a', 'b')),
+                    is_(none()))
+
+    @fudge.patch('nti.externalization.externalization.is_system_user')
+    def test_choose_field_system_user(self, is_system_user):
+        from nti.externalization.externalization import SYSTEM_USER_NAME
+        system_user = object()
+
+        is_system_user.expects_call().returns(True)
+        class WithSystemUser(object):
+            user = system_user
+
+        result = {}
+        choose_field(result, WithSystemUser,
+                     StandardExternalFields.CREATOR, fields=('user',))
+        assert_that(result, is_({StandardExternalFields.CREATOR: SYSTEM_USER_NAME}))
+
+
+class TestDecorators(CleanUp,
+                     unittest.TestCase):
+
+    def test_decorate_external_mapping(self):
+        from nti.externalization.interfaces import IExternalMappingDecorator
+        from nti.externalization.externalization import decorate_external_mapping
+        class IRequest(interface.Interface):
+            pass
+
+        @interface.implementer(IRequest)
+        class Request(object):
+            pass
+
+
+        @component.adapter(object)
+        @interface.implementer(IExternalMappingDecorator)
+        class Decorator(object):
+
+            def __init__(self, result):
+                pass
+
+            def decorateExternalMapping(self, orig_object, result):
+                result['decorated'] = True
+
+        @component.adapter(object, IRequest)
+        @interface.implementer(IExternalMappingDecorator)
+        class RequestDecorator(object):
+            def __init__(self, result, request):
+                pass
+
+            def decorateExternalMapping(self, orig_object, result):
+                result['req_decorated'] = True
+
+
+        gsm = component.getGlobalSiteManager()
+        gsm.registerSubscriptionAdapter(Decorator)
+        gsm.registerSubscriptionAdapter(RequestDecorator)
+
+        result = {}
+        decorate_external_mapping(self, result)
+        assert_that(result, is_({'decorated': True}))
+
+        result = {}
+        decorate_external_mapping(self, result, request=Request())
+        assert_that(result, is_({'decorated': True, 'req_decorated': True}))
+
+    def test_decorators_for_requests_toExternalObject(self):
+        class IRequest(interface.Interface):
+            pass
+        @interface.implementer(IRequest)
+        class Request(object):
+            pass
+
+        @component.adapter(object, IRequest)
+        @interface.implementer(IExternalObjectDecorator)
+        class Decorator(object):
+
+            decorated = []
+
+            def __init__(self, orig_object, request):
+                pass
+
+            def decorateExternalObject(self, *args):
+                Decorator.decorated.append(args)
+
+        component.getGlobalSiteManager().registerSubscriptionAdapter(Decorator)
+
+        toExternalObject({}, request=Request())
+
+        assert_that(Decorator.decorated,
+                    is_([({}, {})]))
+
+        component.getGlobalSiteManager().unregisterSubscriptionAdapter(Decorator)
 
 
 class TestPersistentExternalizableWeakList(unittest.TestCase):
@@ -286,14 +424,10 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
         assert_that(newObj.A2, is_("2"))
 
 
-
-
-
-
 class TestToExternalObject(ExternalizationLayerTest):
 
     def test_decorator(self):
-        class ITest(interface.Interface):
+        class ITest(interface.Interface): # pylint:disable=inherit-non-class
             pass
 
         @interface.implementer(ITest, IExternalObject)
@@ -306,8 +440,8 @@ class TestToExternalObject(ExternalizationLayerTest):
 
         @interface.implementer(IExternalObjectDecorator)
         class Decorator(object):
-
-            def __init__(self, o): pass
+            def __init__(self, o):
+                pass
 
             def decorateExternalObject(self, obj, result):
                 result['test'] = obj
@@ -392,16 +526,71 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(ex_dic,
                     has_entry(StandardExternalFields.CREATED_TIME, is_(Number)))
 
+    def test_to_stand_dict_merges(self):
+        obj = {}
+        result = to_standard_external_dictionary(obj, mergeFrom={'abc': 42})
+        assert_that(result, is_({'abc': 42, 'Class': 'dict'}))
+
+    def test_to_minimal_external_dict(self):
+        from nti.externalization.externalization import to_minimal_standard_external_dictionary
+        class O(object):
+            mime_type = 'application/thing'
+
+        result = to_minimal_standard_external_dictionary(O(), mergeFrom={'abc': 42})
+        assert_that(result, is_({'abc': 42, 'Class': 'O', 'MimeType': 'application/thing'}))
+
+    def test_name_falls_back_to_standard_name(self):
+        toExternalObject(self, name='a name')
+
+    def test_toExternalList(self):
+        class ExtList(object):
+            def toExternalList(self):
+                return [42]
+
+        assert_that(toExternalObject(ExtList()), is_([42]))
+
+    def test_sequence_of_primitives(self):
+        assert_that(toExternalObject([42]), is_([42]))
+
+    def test_decorate_callback(self):
+        # decorate_callback doesn't make much sense.
+        calls = []
+        def callback(x, y):
+            calls.append((x, y))
+
+        # Not by default
+        obj = {}
+        toExternalObject(obj, decorate_callback=callback)
+        assert_that(calls, is_([]))
+
+        # It's only called when we turn off decoration...
+        # and it gets passed to every externalizer, which is also
+        # weird. It also gets called *twice* for mapping types, which
+        # seems wrong too.
+        toExternalObject(obj, decorate_callback=callback,
+                         decorate=False)
+        assert_that(calls, is_([(obj, obj),
+                                (obj, obj)]))
+
+    def test_catch_components_top_level(self):
+        class MyException(Exception):
+            pass
+
+        class Foo(object):
+            def toExternalObject(self, *args, **kwargs):
+                raise MyException()
 
 
+        assert_that(calling(toExternalObject).with_args(Foo(), catch_components=MyException),
+                    raises(MyException))
 
 
 @NoPickle
-class Foo(object):
+class DoNotPickleMe(object):
     pass
 
 
 class TestNoPickle(unittest.TestCase):
 
     def test_decorator(self):
-        assert_does_not_pickle(Foo())
+        assert_does_not_pickle(DoNotPickleMe())

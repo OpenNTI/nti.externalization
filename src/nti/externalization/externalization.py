@@ -19,11 +19,11 @@ import BTrees.OOBTree
 from ZODB.POSException import POSKeyError
 import persistent
 import six
-from six import iteritems
+
 from zope import component
 from zope import deprecation
 from zope import interface
-from zope.cachedescriptors.property import CachedProperty
+
 import zope.deferredimport
 from zope.dublincore.interfaces import IDCTimes
 from zope.hookable import hookable
@@ -72,14 +72,12 @@ SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 def is_system_user(obj):
     return IPrincipal.providedBy(obj) and obj.id == system_user.id
 
+_NotGiven = object()
 
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
 # and they call back into us, and otherwise we would lose
 # the name that was established at the top level.
-_NotGiven = object()
-
-
 _manager = ThreadLocalManager(default=lambda: {'name': _NotGiven, 'memos': None})
 
 # Things that can be directly externalized
@@ -148,19 +146,15 @@ class _ExternalizationState(object):
     request = None
     registry = None
 
-    def __init__(self, **kwargs):
-        for k, v in iteritems(kwargs):
-            setattr(self, k, v)
-
-    @CachedProperty
-    def memo(self):
+    def __init__(self, kwargs):
         # We take a similar approach to pickle.Pickler
         # for memoizing objects we've seen:
         # we map the id of an object to a two tuple: (obj, external-value)
         # the original object is kept in the tuple to keep transient objects alive
         # and thus ensure no overlapping ids
-        return {}
-
+        self.memo = {}
+        # Allow it to be passed as a kwarg to override
+        self.__dict__.update(kwargs)
 
 class _RecursiveCallState(dict):
     pass
@@ -170,7 +164,7 @@ _marker = object()
 
 
 def _to_external_object_state(obj, state, top_level=False, decorate=True,
-                              useCache=True, decorate_callback=None):
+                              useCache=True, decorate_callback=_NotGiven):
     __traceback_info__ = obj
 
     orig_obj = obj
@@ -226,6 +220,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
         elif hasattr(obj, "toExternalList"):
             result = obj.toExternalList()
         elif isinstance(obj, MAPPING_TYPES):
+            # XXX: This winds up calling decorate_callback at least twice.
             result = to_standard_external_dictionary(obj, name=state.name,
                                                      registry=state.registry,
                                                      request=state.request,
@@ -271,7 +266,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
         if decorate:
             for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
                 decorator.decorateExternalObject(orig_obj, result)
-        elif decorate_callback is not None and callable(decorate_callback):
+        elif callable(decorate_callback):
             decorate_callback(orig_obj, result)
 
         # Request specific decorating, if given, is more specific than plain object
@@ -305,7 +300,9 @@ def toExternalObject(obj,
                      request=_NotGiven,
                      decorate=True,
                      useCache=True,
-                     decorate_callback=None,
+                     # XXX: Why do we have this? It's only used when decotare is False,
+                     # which doesn't make much sense.
+                     decorate_callback=_NotGiven,
                      default_non_externalizable_replacer=DefaultNonExternalizableReplacer):
     """
     Translates the object into a form suitable for
@@ -340,7 +337,7 @@ def toExternalObject(obj,
 
     v = dict(locals())
     v.pop('obj')
-    state = _ExternalizationState(**v)
+    state = _ExternalizationState(v)
 
     if name is _NotGiven:
         name = _manager.get()['name']
@@ -379,17 +376,19 @@ def stripSyntheticKeysFromExternalDictionary(external):
         external.pop(key, None)
     return external
 
+_SYNTHETIC_KEYS = frozenset(('OID', 'ID', 'Last Modified', 'Creator',
+                             'ContainerId', 'Class'))
 
 def _syntheticKeys():
-    return ('OID', 'ID', 'Last Modified', 'Creator', 'ContainerId', 'Class')
-
+    # XXX: Why is this a callable?
+    return _SYNTHETIC_KEYS
 
 def _isMagicKey(key):
     """
     For our mixin objects that have special keys, defines
     those keys that are special and not settable by the user.
     """
-    return key in _syntheticKeys()
+    return key in _SYNTHETIC_KEYS
 isSyntheticKey = _isMagicKey
 
 
@@ -401,9 +400,9 @@ _datetime_to_epoch = datetime_to_epoch
 
 
 def choose_field(result, self, ext_name,
-                 converter=lambda x: x,
+                 converter=lambda _: _,
                  fields=(),
-                 sup_iface=None, sup_fields=(), sup_converter=lambda x: x):
+                 sup_iface=None, sup_fields=(), sup_converter=lambda _: _):
 
     for x in fields:
         try:
@@ -417,8 +416,8 @@ def choose_field(result, self, ext_name,
 
         if value is not None:
             # If the creator is the system user, catch it here
-            if ext_name is StandardExternalFields_CREATOR and is_system_user(value):
-                value = to_unicode(SYSTEM_USER_NAME)
+            if ext_name == StandardExternalFields_CREATOR and is_system_user(value):
+                value = SYSTEM_USER_NAME
                 result[ext_name] = value
                 return value
             value = converter(value)
@@ -480,21 +479,19 @@ def to_standard_external_created_time(context, default=None, _write_into=None):
     return holder.get(StandardExternalFields_CREATED_TIME, default)
 
 
+_ext_class_ignored_modules = frozenset(('nti.externalization',
+                                        'nti.externalization.datastructures',
+                                        'nti.externalization.persistence',
+                                        'nti.externalization.interfaces'))
+
 def _ext_class_if_needed(self, result):
-    if StandardExternalFields_CLASS in result:
-        return
-
-    cls = getattr(self, '__external_class_name__', None)
-    if cls:
-        result[StandardExternalFields_CLASS] = cls
-    elif (not self.__class__.__name__.startswith('_')
-            and self.__class__.__module__ not in ('nti.externalization',
-                                                  'nti.externalization.datastructures',
-                                                  'nti.externalization.persistence',
-                                                  'nti.externalization.interfaces')):
-        result[StandardExternalFields_CLASS] = self.__class__.__name__
-
-
+    if StandardExternalFields_CLASS not in result:
+        cls = getattr(self, '__external_class_name__', None)
+        if cls:
+            result[StandardExternalFields_CLASS] = cls
+        elif (not self.__class__.__name__.startswith('_')
+              and self.__class__.__module__ not in _ext_class_ignored_modules):
+            result[StandardExternalFields_CLASS] = self.__class__.__name__
 
 
 def setExternalIdentifiers(self, result):
@@ -510,7 +507,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
                                     registry=component,
                                     decorate=True,
                                     request=_NotGiven,
-                                    decorate_callback=NameError,
+                                    decorate_callback=_NotGiven,
                                     *unused_args, **unused_kwargs):
     """
     Returns a dictionary representing the standard externalization of
@@ -556,7 +553,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
     if decorate:
         decorate_external_mapping(self, result, registry=registry,
                                   request=request)
-    elif decorate_callback is not None and callable(decorate_callback):
+    elif callable(decorate_callback):
         decorate_callback(self, result)
 
     return result
@@ -600,7 +597,8 @@ def is_nonstr_iter(v):
 
 
 def removed_unserializable(ext):
-
+    # XXX: Why is this here? We don't use it anymore.
+    # Can it be removed?
     def _is_sequence(m):
         return not isinstance(m, collections.Mapping) and is_nonstr_iter(m)
 

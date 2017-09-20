@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*
 """
 Datastructures to help externalization.
-
-.. $Id$
 """
 
 from __future__ import absolute_import
@@ -23,25 +21,15 @@ from zope.schema.interfaces import SchemaNotProvided
 from nti.externalization.externalization import to_minimal_standard_external_dictionary
 from nti.externalization.externalization import to_standard_external_dictionary
 from nti.externalization.externalization import toExternalObject
+from nti.externalization.externalization import _syntheticKeys
+from nti.externalization.externalization import _isMagicKey
 from nti.externalization.interfaces import IInternalObjectIO
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import StandardInternalFields
 from nti.externalization.internalization import validate_named_field_value
 from nti.schema.interfaces import find_most_derived_interface
 
-logger = __import__('logging').getLogger(__name__)
 
-
-def _syntheticKeys():
-    return ('OID', 'ID', 'Last Modified', 'Creator', 'ContainerId', 'Class')
-
-
-def _isMagicKey(key):
-    """
-    For our mixin objects that have special keys, defines
-    those keys that are special and not settable by the user.
-    """
-    return key in _syntheticKeys()
 isSyntheticKey = _isMagicKey
 
 
