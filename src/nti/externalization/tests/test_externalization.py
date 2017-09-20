@@ -13,9 +13,9 @@ import sys
 import unittest
 
 try:
-    from UserDict import UserDict
-except ImportError:
     from collections import UserDict
+except ImportError:
+    from UserDict import UserDict # Python 2
 
 
 from ZODB.broken import Broken

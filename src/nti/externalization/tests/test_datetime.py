@@ -80,22 +80,22 @@ class TestDatetime(ExternalizationLayerTest):
                         is_(IDateTime('2014-01-20T06:00Z')))
 
         finally:
-            if tz:
+            if tz: # pragma: no cover
                 os.environ['TZ'] = tz
             else:
                 del os.environ['TZ']
             time.tzset()
 
-            # Same result for the canonical name, don't need to be in
-            # environment
-            assert_that(datetime_from_string('2014-01-20T00:00',
-                                             assume_local=True,
-                                             local_tzname='US/Central'),
-                        is_(IDateTime('2014-01-20T06:00Z')))
-            assert_that(datetime_from_string('2014-01-20T00:00',
-                                             assume_local=True,
-                                             local_tzname='US/Eastern'),
-                        is_(IDateTime('2014-01-20T05:00Z')))
+        # Same result for the canonical name, don't need to be in
+        # environment
+        assert_that(datetime_from_string('2014-01-20T00:00',
+                                         assume_local=True,
+                                         local_tzname='US/Central'),
+                    is_(IDateTime('2014-01-20T06:00Z')))
+        assert_that(datetime_from_string('2014-01-20T00:00',
+                                         assume_local=True,
+                                         local_tzname='US/Eastern'),
+                    is_(IDateTime('2014-01-20T05:00Z')))
 
     def test_timedelta_to_string(self):
         the_delt = timedelta(weeks=16)

@@ -195,7 +195,7 @@ def _resolve_externals(object_io, updating_object, externalObject,
         # classmethods and static methods are implemented with descriptors,
         # which don't work when accessed through the dictionary in this way,
         # so we special case it so instances don't have to.
-        if isinstance(resolver_func, classmethod) or isinstance(resolver_func, staticmethod):
+        if isinstance(resolver_func, (classmethod, staticmethod)):
             resolver_func = resolver_func.__get__(None, object_io.__class__)
         elif len(inspect.getargspec(resolver_func)[0]) == 4:  # instance method
             _resolver_func = resolver_func
@@ -248,9 +248,8 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
         if iface_attr:
             iface_providing_attr = iface_attr.interface
         descriptions[iface_providing_attr].append(k)
-    attributes = [
-        Attributes(iface, *keys) for iface, keys in descriptions.items()
-    ]
+    attributes = [Attributes(iface, *sorted(keys))
+                  for iface, keys in descriptions.items()]
     event = eventFactory(containedObject, *attributes, **kwargs)
     event.external_value = externalObject
     # Let the updater have its shot at modifying the event, too, adding
@@ -264,6 +263,8 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
     else:
         event = meth(event)
     _zope_event_notify(event)
+    return event
+
 notify_modified = notifyModified
 
 

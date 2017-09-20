@@ -1,6 +1,7 @@
 [run]
 source = nti.externalization
-
+omit =
+    */flycheck_*py
 
 [report]
 exclude_lines =

@@ -18,11 +18,6 @@ from hamcrest import is_
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 
-try:
-    maxint = sys.maxint
-except AttributeError:
-    maxint = sys.maxsize
-
 
 class TestIntStrings(unittest.TestCase):
 
@@ -43,7 +38,7 @@ class TestIntStrings(unittest.TestCase):
             _t(i)
 
         # Big values
-        for i in range(maxint - 2000, maxint):
+        for i in range(sys.maxsize - 2000, sys.maxsize):
             _t(i)
 
     def test_decode_unicode(self):
