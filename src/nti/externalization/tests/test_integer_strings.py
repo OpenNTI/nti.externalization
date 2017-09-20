@@ -13,7 +13,9 @@ from nti.externalization.integer_strings import from_external_string
 from nti.externalization.integer_strings import to_external_string
 
 from hamcrest import assert_that
+from hamcrest import calling
 from hamcrest import is_
+from hamcrest import raises
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -43,4 +45,8 @@ class TestIntStrings(unittest.TestCase):
 
     def test_decode_unicode(self):
         assert_that(from_external_string(u'abcde'),
-					is_(204869188))
+                    is_(204869188))
+
+    def test_bad_value(self):
+        assert_that(calling(from_external_string).with_args(''),
+                    raises(ValueError, "Improper key"))
