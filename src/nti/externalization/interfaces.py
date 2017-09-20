@@ -3,23 +3,28 @@
 """
 Externalization Interfaces
 
-.. $Id$
 """
 
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
-
-logger = __import__('logging').getLogger(__name__)
 
 from zope import interface
 
 from zope.component.interfaces import IFactory
 
 from zope.interface.common.mapping import IFullMapping
-
 from zope.interface.common.sequence import ISequence
 
 from zope.location import ILocation
+
+from zope.interface.interfaces import ObjectEvent
+from zope.interface.interfaces import IObjectEvent
+
+from zope.lifecycleevent import ObjectModifiedEvent
+from zope.lifecycleevent import IObjectModifiedEvent
+
+
+# pylint:disable=inherit-non-class,no-method-argument,no-self-argument
 
 
 class StandardExternalFields(object):
@@ -92,7 +97,7 @@ class INonExternalizableReplacer(interface.Interface):
     some object cannot be externalized.
     """
 
-    def __call__(obj):
+    def __call__(obj): # pylint:disable=signature-differs
         """
         :return: An externalized object to replace the given object. Possibly the
                 given object itself if some higher level will handle it.
@@ -126,10 +131,11 @@ class IExternalObjectDecorator(interface.Interface):
         though this is not guaranteed).
 
         :param original: The object that is being externalized.
-                Passed to facilitate using non-classes as decorators.
+            Passed to facilitate using non-classes as decorators.
         :param external: The externalization of that object, produced
-                by an implementation of :class:`~nti.externalization.interfaces.IInternalObjectExternalizer` or
-                default rules.
+            by an implementation of
+            :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`
+            or default rules.
         :return: Undefined.
         """
 
@@ -153,11 +159,11 @@ class IExternalMappingDecorator(interface.Interface):
         Decorate the externalized object mapping.
 
         :param original: The object that is being externalized. Passed
-                to facilitate using non-classes as decorators.
+            to facilitate using non-classes as decorators.
         :param external: The externalization of that object, an
-                :class:`~nti.externalization.interfaces.ILocatedExternalMapping`,
-                produced by an implementation of
-                :class:`~nti.externalization.interfaces.IInternalObjectExternalizer` or default rules.
+            :class:`~nti.externalization.interfaces.ILocatedExternalMapping`,
+            produced by an implementation of
+            :class:`~nti.externalization.interfaces.IInternalObjectExternalizer` or default rules.
         :return: Undefined.
         """
 
@@ -186,8 +192,10 @@ class ILocatedExternalSequence(IExternalizedObject, ILocation, ISequence):
 @interface.implementer(ILocatedExternalMapping)
 class LocatedExternalDict(dict):
     """
-    A dictionary that implements :class:`~nti.externalization.interfaces.ILocatedExternalMapping`. Returned
-    by :func:`~nti.externalization.externalization.to_standard_external_dictionary`.
+    A dictionary that implements
+    :class:`~nti.externalization.interfaces.ILocatedExternalMapping`.
+    Returned by
+    :func:`~nti.externalization.externalization.to_standard_external_dictionary`.
 
     This class is not :class:`.IContentTypeAware`, and it indicates so explicitly by declaring a
     `mime_type` value of None.
@@ -202,8 +210,10 @@ class LocatedExternalDict(dict):
 @interface.implementer(ILocatedExternalSequence)
 class LocatedExternalList(list):
     """
-    A list that implements :class:`~nti.externalization.interfaces.ILocatedExternalSequence`. Returned
-    by :func:`~nti.externalization.externalization.to_external_object`.
+    A list that implements
+    :class:`~nti.externalization.interfaces.ILocatedExternalSequence`.
+    Returned by
+    :func:`~nti.externalization.externalization.to_external_object`.
 
     This class is not :class:`.IContentTypeAware`, and it indicates so explicitly by declaring a
     `mimeType` value of None.
@@ -290,8 +300,9 @@ class IExternalizedObjectFactoryFinder(interface.Interface):
 
     def find_factory(externalized_object):
         """
-        Given an externalized object, return a :class:`zope.component.interfaces.IFactory` to create the proper
-        internal types.
+        Given an externalized object, return a
+        :class:`zope.component.interfaces.IFactory` to create the
+        proper internal types.
 
         :return: An :class:`zope.component.interfaces.IFactory`, or :const:`None`.
         """
@@ -346,14 +357,6 @@ class IInternalObjectIO(IInternalObjectExternalizer, IInternalObjectUpdater):
     A single object responsible for both reading and writing internal objects
     in external forms.
     """
-
-
-from zope.interface.interfaces import ObjectEvent
-from zope.interface.interfaces import IObjectEvent
-
-from zope.lifecycleevent import ObjectModifiedEvent
-from zope.lifecycleevent import IObjectModifiedEvent
-
 
 class IObjectWillUpdateFromExternalEvent(IObjectEvent):
     """
