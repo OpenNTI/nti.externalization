@@ -43,12 +43,9 @@ from ZODB.broken import Broken
 from nti.externalization.datastructures import ExternalizableInstanceDict
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
 
-
-from nti.externalization.externalization import _manager
 from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
 
 from nti.externalization.externalization import toExternalObject
-from nti.externalization.externalization import get_external_param
 from nti.externalization.externalization import catch_replace_action
 from nti.externalization.externalization import removed_unserializable
 from nti.externalization.externalization import set_external_identifiers
@@ -220,16 +217,6 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(ext, has_entry('a', is_([3, 4])))
         assert_that(ext, has_entry('z', is_(none())))
         assert_that(ext, has_entry('b', has_entry('c', is_([None, 1]))))
-
-    def test_get_external_param(self):
-        _manager.push({'foo': 'var'})
-        try:
-            value = get_external_param('foo')
-            assert_that(value, is_('var'))
-            value = get_external_param('unknown')
-            assert_that(value, is_(none()))
-        finally:
-            _manager.pop()
 
 
 class TestPersistentExternalizableWeakList(unittest.TestCase):

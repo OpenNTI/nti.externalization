@@ -310,8 +310,7 @@ def toExternalObject(obj,
                      decorate=True,
                      useCache=True,
                      decorate_callback=None,
-                     default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
-                     **kwargs):
+                     default_non_externalizable_replacer=DefaultNonExternalizableReplacer):
     """
     Translates the object into a form suitable for
     external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
@@ -344,8 +343,7 @@ def toExternalObject(obj,
         return obj
 
     v = dict(locals())
-    v.pop('obj', None)
-    [v.pop(x, None) for x in kwargs]
+    v.pop('obj')
     state = _ExternalizationState(**v)
 
     if name is _NotGiven:
@@ -357,9 +355,7 @@ def toExternalObject(obj,
     if memos is None:
         memos = defaultdict(dict)
 
-    data = dict(kwargs)
-    data.update({'name': name, 'memos': memos})
-    _manager.push(data)
+    _manager.push({'name': name, 'memos': memos})
 
     state.name = name
     state.memo = memos[name]
@@ -376,26 +372,6 @@ def toExternalObject(obj,
         _manager.pop()
 to_external_object = toExternalObject
 
-
-def get_externals():
-    """
-    Return the externalization params
-    """
-    state = dict(_manager.get())
-    [state.pop(x, None) for x in ('request', 'registry', 'name', 'memos')]
-    return state
-getExternals = get_externals
-
-
-def get_external_param(name, default=None):
-    """
-    Return the currently value for an externalization param or default
-    """
-    try:
-        return get_externals()[name]
-    except KeyError:
-        return default
-getExternalParam = get_external_param
 
 
 def stripSyntheticKeysFromExternalDictionary(external):
