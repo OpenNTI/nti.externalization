@@ -11,24 +11,24 @@ from __future__ import print_function
 # stdlib imports
 import numbers
 
-from ZODB.POSException import POSError
 import six
 from zope import interface
 from zope import schema
 import zope.deferredimport
 from zope.schema.interfaces import SchemaNotProvided
 
-from nti.externalization.externalization import stripSyntheticKeysFromExternalDictionary
-from nti.externalization.externalization import to_minimal_standard_external_dictionary
-from nti.externalization.externalization import to_standard_external_dictionary
-from nti.externalization.externalization import toExternalObject
-from nti.externalization.externalization import _isMagicKey
-from nti.externalization.interfaces import IInternalObjectIO
-from nti.externalization.interfaces import StandardExternalFields
-from nti.externalization.interfaces import StandardInternalFields
-from nti.externalization.internalization import validate_named_field_value
 from nti.schema.interfaces import find_most_derived_interface
 
+from .externalization import _isMagicKey
+from .externalization import stripSyntheticKeysFromExternalDictionary
+from .externalization import to_minimal_standard_external_dictionary
+from .externalization import to_standard_external_dictionary
+from .externalization import toExternalObject
+from .interfaces import IInternalObjectIO
+from .interfaces import StandardExternalFields
+from .interfaces import StandardInternalFields
+from .internalization import validate_named_field_value
+from .representation import make_repr
 
 isSyntheticKey = _isMagicKey
 
@@ -260,17 +260,7 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
         return super(ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys) \
             or (self._update_accepts_type_attrs and hasattr(ext_self, k))
 
-    def __repr__(self):
-        try:
-            return "<%s.%s %s>" % (self.__class__.__module__,
-                                   self.__class__.__name__,
-                                   getattr(self, 'creator', ''))
-        except POSError as cse:
-            return '<%s(Ghost, %s)>' % (self.__class__.__name__, cse)
-        except (ValueError, LookupError) as e:  # Things like invalid NTIID, missing registrations
-            return '<%s(%s)>' % (self.__class__.__name__, e)
-        except AttributeError as e:  # Another weird database-related issue
-            return '<%s(%s)>' % (self.__class__.__name__, e)
+    __repr__ = make_repr()
 
 
 _primitives = six.string_types + (numbers.Number, bool)
