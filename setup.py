@@ -47,6 +47,7 @@ setup(
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'setuptools',
+        'Acquisition',
         'BTrees',
         'isodate',
         'nti.schema',
@@ -61,6 +62,7 @@ setup(
         'zope.cachedescriptors',
         'zope.component',
         'zope.configuration',
+        'zope.container',
         'zope.deferredimport',
         'zope.deprecation',
         'zope.dottedname',
@@ -73,6 +75,7 @@ setup(
         'zope.location',
         'zope.mimetype',
         'zope.preference',
+        'zope.proxy',
         'zope.schema',
         'zope.security',
     ],

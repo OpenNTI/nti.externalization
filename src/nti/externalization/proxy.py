@@ -6,31 +6,19 @@ Utilities for working with various kinds of transparent proxies.
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-logger = __import__('logging').getLogger(__name__)
+import Acquisition
+import zope.container.contained
+import zope.proxy
 
 _unwrappers = []
-try:
-    import zope.proxy
-    _unwrappers.append(zope.proxy.removeAllProxies)
-except ImportError:
-    pass
-
-try:
-    import zope.container.contained
-    _unwrappers.append(zope.container.contained.getProxiedObject)
-except ImportError:
-    pass
-
-try:
-    import Acquisition
-    aq_base = getattr(Acquisition, 'aq_base')
-    _unwrappers.append(aq_base)
-except (ImportError, AttributeError):
-    pass
-
+_unwrappers.append(zope.proxy.removeAllProxies)
+_unwrappers.append(zope.container.contained.getProxiedObject)
+#aq_base = getattr(Acquisition, 'aq_base')
+_unwrappers.append(Acquisition.aq_base)
 
 def removeAllProxies(proxy):
     """

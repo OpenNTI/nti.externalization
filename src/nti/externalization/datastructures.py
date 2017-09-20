@@ -6,33 +6,30 @@ Datastructures to help externalization.
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-logger = __import__('logging').getLogger(__name__)
-
-import six
-import sys
+# stdlib imports
 import numbers
 
-from zope import schema
+from ZODB.POSException import POSError
+import six
 from zope import interface
-
+from zope import schema
+import zope.deferredimport
 from zope.schema.interfaces import SchemaNotProvided
 
-from ZODB.POSException import POSError
-
-from nti.externalization.externalization import toExternalObject
-from nti.externalization.externalization import to_standard_external_dictionary
 from nti.externalization.externalization import to_minimal_standard_external_dictionary
-
+from nti.externalization.externalization import to_standard_external_dictionary
+from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import IInternalObjectIO
-from nti.externalization.interfaces import StandardInternalFields
 from nti.externalization.interfaces import StandardExternalFields
-
+from nti.externalization.interfaces import StandardInternalFields
 from nti.externalization.internalization import validate_named_field_value
-
 from nti.schema.interfaces import find_most_derived_interface
+
+logger = __import__('logging').getLogger(__name__)
 
 
 def _syntheticKeys():
@@ -535,9 +532,7 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
                 if x.__module__ == self._ext_search_module.__name__
                 and not x.queryTaggedValue('_ext_is_marker_interface'))
 
-
 # Things that have moved
-import zope.deferredimport
 zope.deferredimport.initialize()
 zope.deferredimport.deprecatedFrom(
     "Moved to nti.externalization.interfaces",

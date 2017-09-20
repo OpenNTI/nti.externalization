@@ -5,23 +5,24 @@ External representation support.
 
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-
+from ZODB.POSException import ConnectionStateError
+import simplejson
+import yaml
 from zope import component
 from zope import interface
 
 from nti.externalization._compat import to_unicode
-
+from nti.externalization.externalization import _NotGiven
+from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import EXT_REPR_JSON
 from nti.externalization.interfaces import EXT_REPR_YAML
-
 from nti.externalization.interfaces import IExternalObjectIO
 from nti.externalization.interfaces import IExternalObjectRepresenter
 
-from nti.externalization.externalization import _NotGiven
-from nti.externalization.externalization import toExternalObject
 
 # Driver functions
 
@@ -55,7 +56,6 @@ def to_json_representation(obj):
 # JSON
 
 
-import simplejson
 
 
 def _second_pass_to_external_object(obj):
@@ -114,9 +114,6 @@ to_json_representation_externalized = JsonRepresenter().dump
 
 # YAML
 
-import yaml
-
-
 class _ExtDumper(yaml.SafeDumper):  # pylint:disable=R0904
     """
     We want to represent all of our special object types,
@@ -156,9 +153,6 @@ class YamlRepresenter(object):
 
 
 # Misc
-
-
-from ZODB.POSException import ConnectionStateError
 
 
 def make_repr(default=lambda self: "%s().__dict__.update( %s )" % (self.__class__.__name__, self.__dict__)):

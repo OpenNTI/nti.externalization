@@ -11,20 +11,17 @@ of :mod:`zope.dublincore.interfaces`.
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
-
-logger = __import__('logging').getLogger(__name__)
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from zope import component
 from zope import interface
-
-from zope.dublincore.interfaces import IDCExtended
 from zope.dublincore.interfaces import IDCDescriptiveProperties
+from zope.dublincore.interfaces import IDCExtended
 
-from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import IExternalMappingDecorator
-
+from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.singleton import SingletonDecorator
 
 

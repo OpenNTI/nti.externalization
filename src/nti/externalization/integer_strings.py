@@ -24,13 +24,16 @@ this algorithm gracefully but still honor codes in the wild.
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-logger = __import__('logging').getLogger(__name__)
+# stdlib imports
+import string
 
 import six
-import string
+
+
 try:
     from string import maketrans
     from string import translate

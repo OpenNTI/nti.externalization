@@ -1,57 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+# stdlib imports
+import unittest
+
+from Acquisition import Implicit
+from ExtensionClass import Base
+from zope.container.contained import ContainedProxy
+from zope.proxy import ProxyBase
+
+from nti.externalization.proxy import removeAllProxies
+from nti.testing.matchers import aq_inContextOf
+
+from hamcrest import assert_that
+from hamcrest import is_
+from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 
-from hamcrest import is_
-from hamcrest import assert_that
-from hamcrest import same_instance
 
-from nti.testing.matchers import aq_inContextOf
+class EC(Base):
+    x = None
 
-import unittest
+class IM(Implicit):
+    pass
 
-try:
-    from zope.proxy import ProxyBase
-except ImportError:
-    def ProxyBase(x): return x
-
-try:
-    from zope.container.contained import ContainedProxy
-except ImportError:
-    def ContainedProxy(x): return x
-
-try:
-    from Acquisition import Implicit
-    from ExtensionClass import Base
-
-    class EC(Base):
-        x = None
-
-    class IM(Implicit):
-        pass
-
-    def aq_proxied(im):
-        ec = EC()
-        ec.x = im
-        assert_that(ec.x, is_(aq_inContextOf(ec)))
-        return ec.x
-
-except ImportError:
-    EC = None
-
-    class IM(object):
-        pass
-
-    def aq_proxied():
-        return IM()
-
-from nti.externalization.proxy import removeAllProxies
-
+def aq_proxied(im):
+    ec = EC()
+    ec.x = im
+    assert_that(ec.x, is_(aq_inContextOf(ec)))
+    return ec.x
 
 class TestProxy(unittest.TestCase):
 
