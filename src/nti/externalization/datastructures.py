@@ -18,6 +18,7 @@ from zope import schema
 import zope.deferredimport
 from zope.schema.interfaces import SchemaNotProvided
 
+from nti.externalization.externalization import stripSyntheticKeysFromExternalDictionary
 from nti.externalization.externalization import to_minimal_standard_external_dictionary
 from nti.externalization.externalization import to_standard_external_dictionary
 from nti.externalization.externalization import toExternalObject
@@ -62,14 +63,8 @@ class ExternalizableDictionaryMixin(object):
                                                       mergeFrom=mergeFrom,
                                                       **kwargs)
 
-    def stripSyntheticKeysFromExternalDictionary(self, external):
-        """
-        Given a mutable dictionary, removes all the external keys
-        that might have been added by toExternalDictionary and echoed back.
-        """
-        for k in _syntheticKeys():
-            external.pop(k, None)
-        return external
+    # XXX: Why is this here as an instance method?
+    stripSyntheticKeysFromExternalDictionary = staticmethod(stripSyntheticKeysFromExternalDictionary)
 
 
 @interface.implementer(IInternalObjectIO)
