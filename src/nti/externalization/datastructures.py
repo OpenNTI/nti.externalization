@@ -22,7 +22,6 @@ from nti.externalization.externalization import stripSyntheticKeysFromExternalDi
 from nti.externalization.externalization import to_minimal_standard_external_dictionary
 from nti.externalization.externalization import to_standard_external_dictionary
 from nti.externalization.externalization import toExternalObject
-from nti.externalization.externalization import _syntheticKeys
 from nti.externalization.externalization import _isMagicKey
 from nti.externalization.interfaces import IInternalObjectIO
 from nti.externalization.interfaces import StandardExternalFields

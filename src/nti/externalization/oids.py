@@ -12,7 +12,7 @@ from __future__ import print_function
 import binascii
 import collections
 
-# Things that have moved
+
 from ZODB.interfaces import IConnection
 from zope import component
 import zope.deferredimport
@@ -67,10 +67,11 @@ def toExternalOID(self, default=None, add_to_connection=False,
         if add_to_connection:
             try:
                 jar = IConnection(self)
-                jar.add(self)
-                oid = self._p_oid
-            except Exception:
+            except TypeError:
                 return default
+
+            jar.add(self)
+            oid = self._p_oid
         else:
             return default
 
@@ -102,7 +103,7 @@ def toExternalOID(self, default=None, add_to_connection=False,
 
     try:
         setattr(self, str('_v_to_external_oid'), oid)
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError): # pragma: no cover
         pass
     return oid
 to_external_oid = toExternalOID
@@ -130,8 +131,10 @@ def fromExternalOID(ext_oid):
 
     # Sometimes raw _p_oid values do contain a b':', so simply splitting
     # on that is not reliable, so try to detect raw _p_oid directly
-    if      isinstance(ext_oid, bytes) and len(ext_oid) == 8 and \
-        not ext_oid.startswith(b'0x') and ext_oid.count(b':') != 2:
+    if (isinstance(ext_oid, bytes)
+            and len(ext_oid) == 8
+            and not ext_oid.startswith(b'0x')
+            and ext_oid.count(b':') != 2):
         # The last conditions might be overkill, but toExternalOID is actually
         # returning bytes, and it could conceivably be exactly 8 chars long;
         # however, a raw oid could also start with the two chars 0x and contain two colons
@@ -159,7 +162,7 @@ def fromExternalOID(ext_oid):
     return ParsedOID(oid_string, name_s, intid)
 from_external_oid = fromExternalOID
 
-
+# Things that have moved
 zope.deferredimport.initialize()
 zope.deferredimport.deprecatedFrom(
     "Import from nti.ntiids.oids",
