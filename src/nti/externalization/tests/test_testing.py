@@ -27,9 +27,9 @@ class TestExternalizes(unittest.TestCase):
             assert_that(self, externalizes(is_('foo')))
 
         e = exc.exception
-        assert_that(str(e.message),
+        assert_that(str(e.args[0]),
                     contains_string("Expected: object that can be externalized to 'foo'"))
-        assert_that(str(e.message),
+        assert_that(str(e.args[0]),
                     contains_string("was replaced by"))
 
     def test_externalizes_none(self):
@@ -38,7 +38,7 @@ class TestExternalizes(unittest.TestCase):
             assert_that(None, externalizes(is_('foo')))
 
         e = exc.exception
-        assert_that(str(e.message),
+        assert_that(str(e.args[0]),
                     contains_string("Expected: object that can be externalized to 'foo'"))
-        assert_that(str(e.message),
+        assert_that(str(e.args[0]),
                     contains_string("externalized to none"))

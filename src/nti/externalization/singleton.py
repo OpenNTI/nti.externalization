@@ -15,7 +15,7 @@ class SingletonDecorator(type):
     """
     Metaclass for singleton classes to be used as external object
     decorators (adapters). These objects accept one or two context arguments to
-    their __init__function, but they do not actually use them (because the same
+    their ``__init__`` function, but they do not actually use them (because the same
     object is passed to their decoration method). Thus they can usefully
     be constructed just once and shared. This metaclass ensures the singleton
     property, ensures that the ``__init__`` method is a no-op, and ensures
@@ -24,16 +24,20 @@ class SingletonDecorator(type):
     A singleton class has only one instance which is returned every time the
     class is instantiated.
 
-    .. note:: We cannot be used with :func:`six.with_metaclass` because it introduces
-              temporary classes. You'll need to use the metaclass constructor directly.
+    .. caution::
+       We cannot be used with :func:`six.with_metaclass` because it introduces
+       temporary classes. You'll need to use the metaclass constructor directly::
 
-    ** Developer notes **
-            The class is instanciated immediately at the point where it is defined
-            by calling cls.__new__(cls). This instance is cached and cls.__new__ is
-            rebound to return it directly.
+            AClass = SingletonDecorator('AClass', (object,), {})
 
-            The original constructor is also cached to allow subclasses to access it
-            and have their own instance.
+    **Implementation Notes**
+
+    The class is instantiated immediately at the point where it is
+    defined by calling ``cls.__new__(cls)``. This instance is cached and
+    ``cls.__new__`` is rebound to return it directly.
+
+    The original constructor is also cached to allow subclasses to access it
+    and have their own instance.
     """
 
     def __new__(cls, name, bases, cls_dict):
