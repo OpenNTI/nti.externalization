@@ -19,7 +19,7 @@ import zope.deferredimport
 from zope.intid.interfaces import IIntIds
 
 from nti.externalization._compat import bytes_
-from nti.externalization._compat import native_
+
 from nti.externalization.integer_strings import from_external_string
 from nti.externalization.integer_strings import to_external_string
 from nti.externalization.proxy import removeAllProxies
@@ -141,11 +141,11 @@ def fromExternalOID(ext_oid):
         # so the format is a bit ambiguous...
         return ParsedOID(ext_oid, '', None)
 
-    ext_oid = bytes_(ext_oid) if not isinstance(ext_oid, bytes) else ext_oid
+    ext_oid = ext_oid.encode("ascii") if not isinstance(ext_oid, bytes) else ext_oid
     parts = ext_oid.split(b':') if b':' in ext_oid else (ext_oid,)
     oid_string = parts[0]
     name_s = parts[1] if len(parts) > 1 else b""
-    intid_s = native_(parts[2]) if len(parts) > 2 else None
+    intid_s = parts[2] if len(parts) > 2 else None
 
     # Translate the external format if needed
     if oid_string.startswith(b'0x'):

@@ -77,7 +77,7 @@ def from_external_string(key):
         # to Unicode, which fails because it contains non-ASCII values.
         # So instead, we encode the unicode string to ascii, which, if it is a
         # valid key, will work
-        key = key.encode('ascii')
+        key = key.decode('ascii') if isinstance(key, bytes) else key.encode('ascii')
 
     # strip the version if needed
     key = key[:-1] if key[-1] == _VERSION else key
