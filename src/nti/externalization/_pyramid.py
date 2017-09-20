@@ -1,50 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-.. $Id$
+Extension points for connecting to Pyramid.
+
+XXX TODO: Define get_current_request as a zope.hookable function
+and let the application determine what framework to connect to.
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__docformat__ = "restructuredtext en"
-
-logger = __import__('logging').getLogger(__name__)
+# stdlib imports
+import threading
 
 try:
-    from pyramid.threadlocal import ThreadLocalManager
     from pyramid.threadlocal import get_current_request
-
-    ThreadLocalManager = ThreadLocalManager
-    get_current_request = get_current_request
-
 except ImportError:
-    import threading
-
-    class ThreadLocalManager(threading.local):
-
-        def __init__(self, default=None):
-            self.stack = []
-            self.default = default
-
-        def push(self, info):
-            self.stack.append(info)
-
-        set = push  # b/c
-
-        def pop(self):
-            if self.stack:
-                return self.stack.pop()
-
-        def get(self):
-            try:
-                return self.stack[-1]
-            except IndexError:
-                return self.default()
-
-        def clear(self):
-            self.stack[:] = []
-
     def get_current_request():
         return None
+else: # pragma: no cover
+    get_current_request = get_current_request
+
+class ThreadLocalManager(threading.local):
+
+    def __init__(self, default=None):
+        self.stack = []
+        self.default = default
+
+    def push(self, info):
+        self.stack.append(info)
+
+    set = push  # b/c
+
+    def pop(self):
+        if self.stack:
+            return self.stack.pop()
+
+    def get(self):
+        try:
+            return self.stack[-1]
+        except IndexError:
+            return self.default()
