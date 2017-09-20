@@ -35,7 +35,6 @@
 
 	<utility factory=".representation.JsonRepresenter" />
 	<utility factory=".representation.YamlRepresenter" />
-	<utility factory=".representation.PlistRepresenter" />
 
 	<!-- Offer to adapt strings to dates -->
 	<!-- TODO: This is a bit ad-hoc. Surely there's a more formal set

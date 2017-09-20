@@ -169,6 +169,8 @@ intersphinx_mapping = {
     'https://docs.python.org/': None,
     #'https://ntiwref.readthedocs.io/en/latest': None,
     'https://persistent.readthedocs.io/en/latest': None,
+    'https://zopecomponent.readthedocs.io/en/latest': None,
+    'https://zodb.readthedocs.io/en/latest': None,
 }
 
 extlinks = {

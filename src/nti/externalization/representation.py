@@ -3,17 +3,11 @@
 """
 External representation support.
 
-.. $Id$
 """
 
 from __future__ import print_function, absolute_import, division
 __docformat__ = "restructuredtext en"
 
-import collections
-import plistlib
-
-import six
-from six import iteritems
 
 from zope import component
 from zope import interface
@@ -22,7 +16,6 @@ from nti.externalization._compat import to_unicode
 
 from nti.externalization.interfaces import EXT_REPR_JSON
 from nti.externalization.interfaces import EXT_REPR_YAML
-from nti.externalization.interfaces import EXT_REPR_PLIST
 
 from nti.externalization.interfaces import IExternalObjectIO
 from nti.externalization.interfaces import IExternalObjectRepresenter
@@ -36,9 +29,11 @@ from nti.externalization.externalization import toExternalObject
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
                                name=_NotGiven, registry=component):
     """
-    Transforms (and returns) the `obj` into its external (string) representation.
+    Transforms (and returns) the `obj` into its external (string)
+    representation.
 
-    :param ext_format: One of :const:`EXT_FORMAT_JSON` or :const:`EXT_FORMAT_PLIST`.
+    :param ext_format: One of :const:`nti.externalization.interfaces.EXT_REPR_JSON` or
+        :const:`nti.externalization.interfaces.EXT_REPR_YAML`.
     """
     # It would seem nice to be able to do this in one step during
     # the externalization process itself, but we would wind up traversing
@@ -55,39 +50,6 @@ def to_json_representation(obj):
     :func:`to_external_representation` with :data:`EXT_REPR_JSON`.
     """
     return to_external_representation(obj, EXT_REPR_JSON)
-
-
-# Plist
-
-
-
-# The API changed in Python 3.4
-_plist_dump = getattr(plistlib, 'dump', None) or plistlib.writePlist
-_plist_dumps = getattr(plistlib, 'dumps', None) or plistlib.writePlistToString
-
-
-@interface.named(EXT_REPR_PLIST)
-@interface.implementer(IExternalObjectRepresenter)
-class PlistRepresenter(object):
-
-    def stripNoneFromExternal(self, obj):
-        """
-        Given an already externalized object, strips ``None`` values.
-        """
-        if isinstance(obj, (list, tuple)):
-            obj = [self.stripNoneFromExternal(x) for x in obj if x is not None]
-        elif isinstance(obj, collections.Mapping):
-            obj = {k: self.stripNoneFromExternal(v)
-                   for k, v in iteritems(obj)
-                   if v is not None and k is not None}
-        return obj
-
-    def dump(self, obj, fp=None):
-        ext = self.stripNoneFromExternal(obj)
-        if fp is not None:
-            _plist_dump(ext, fp)
-        else:
-            return _plist_dumps(ext)
 
 
 # JSON
@@ -143,7 +105,7 @@ class JsonRepresenter(object):
         # Depending on whether the simplejson C speedups are active, we can still
         # get back a non-unicode string if the object was a naked string. (If the python
         # version is used, it returns unicode; the C version returns str.)
-        if isinstance(value, six.binary_type):
+        if isinstance(value, bytes):
             # we know it's simple ascii or it would have produced unicode
             value = to_unicode(value)
         return value
@@ -199,10 +161,7 @@ class YamlRepresenter(object):
 from ZODB.POSException import ConnectionStateError
 
 
-def make_repr(default=None):
-    if default is None:
-        def default(self):
-            return "%s().__dict__.update( %s )" % (self.__class__.__name__, self.__dict__)
+def make_repr(default=lambda self: "%s().__dict__.update( %s )" % (self.__class__.__name__, self.__dict__)):
 
     def __repr__(self):
         try:
