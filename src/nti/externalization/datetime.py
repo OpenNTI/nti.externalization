@@ -80,10 +80,10 @@ def _local_tzinfo(local_tzname=None):
 
     # Ok, not a value known to pytz. Is it a two-tuple like ('CST', 'CDT')
     # that we can figure out the offset of ourself?
-    if (    not tzinfo
-        and isinstance(local_tzname, tuple)
-        and len(local_tzname) == 2
-        and all((bool(x) for x in local_tzname))):
+    if (not tzinfo
+            and isinstance(local_tzname, tuple)
+            and len(local_tzname) == 2
+            and all((bool(x) for x in local_tzname))):
         offset_hours = time.timezone // 3600
         local_tzname = '%s%d%s' % (local_tzname[0],
                                    offset_hours,
