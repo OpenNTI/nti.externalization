@@ -304,8 +304,7 @@ def update_from_external_object(containedObject, externalObject,
             ``v`` is the newly-updated value, and ``x`` is the external object used to update ``v``.
     :param callable pre_hook: If given, called with the before update_from_external_object is
             called for every nested object. Signature ``f(k,x)`` where ``k`` is either the key name,
-             or None in the case of a sequence and ``x`` is the external object
-
+            or None in the case of a sequence and ``x`` is the external object
     :return: `containedObject` after updates from `externalObject`
     """
 

@@ -270,9 +270,6 @@ class IExternalObjectIO(IExternalObjectRepresenter,
 #: Constant requesting JSON format data
 EXT_REPR_JSON = u'json'
 
-#: Constant requesting PList (XML) format data
-EXT_REPR_PLIST = u'plist'
-
 #: Constant requesting YAML format data
 EXT_REPR_YAML = u'yaml'
 

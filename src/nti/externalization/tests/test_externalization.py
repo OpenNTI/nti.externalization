@@ -25,7 +25,7 @@ from nti.testing.matchers import verifiably_provides
 
 import sys
 import json
-import plistlib
+
 import unittest
 
 try:
@@ -43,8 +43,6 @@ from ZODB.broken import Broken
 from nti.externalization.datastructures import ExternalizableInstanceDict
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
 
-from nti.externalization.externalization import EXT_FORMAT_JSON
-from nti.externalization.externalization import EXT_FORMAT_PLIST
 
 from nti.externalization.externalization import _manager
 from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
@@ -57,6 +55,7 @@ from nti.externalization.externalization import set_external_identifiers
 from nti.externalization.externalization import to_standard_external_dictionary
 
 from nti.externalization.interfaces import EXT_REPR_YAML
+from nti.externalization.interfaces import EXT_REPR_JSON
 from nti.externalization.interfaces import LocatedExternalList
 from nti.externalization.interfaces import LocatedExternalDict
 
@@ -136,13 +135,8 @@ class TestFunctions(ExternalizationLayerTest):
     def test_to_external_representation_none_handling(self):
         d = {'a': 1, 'None': None}
         # JSON keeps None
-        assert_that(json.loads(to_external_representation(d, EXT_FORMAT_JSON)),
+        assert_that(json.loads(to_external_representation(d, EXT_REPR_JSON)),
                     is_(d))
-        # PList strips it
-        # The api changed in Python 3.4
-        read_plist = getattr(plistlib, 'loads', getattr(plistlib, 'readPlistFromString', None))
-        assert_that(read_plist(to_external_representation(d, EXT_FORMAT_PLIST)),
-                    is_({'a': 1}))
 
     def test_to_external_representation_yaml(self):
         l = LocatedExternalList()

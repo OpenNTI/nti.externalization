@@ -264,12 +264,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
                 result.append(ext_obj)
             result = state.registry.getAdapter(result,
                                                ILocatedExternalSequence)
-        # PList doesn't support None values, JSON does. The closest
-        # coersion I can think of is False.
-        elif obj is None:
-            if state.coerceNone:
-                result = False
-        else:
+        elif obj is not None:
             # Otherwise, we probably won't be able to JSON-ify it.
             # TODO: Should this live here, or at a higher level where the ultimate
             # external target/use-case is known?
@@ -307,7 +302,6 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
 
 
 def toExternalObject(obj,
-                     coerceNone=False,
                      name=_NotGiven,
                      registry=component,
                      catch_components=(),
@@ -677,8 +671,9 @@ zope.deferredimport.deprecatedFrom(
     "nti.externalization.persistence",
     "NoPickle")
 
-EXT_FORMAT_JSON = 'json'      #: Constant requesting JSON format data
-EXT_FORMAT_PLIST = 'plist'  #: Constant requesting PList (XML) format data
+#: Constant requesting JSON format data
+EXT_FORMAT_JSON = 'json'
+
 
 zope.deferredimport.deprecatedFrom(
     "Import from .representation",
