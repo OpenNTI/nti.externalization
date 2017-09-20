@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from nti.externalization.singleton import SingletonDecorator
+from nti.externalization.tests import ExternalizationLayerTest
+
+from hamcrest import assert_that
+from hamcrest import is_
+from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
-
-from six import with_metaclass
-
-from hamcrest import is_
-from hamcrest import assert_that
-from hamcrest import same_instance
-
-from nti.externalization.singleton import SingletonDecorator
-
-from nti.externalization.tests import ExternalizationLayerTest
 
 
 class TestSingleton(ExternalizationLayerTest):

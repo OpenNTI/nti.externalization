@@ -2,37 +2,26 @@
 # -*- coding: utf-8 -*-
 """
 Classes and functions for dealing with persistence in an external context.
-
-.. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-logger = __import__('logging').getLogger(__name__)
-
+# stdlib imports
 import collections
 
+import persistent
+from persistent.list import PersistentList
+from persistent.mapping import PersistentMapping
+from persistent.wref import WeakRef as PWeakRef
 from zope import interface
 
-import persistent
-
-from persistent.list import PersistentList
-
-from persistent.mapping import PersistentMapping
-
-from persistent.wref import WeakRef as PWeakRef
-
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
-
 from nti.externalization.externalization import toExternalObject
-
 from nti.externalization.interfaces import IExternalObject
-
 from nti.externalization.oids import toExternalOID
-
 from nti.externalization.proxy import removeAllProxies
-
 from nti.zodb.persistentproperty import PersistentPropertyHolder
 
 # disable: accessing protected members
@@ -85,8 +74,8 @@ def getPersistentState(obj):
 
 
 def setPersistentStateChanged(obj):
-    """ 
-    Explicitly marks a persistent object as changed. 
+    """
+    Explicitly marks a persistent object as changed.
     """
     try:
         obj._p_changed = True

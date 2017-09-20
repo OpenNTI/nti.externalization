@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 Support for singleton objects that are used as external object decorators.
-
-.. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
-
-logger = __import__('logging').getLogger(__name__)
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # This was originally based on code from sympy.core.singleton
 

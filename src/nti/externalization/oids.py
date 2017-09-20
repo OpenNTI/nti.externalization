@@ -2,30 +2,26 @@
 # -*- coding: utf-8 -*-
 """
 Functions for externalizing OIDs.
-
-.. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-logger = __import__('logging').getLogger(__name__)
-
+# stdlib imports
 import binascii
 import collections
 
-from zope import component
-
-from zope.intid.interfaces import IIntIds
-
+# Things that have moved
 from ZODB.interfaces import IConnection
+from zope import component
+import zope.deferredimport
+from zope.intid.interfaces import IIntIds
 
 from nti.externalization._compat import bytes_
 from nti.externalization._compat import native_
-
-from nti.externalization.integer_strings import to_external_string
 from nti.externalization.integer_strings import from_external_string
-
+from nti.externalization.integer_strings import to_external_string
 from nti.externalization.proxy import removeAllProxies
 
 
@@ -164,8 +160,6 @@ def fromExternalOID(ext_oid):
 from_external_oid = fromExternalOID
 
 
-# Things that have moved
-import zope.deferredimport
 zope.deferredimport.initialize()
 zope.deferredimport.deprecatedFrom(
     "Import from nti.ntiids.oids",

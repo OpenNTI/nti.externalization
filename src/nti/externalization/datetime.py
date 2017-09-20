@@ -6,29 +6,27 @@ Support for reading and writing date and time related objects.
 See the :mod:`datetime` module, as well as the :mod:`zope.interface.common.idatetime`
 module for types of objects.
 
-.. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
+# stdlib imports
+from datetime import datetime
 import sys
 import time
-from datetime import datetime
 
 import isodate
 import pytz
 import six
-
 from zope import component
 from zope import interface
-
 from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
 from zope.interface.common.idatetime import ITimeDelta
 
 from nti.externalization.interfaces import IInternalObjectExternalizer
-
 from nti.schema.interfaces import InvalidValue
 
 

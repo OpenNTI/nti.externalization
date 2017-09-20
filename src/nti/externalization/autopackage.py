@@ -4,7 +4,18 @@
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from ZODB.loglevels import TRACE
+from zope import interface
+from zope.dottedname import resolve as dottedname
+from zope.mimetype.interfaces import IContentTypeAware
+
+from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
+from nti.externalization.internalization import register_legacy_search_module
+
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
@@ -14,17 +25,11 @@ logger = __import__('logging').getLogger(__name__)
 # is probably not what we want
 # import ExtensionClass
 
-from zope import interface
 
-from zope.dottedname import resolve as dottedname
 
-from zope.mimetype.interfaces import IContentTypeAware
 
-from ZODB.loglevels import TRACE
 
-from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
 
-from nti.externalization.internalization import register_legacy_search_module
 
 
 class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO):

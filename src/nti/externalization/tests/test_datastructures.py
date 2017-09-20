@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-# disable: accessing protected members, too many methods
-# pylint: disable=W0212,R0904
-
-from hamcrest import assert_that
-from hamcrest import has_property
-
+# stdlib imports
 import sys
 
 from zope import interface
 
 from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
-
 from nti.externalization.tests import ExternalizationLayerTest
+
+from hamcrest import assert_that
+from hamcrest import has_property
+
+# disable: accessing protected members, too many methods
+# pylint: disable=W0212,R0904
 
 
 class TestDatastructures(ExternalizationLayerTest):

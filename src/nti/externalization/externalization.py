@@ -5,48 +5,46 @@ Functions related to actually externalizing objects.
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-import numbers
+# stdlib imports
+from calendar import timegm as _calendar_gmtime
 import collections
 from collections import defaultdict
+import numbers
 
+import BTrees.OOBTree
+from ZODB.POSException import POSKeyError
+import persistent
 import six
 from six import iteritems
-
 from zope import component
-from zope import interface
 from zope import deprecation
-
-from zope.hookable import hookable
-
-from zope.interface.common.sequence import IFiniteSequence
-
+from zope import interface
+from zope.cachedescriptors.property import CachedProperty
+import zope.deferredimport
 from zope.dublincore.interfaces import IDCTimes
-
+from zope.hookable import hookable
+from zope.interface.common.sequence import IFiniteSequence
 from zope.security.interfaces import IPrincipal
 from zope.security.management import system_user
 
-from ZODB.POSException import POSKeyError
-
-import persistent
-
-import BTrees.OOBTree
-
 from nti.externalization._compat import to_unicode
-
+from nti.externalization._pyramid import ThreadLocalManager
+from nti.externalization._pyramid import get_current_request
+from nti.externalization.interfaces import IExternalMappingDecorator
 from nti.externalization.interfaces import IExternalObject
+from nti.externalization.interfaces import IExternalObjectDecorator
+from nti.externalization.interfaces import ILocatedExternalSequence
+from nti.externalization.interfaces import INonExternalizableReplacement
+from nti.externalization.interfaces import INonExternalizableReplacer
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import StandardInternalFields
-from nti.externalization.interfaces import IExternalObjectDecorator
-from nti.externalization.interfaces import ILocatedExternalSequence
-from nti.externalization.interfaces import IExternalMappingDecorator
-from nti.externalization.interfaces import INonExternalizableReplacer
-from nti.externalization.interfaces import INonExternalizableReplacement
-
 from nti.externalization.oids import to_external_oid
+
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -81,7 +79,6 @@ def is_system_user(obj):
 # the name that was established at the top level.
 _NotGiven = object()
 
-from nti.externalization._pyramid import ThreadLocalManager
 
 _manager = ThreadLocalManager(default=lambda: {'name': _NotGiven, 'memos': None})
 
@@ -143,7 +140,6 @@ MAPPING_TYPES = (persistent.mapping.PersistentMapping,
                  BTrees.OOBTree.OOBTree,
                  collections.Mapping)
 
-from zope.cachedescriptors.property import CachedProperty
 
 
 class _ExternalizationState(object):
@@ -310,8 +306,7 @@ def toExternalObject(obj,
                      decorate=True,
                      useCache=True,
                      decorate_callback=None,
-                     default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
-                     **kwargs):
+                     default_non_externalizable_replacer=DefaultNonExternalizableReplacer):
     """
     Translates the object into a form suitable for
     external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
@@ -344,8 +339,7 @@ def toExternalObject(obj,
         return obj
 
     v = dict(locals())
-    v.pop('obj', None)
-    [v.pop(x, None) for x in kwargs]
+    v.pop('obj')
     state = _ExternalizationState(**v)
 
     if name is _NotGiven:
@@ -357,9 +351,7 @@ def toExternalObject(obj,
     if memos is None:
         memos = defaultdict(dict)
 
-    data = dict(kwargs)
-    data.update({'name': name, 'memos': memos})
-    _manager.push(data)
+    _manager.push({'name': name, 'memos': memos})
 
     state.name = name
     state.memo = memos[name]
@@ -376,26 +368,6 @@ def toExternalObject(obj,
         _manager.pop()
 to_external_object = toExternalObject
 
-
-def get_externals():
-    """
-    Return the externalization params
-    """
-    state = dict(_manager.get())
-    [state.pop(x, None) for x in ('request', 'registry', 'name', 'memos')]
-    return state
-getExternals = get_externals
-
-
-def get_external_param(name, default=None):
-    """
-    Return the currently value for an externalization param or default
-    """
-    try:
-        return get_externals()[name]
-    except KeyError:
-        return default
-getExternalParam = get_external_param
 
 
 def stripSyntheticKeysFromExternalDictionary(external):
@@ -421,7 +393,6 @@ def _isMagicKey(key):
 isSyntheticKey = _isMagicKey
 
 
-from calendar import timegm as _calendar_gmtime
 
 
 def datetime_to_epoch(dt):
@@ -524,7 +495,6 @@ def _ext_class_if_needed(self, result):
         result[StandardExternalFields_CLASS] = self.__class__.__name__
 
 
-from nti.externalization._pyramid import get_current_request
 
 
 def setExternalIdentifiers(self, result):
@@ -662,9 +632,8 @@ def removed_unserializable(ext):
     _clean(ext)
     return ext
 
-
 # Things that have moved
-import zope.deferredimport
+
 zope.deferredimport.initialize()
 zope.deferredimport.deprecatedFrom(
     "Import from .persistence",

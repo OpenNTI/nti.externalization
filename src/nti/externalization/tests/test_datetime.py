@@ -1,34 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-# disable: accessing protected members, too many methods
-# pylint: disable=W0212,R0904
-
-from hamcrest import is_
-from hamcrest import none
-from hamcrest import raises
-from hamcrest import calling
-from hamcrest import assert_that
-from hamcrest import has_property
-
-import os
-import time
+# stdlib imports
 from datetime import date
 from datetime import timedelta
+import os
+import time
 
 from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
 
 from nti.externalization.datetime import _datetime_to_string
 from nti.externalization.datetime import datetime_from_string
-
+from nti.externalization.tests import ExternalizationLayerTest
+from nti.externalization.tests import externalizes
 from nti.schema.interfaces import InvalidValue
 
-from nti.externalization.tests import externalizes
-from nti.externalization.tests import ExternalizationLayerTest
+from hamcrest import assert_that
+from hamcrest import calling
+from hamcrest import has_property
+from hamcrest import is_
+from hamcrest import none
+from hamcrest import raises
+
+# disable: accessing protected members, too many methods
+# pylint: disable=W0212,R0904
 
 
 class TestDatetime(ExternalizationLayerTest):

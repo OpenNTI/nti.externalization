@@ -1,31 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-# disable: accessing protected members, too many methods
-# pylint: disable=W0212,R0904
-
-from hamcrest import is_
-from hamcrest import none
-from hamcrest import is_not
-from hamcrest import raises
-from hamcrest import calling
-from hamcrest import has_key
-from hamcrest import contains
-from hamcrest import has_entry
-from hamcrest import has_items
-from hamcrest import assert_that
-from hamcrest import same_instance
-from hamcrest import has_property as has_attr
-does_not = is_not
-
-from nti.testing.matchers import verifiably_provides
-
-import sys
+# stdlib imports
+import datetime
 import json
-
+from numbers import Number
+import sys
 import unittest
 
 try:
@@ -33,43 +17,56 @@ try:
 except ImportError:
     from collections import UserDict
 
-import persistent
-
-from zope import component
-from zope import interface
 
 from ZODB.broken import Broken
+import persistent
+from zope import component
+from zope import interface
+from zope.dublincore import interfaces as dub_interfaces
 
-from nti.externalization.datastructures import ExternalizableInstanceDict
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
-
-
-from nti.externalization.externalization import _manager
+from nti.externalization.datastructures import ExternalizableInstanceDict
 from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
-
-from nti.externalization.externalization import toExternalObject
-from nti.externalization.externalization import get_external_param
 from nti.externalization.externalization import catch_replace_action
 from nti.externalization.externalization import removed_unserializable
 from nti.externalization.externalization import set_external_identifiers
 from nti.externalization.externalization import to_standard_external_dictionary
-
-from nti.externalization.interfaces import EXT_REPR_YAML
+from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import EXT_REPR_JSON
-from nti.externalization.interfaces import LocatedExternalList
+from nti.externalization.interfaces import EXT_REPR_YAML
+from nti.externalization.interfaces import IExternalObject
+from nti.externalization.interfaces import IExternalObjectDecorator
 from nti.externalization.interfaces import LocatedExternalDict
-
+from nti.externalization.interfaces import LocatedExternalList
+from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.internalization import _search_for_external_factory
-
-from nti.externalization.oids import toExternalOID
 from nti.externalization.oids import fromExternalOID
-
-from nti.externalization.persistence import getPersistentState
+from nti.externalization.oids import toExternalOID
+from nti.externalization.persistence import NoPickle
 from nti.externalization.persistence import PersistentExternalizableWeakList
-
+from nti.externalization.persistence import getPersistentState
 from nti.externalization.representation import to_external_representation
-
 from nti.externalization.tests import ExternalizationLayerTest
+from nti.externalization.tests import assert_does_not_pickle
+from nti.testing.matchers import verifiably_provides
+
+from hamcrest import assert_that
+from hamcrest import calling
+from hamcrest import contains
+from hamcrest import has_entry
+from hamcrest import has_items
+from hamcrest import has_key
+from hamcrest import is_
+from hamcrest import is_not
+from hamcrest import none
+from hamcrest import raises
+from hamcrest import same_instance
+from hamcrest import has_property as has_attr
+
+# disable: accessing protected members, too many methods
+# pylint: disable=W0212,R0904
+
+does_not = is_not
 
 
 class TestFunctions(ExternalizationLayerTest):
@@ -221,16 +218,6 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(ext, has_entry('z', is_(none())))
         assert_that(ext, has_entry('b', has_entry('c', is_([None, 1]))))
 
-    def test_get_external_param(self):
-        _manager.push({'foo': 'var'})
-        try:
-            value = get_external_param('foo')
-            assert_that(value, is_('var'))
-            value = get_external_param('unknown')
-            assert_that(value, is_(none()))
-        finally:
-            _manager.pop()
-
 
 class TestPersistentExternalizableWeakList(unittest.TestCase):
 
@@ -299,14 +286,8 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
         assert_that(newObj.A2, is_("2"))
 
 
-import datetime
-from numbers import Number
 
-from zope.dublincore import interfaces as dub_interfaces
 
-from nti.externalization.interfaces import IExternalObject
-from nti.externalization.interfaces import StandardExternalFields
-from nti.externalization.interfaces import IExternalObjectDecorator
 
 
 class TestToExternalObject(ExternalizationLayerTest):
@@ -412,9 +393,7 @@ class TestToExternalObject(ExternalizationLayerTest):
                     has_entry(StandardExternalFields.CREATED_TIME, is_(Number)))
 
 
-from nti.externalization.persistence import NoPickle
 
-from nti.externalization.tests import assert_does_not_pickle
 
 
 @NoPickle

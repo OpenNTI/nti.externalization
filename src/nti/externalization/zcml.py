@@ -7,26 +7,32 @@ for mime types.
 .. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from ZODB import loglevels
+from ZODB.POSException import POSError
+from zope import interface
+from zope.component import zcml as component_zcml
+from zope.component.factory import Factory
+from zope.configuration.fields import GlobalInterface
+from zope.configuration.fields import GlobalObject
+from zope.configuration.fields import Tokens
+
+from nti.externalization.autopackage import AutoPackageSearchingScopedInterfaceObjectIO
+from nti.externalization.interfaces import IMimeObjectFactory
+
 __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
-from zope import interface
 
-from zope.component import zcml as component_zcml
 
-from zope.component.factory import Factory
 
-from zope.configuration.fields import Tokens
-from zope.configuration.fields import GlobalObject
-from zope.configuration.fields import GlobalInterface
 
-from ZODB import loglevels
 
-from ZODB.POSException import POSError
 
-from nti.externalization.interfaces import IMimeObjectFactory
 
 
 @interface.implementer(IMimeObjectFactory)
@@ -126,7 +132,6 @@ class IAutoPackageExternalizationDirective(interface.Interface):
                           required=False)
 
 
-from nti.externalization.autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 
 
 def autoPackageExternalization(_context, root_interfaces, modules, factory_modules=None, iobase=None):

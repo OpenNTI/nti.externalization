@@ -4,46 +4,42 @@
 Functions for taking externalized objects and creating application
 model objects.
 
-.. $Id$
 """
 
-from __future__ import print_function, absolute_import, division
-__docformat__ = "restructuredtext en"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-import sys
+# stdlib imports
+import collections
 import inspect
 import numbers
-import collections
-
-import six
-from six import reraise
-
-from zope import component
-from zope import interface
-
-from zope.dottedname.resolve import resolve
-
-from zope.event import notify as _zope_event_notify
-
-from zope.lifecycleevent import Attributes
-
-from zope.schema.interfaces import IField
-from zope.schema.interfaces import WrongType
-from zope.schema.interfaces import IFromUnicode
-from zope.schema.interfaces import ValidationError
-from zope.schema.interfaces import SchemaNotProvided
-from zope.schema.interfaces import WrongContainedType
+import sys
 
 from persistent.interfaces import IPersistent
+import six
+from six import reraise
+from zope import component
+from zope import interface
+from zope.dottedname.resolve import resolve
+from zope.event import notify as _zope_event_notify
+from zope.lifecycleevent import Attributes
+from zope.schema.interfaces import IField
+from zope.schema.interfaces import IFromUnicode
+from zope.schema.interfaces import SchemaNotProvided
+from zope.schema.interfaces import ValidationError
+from zope.schema.interfaces import WrongContainedType
+from zope.schema.interfaces import WrongType
 
-from nti.externalization.interfaces import IFactory
-from nti.externalization.interfaces import IMimeObjectFactory
 from nti.externalization.interfaces import IClassObjectFactory
-from nti.externalization.interfaces import IInternalObjectUpdater
-from nti.externalization.interfaces import StandardExternalFields
-from nti.externalization.interfaces import IExternalReferenceResolver
-from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
+from nti.externalization.interfaces import IExternalReferenceResolver
+from nti.externalization.interfaces import IFactory
+from nti.externalization.interfaces import IInternalObjectUpdater
+from nti.externalization.interfaces import IMimeObjectFactory
+from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
+from nti.externalization.interfaces import StandardExternalFields
+
 
 logger = __import__('logging').getLogger(__name__)
 
