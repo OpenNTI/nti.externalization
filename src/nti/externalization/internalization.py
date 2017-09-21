@@ -265,7 +265,7 @@ def _object_hook(k, v, x):
 def _recall(k, obj, ext_obj, kwargs):
     obj = update_from_external_object(obj, ext_obj, **kwargs)
     obj = kwargs['object_hook'](k, obj, ext_obj)
-    if IPersistent.providedBy(obj):
+    if IPersistent.providedBy(obj): # pragma: no cover
         obj._v_updated_from_external_source = ext_obj
     return obj
 
@@ -297,13 +297,14 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
     # Let the updater have its shot at modifying the event, too, adding
     # interfaces or attributes. (Note: this was added to be able to provide
     # sharedWith information on the event, since that makes for a better stream.
-    # If that use case expands, revisit this interface
+    # If that use case expands, revisit this interface.
+    # XXX: Document and test this.
     try:
         meth = updater._ext_adjust_modified_event
     except AttributeError:
         pass
     else:
-        event = meth(event)
+        event = meth(event) # pragma: no cover
     _zope_event_notify(event)
     return event
 
@@ -506,17 +507,20 @@ def validate_field_value(self, field_name, field, value):
         # Like SchemaNotProvided, but for a primitive type,
         # most commonly a date
         # Can we adapt?
-        if len(e.args) != 3:
+        if len(e.args) != 3: # pragma: no cover
             raise
         exc_info = sys.exc_info()
         exp_type = e.args[1]
         # If the type unambiguously implements an interface (one interface)
         # that's our target. IDate does this
         if len(list(interface.implementedBy(exp_type))) != 1:
-            raise
+            try:
+                raise
+            finally:
+                del exc_info
         schema = list(interface.implementedBy(exp_type))[0]
         try:
-            value = component.getAdapter(value, schema)
+            value = schema(value)
         except (LookupError, TypeError):
             # No registered adapter, darn
             raise reraise(*exc_info)
@@ -540,10 +544,9 @@ def validate_field_value(self, field_name, field, value):
         # if the error is one that may be solved via simple adaptation
         # TODO: This is also thrown from IObject fields when validating the
         # fields of the object
-        exc_info = sys.exc_info()
         if not e.args or not all((isinstance(x, SchemaNotProvided) for x in e.args[0])):
-            raise
-
+            raise # pragma: no cover
+        exc_info = sys.exc_info()
         # IObject provides `schema`, which is an interface, so we can adapt
         # using it. Some other things do not, for example nti.schema.field.Variant
         # They might provide a `fromObject` function to do the conversion
@@ -584,7 +587,7 @@ def validate_field_value(self, field_name, field, value):
             del exc_info
 
     if (field.readonly
-            and field.get(self) is None
+            and field.query(self) is None
             and field.queryTaggedValue('_ext_allow_initial_set')):
         if value is not None:
             # First time through we get to set it, but we must bypass

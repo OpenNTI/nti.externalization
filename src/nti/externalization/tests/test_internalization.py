@@ -24,6 +24,7 @@ from ..interfaces import IMimeObjectFactory
 
 from hamcrest import assert_that
 from hamcrest import calling
+from hamcrest import contains
 from hamcrest import equal_to
 from hamcrest import has_entry
 from hamcrest import has_length
@@ -401,3 +402,178 @@ class TestUpdateFromExternaObject(CleanUp,
         self._callFUT(None, ext_wrapper)
 
         assert_that(ext_wrapper, has_entry('a', is_(TrivialFactory)))
+
+
+class TestValidateFieldValue(CleanUp,
+                             unittest.TestCase):
+
+    class Bag(object):
+        pass
+
+    def _callFUT(self, field, value, bag=None):
+        bag = bag or self.Bag()
+        setter = INT.validate_field_value(bag, field.__name__, field, value)
+        return setter, bag
+
+    def test_schema_not_provided_adapts(self):
+        from zope.schema import Object
+
+        class IThing(interface.Interface):
+            pass
+
+        field = Object(IThing, __name__='field')
+
+        class O(object):
+
+            def __conform__(self, iface):
+                assert iface is IThing
+                interface.alsoProvides(self, iface)
+                return self
+
+        setter, bag = self._callFUT(field, O())
+
+        setter()
+        assert_that(bag, has_property('field', is_(O)))
+
+    def test_wrong_type_adapts(self):
+        from zope.schema import Field
+        from zope.schema.interfaces import WrongType
+        from zope.schema.interfaces import ValidationError
+
+        class Iface(interface.Interface):
+            pass
+        @interface.implementer(Iface)
+        class TheType(object):
+            pass
+
+        class MyField(Field):
+            _type = TheType
+
+        class MyObject(object):
+            pass
+
+        field = MyField(__name__='field')
+
+        with self.assertRaises(WrongType):
+            self._callFUT(field, MyObject())
+
+        class MyConformingObject(object):
+            def __conform__(self, iface):
+                assert iface is Iface
+                interface.alsoProvides(self, iface)
+                # Note that we have to return this exact type, other wise
+                # we get stuck in an infinite loop.
+                return TheType()
+
+        setter, bag = self._callFUT(field, MyConformingObject())
+        setter()
+        assert_that(bag, has_property('field', is_(TheType)))
+
+        class MyInvalidObject(object):
+            def __conform__(self, iface):
+                raise ValidationError()
+
+        with self.assertRaises(ValidationError) as exc:
+            self._callFUT(field, MyInvalidObject())
+
+        assert_that(exc.exception, has_property('field', field))
+
+    def test_wrong_contained_type_object_field_adapts(self):
+        from zope.schema import Object
+        from zope.schema import List
+        from zope.schema.interfaces import WrongContainedType
+
+        class IThing(interface.Interface):
+            pass
+
+        field = List(value_type=Object(IThing), __name__='field')
+
+        class O(object):
+            def __conform__(self, iface):
+                assert iface is IThing, iface
+                interface.alsoProvides(self, iface)
+                return self
+
+        setter, bag = self._callFUT(field, [O()])
+
+        setter()
+        assert_that(bag, has_property('field', contains(is_(O))))
+
+        class N(object):
+            def __conform__(self, iface):
+                raise TypeError()
+
+        with self.assertRaises(WrongContainedType):
+            self._callFUT(field, [N()])
+
+    def test_wrong_contained_type_field_fromObject(self):
+        from zope.schema import Object
+        from zope.schema import List
+        from zope.schema.interfaces import WrongContainedType
+
+        class FromList(List):
+            def fromObject(self, o):
+                assert isinstance(o, list)
+                return o
+
+        class IThing(interface.Interface):
+            pass
+
+        field = FromList(value_type=Object(IThing))
+
+        # This gets us to the second pass, after we run the fromObject
+        # one time.
+        with self.assertRaises(WrongContainedType):
+            self._callFUT(field, [object()])
+
+    def test_wrong_contained_type_value_type_fromObject(self):
+        from zope.schema import Object
+        from zope.schema import List
+
+        class IThing(interface.Interface):
+            pass
+
+
+        class FromObject(Object):
+
+            def fromObject(self, o):
+                interface.alsoProvides(o, IThing)
+                return o
+
+        class O(object):
+            pass
+
+        field = List(value_type=FromObject(IThing), __name__='field')
+
+        setter, bag = self._callFUT(field, [O()])
+        setter()
+        assert_that(bag, has_property('field'))
+
+
+    def test_readonly_allowed(self):
+        from zope.schema import Int
+
+        field = Int(readonly=True, __name__='field', required=False)
+        field.setTaggedValue('_ext_allow_initial_set', True)
+
+        setter, bag = self._callFUT(field, 1)
+        setter()
+        assert_that(bag, has_property('field', 1))
+
+        # Second time it is not allowed
+        setter, bag = self._callFUT(field, 2, bag=bag)
+        with self.assertRaises(TypeError):
+            setter()
+        assert_that(bag, has_property('field', 1))
+
+        # If we send none, it is bypassed
+        setter, bag = self._callFUT(field, None)
+        setter()
+        assert_that(bag, is_not(has_property('field')))
+
+    def test_validate_named_field_value_just_attr(self):
+        class IFace(interface.Interface):
+            thing = interface.Attribute("A thing")
+
+        setter = INT.validate_named_field_value(self.Bag(), IFace, 'thing', 42)
+        setter()
