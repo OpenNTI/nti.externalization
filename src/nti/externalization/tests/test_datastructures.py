@@ -338,6 +338,7 @@ class TestInterfaceObjectIO(CleanUp,
     def test_updateFromExternalObject_float(self):
         from zope.schema import Float
         from zope.schema.interfaces import RequiredMissing
+        from zope.schema.interfaces import WrongType
         class I(interface.Interface):
             ivar = Float(required=True) # a plain _type is allowed
 
@@ -348,9 +349,20 @@ class TestInterfaceObjectIO(CleanUp,
         ext_self = O()
         inst = self._makeOne(ext_self, iface_upper_bound=I)
 
+        # A literal is fine
         inst.updateFromExternalObject({'ivar': 1.0})
-
         assert_that(ext_self, has_property('ivar', 1.0))
+
+        # A text string is fine
+        inst.updateFromExternalObject({'ivar': u'2.0'})
+        assert_that(ext_self, has_property('ivar', 2.0))
+
+        # A byte string is NOT fine
+        with self.assertRaises(WrongType):
+            inst.updateFromExternalObject({'ivar': b'3.0'})
+
+        assert_that(ext_self, has_property('ivar', 2.0))
+
 
         # Now a validation error after set
         ext_self = O()

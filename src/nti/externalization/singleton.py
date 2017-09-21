@@ -11,9 +11,9 @@ from __future__ import print_function
 # This was originally based on code from sympy.core.singleton
 
 
-class SingletonDecorator(type):
+class SingletonMetaclass(type):
     """
-    Metaclass for singleton classes to be used as external object
+    Metaclass for singleton classes most commonly used as external object
     decorators (adapters). These objects accept one or two context arguments to
     their ``__init__`` function, but they do not actually use them (because the same
     object is passed to their decoration method). Thus they can usefully
@@ -28,7 +28,9 @@ class SingletonDecorator(type):
        We cannot be used with :func:`six.with_metaclass` because it introduces
        temporary classes. You'll need to use the metaclass constructor directly::
 
-            AClass = SingletonDecorator('AClass', (object,), {})
+            AClass = SingletonMetaclass('AClass', (object,), {})
+
+       Alternatively, you can inherit from :class:`Singleton`.
 
     **Implementation Notes**
 
@@ -40,16 +42,16 @@ class SingletonDecorator(type):
     and have their own instance.
     """
 
-    def __new__(cls, name, bases, cls_dict):
+    def __new__(mcs, name, bases, cls_dict):
         cls_dict[str('__slots__')] = ()  # no ivars
 
-        cls = type.__new__(cls, name, bases, cls_dict)
+        cls = type.__new__(mcs, name, bases, cls_dict)
 
         ancestor = object
         for ancestor in cls.mro():
             if '__new__' in ancestor.__dict__:
                 break
-        if isinstance(ancestor, SingletonDecorator) and ancestor is not cls:
+        if isinstance(ancestor, SingletonMetaclass) and ancestor is not cls:
             ctor = ancestor._new_instance
         else:
             ctor = cls.__new__
@@ -66,3 +68,14 @@ class SingletonDecorator(type):
         cls.__init__ = __init__
 
         return cls
+
+SingletonDecorator = SingletonMetaclass # BWC
+
+Singleton = SingletonMetaclass(
+    'Singleton', (object,),
+    {
+        '__doc__':
+        "A base class for singletons. "
+        "Can be more convenient than a metaclass for Python2/Python3 compatibility."
+    }
+)
