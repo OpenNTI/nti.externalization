@@ -25,6 +25,7 @@ from ..interfaces import IMimeObjectFactory
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import equal_to
+from hamcrest import has_entry
 from hamcrest import has_length
 from hamcrest import has_property
 from hamcrest import is_
@@ -32,6 +33,7 @@ from hamcrest import is_in
 from hamcrest import is_not
 from hamcrest import none
 from hamcrest import raises
+from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -285,3 +287,117 @@ class TestResolveExternals(CleanUp,
         ext_value = {'a': (1,)}
         INT._resolve_externals(IO(), self, ext_value)
         assert_that(ext_value, is_({'a': 'b'}))
+
+
+class TestUpdateFromExternaObject(CleanUp,
+                                  unittest.TestCase):
+
+    def _callFUT(self, *args, **kwargs):
+        return INT.update_from_external_object(*args, **kwargs)
+
+    def test_update_sequence_of_primitives(self):
+        ext = [1, 2, 3]
+        result = self._callFUT(None, ext)
+        assert_that(result, is_not(same_instance(ext)))
+        assert_that(result, is_(ext))
+
+    def test_update_empty_mapping_no_required_updater(self):
+        ext = {}
+        result = self._callFUT(self, ext)
+        assert_that(result, is_(same_instance(self)))
+        assert_that(ext, is_({}))
+
+    def test_update_empty_mapping_with_required_updater(self):
+        ext = {}
+        with self.assertRaises(LookupError):
+            self._callFUT(self, ext, require_updater=True)
+
+    def test_update_mapping_of_primitives_and_sequences(self):
+        b = [1, 2, 3]
+        ext = {'a': 1, 'b': b, 'c': {}}
+        result = self._callFUT(self, ext)
+        assert_that(result, is_(same_instance(self)))
+
+        assert_that(ext, is_({'a': 1, 'b': b, 'c': {}}))
+        # This should change.
+        assert_that(ext['b'], is_not(same_instance(b)))
+
+    def test_update_mapping_with_update_on_contained_object(self):
+        class ContainedObject(object):
+            updated = False
+            def updateFromExternalObject(self, ext):
+                self.updated = True
+                return True
+
+        contained = ContainedObject()
+        self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', True))
+
+    def test_update_mapping_with_update_on_contained_object_ignored(self):
+
+        class ContainedObject(object):
+            updated = False
+            __ext_ignore_updateFromExternalObject__ = True
+
+            def updateFromExternalObject(self, ext):
+                raise AssertionError("Should not be called")
+
+        contained = ContainedObject()
+        self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', False))
+
+    def test_update_mapping_with_context_arg(self):
+        class ContainedObject(object):
+            updated = False
+            def updateFromExternalObject(self, ext, context):
+                self.updated = True
+                return True
+
+        contained = ContainedObject()
+        self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', True))
+
+    def test_update_mapping_with_ds_arg(self):
+        class ContainedObject(object):
+            updated = False
+            def updateFromExternalObject(self, ext, dataserver):
+                self.updated = True
+                return True
+
+        contained = ContainedObject()
+        self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', True))
+
+    def test_update_mapping_with_kwargs(self):
+        class ContainedObject(object):
+            updated = False
+            args = None
+            def updateFromExternalObject(self, ext, **kwargs):
+                self.updated = True
+                self.args = kwargs
+                return True
+
+        contained = ContainedObject()
+        self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', True))
+        assert_that(contained, has_property('args', {'context': None}))
+
+    def test_update_mapping_with_registered_factory(self):
+        ext = {'MimeType': 'mime'}
+        ext_wrapper = {'a': ext}
+
+        class TrivialFactory(object):
+
+            def __init__(self, ctx):
+                pass
+
+            def __call__(self):
+                return self
+
+        component.provideAdapter(TrivialFactory,
+                                 provides=IMimeObjectFactory,
+                                 adapts=(object,))
+
+        self._callFUT(None, ext_wrapper)
+
+        assert_that(ext_wrapper, has_entry('a', is_(TrivialFactory)))

@@ -15,10 +15,13 @@ import collections
 import inspect
 import numbers
 import sys
+import warnings
 
 from persistent.interfaces import IPersistent
-import six
+from six import string_types
+from six import text_type
 from six import reraise
+from six import iteritems
 from zope import component
 from zope import interface
 from zope.dottedname.resolve import resolve
@@ -160,6 +163,9 @@ def default_externalized_object_factory_finder(externalized_object):
                 if not factory:
                     factory = find_factory_for_class_name(class_name)
     except (TypeError, KeyError):
+        # XXX: These catches are too broad. If there is a programming error
+        # in the adapter (eg, it doesn't have the correct __init__), we
+        # want that to propagate.
         return None
 
     return factory
@@ -244,7 +250,7 @@ def _resolve_externals(object_io, updating_object, externalObject,
 
 
 # Things we don't bother trying to internalize
-_primitives = six.string_types + (numbers.Number, bool)
+_primitives = string_types + (numbers.Number, bool)
 
 
 def _pre_hook(k, x):
@@ -341,14 +347,22 @@ def update_from_external_object(containedObject, externalObject,
         ``f(k,v,x)`` where ``k`` is either the key name, or None
         in the case of a sequence, ``v`` is the newly-updated
         value, and ``x`` is the external object used to update
-        ``v``.
+        ``v``. Deprecated.
     :keyword callable pre_hook: If given, called with the before
         update_from_external_object is called for every nested object.
         Signature ``f(k,x)`` where ``k`` is either the key name, or
         None in the case of a sequence and ``x`` is the external
-        object
+        object. Deprecated.
     :return: `containedObject` after updates from `externalObject`
     """
+
+    if pre_hook is not None and pre_hook is not _pre_hook: # pragma: no cover
+        for i in range(3):
+            warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
+
+    if object_hook is not None and object_hook is not _object_hook: # pragma: no cover
+        for i in range(3):
+            warnings.warn('object_hook is deprecated', FutureWarning, stacklevel=i)
 
     pre_hook = _pre_hook if pre_hook is None else pre_hook
     object_hook = _object_hook if object_hook is None else object_hook
@@ -372,10 +386,12 @@ def update_from_external_object(containedObject, externalObject,
     # python types
     if isinstance(externalObject, collections.MutableSequence):
         tmp = []
-        for i in externalObject:
-            kwargs['pre_hook'](None, i)
-            factory = find_factory_for(i, registry=registry)
-            tmp.append(_recall(None, factory(), i, kwargs) if factory else i)
+        for value in externalObject:
+            pre_hook(None, value)
+            factory = find_factory_for(value, registry=registry)
+            tmp.append(_recall(None, factory(), value, kwargs) if factory else value)
+        # XXX: TODO: Should we be assigning this to the slice of externalObject?
+        # in-place?
         return tmp
 
     assert isinstance(externalObject, collections.MutableMapping)
@@ -383,22 +399,24 @@ def update_from_external_object(containedObject, externalObject,
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
     external_keys = list()
-    for k, v in externalObject.iteritems():
+    for k, v in iteritems(externalObject):
         external_keys.append(k)
         if isinstance(v, _primitives):
             continue
 
-        kwargs['pre_hook'](k, v)
+        pre_hook(k, v)
 
         if isinstance(v, collections.MutableSequence):
             # Update the sequence in-place
+            # XXX: This is not actually updating it.
+            # We need to slice externalObject[k[:]]
             __traceback_info__ = k, v
             v = _recall(k, (), v, kwargs)
             externalObject[k] = v
         else:
             factory = find_factory_for(v, registry=registry)
-            externalObject[k] = _recall(
-                k, factory(), v, kwargs) if factory else v
+            if factory:
+                externalObject[k] = _recall(k, factory(), v, kwargs)
 
     updater = None
     if hasattr(containedObject, 'updateFromExternalObject') \
@@ -422,6 +440,8 @@ def update_from_external_object(containedObject, externalObject,
 
         updated = None
         # The signature may vary.
+        # XXX: This is slow and cumbersome and needs to go.
+        # See https://github.com/NextThought/nti.externalization/issues/30
         argspec = inspect.getargspec(updater.updateFromExternalObject)
         if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
             updated = updater.updateFromExternalObject(externalObject,
@@ -460,7 +480,7 @@ def validate_field_value(self, field_name, field, value):
     __traceback_info__ = field_name, value
     field = field.bind(self)
     try:
-        if isinstance(value, six.text_type) and IFromUnicode.providedBy(field):
+        if isinstance(value, text_type) and IFromUnicode.providedBy(field):
             value = field.fromUnicode(value)  # implies validation
         else:
             field.validate(value)

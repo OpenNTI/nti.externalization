@@ -7,4 +7,5 @@ omit =
 exclude_lines =
     pragma: no cover
     raise NotImplementedError
+    raise AssertionError
     if __name__ == .__main__.:
