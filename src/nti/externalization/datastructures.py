@@ -300,6 +300,19 @@ class _InterfaceCache(object):
             attrs[key] = cache
         return cache
 
+    @staticmethod
+    def cleanUp():
+        import gc
+        for x in (y for y in gc.get_objects() if isinstance(y, _InterfaceCache)):
+            x.__dict__.clear()
+
+try:
+    from zope.testing import cleanup
+except ImportError: # pragma: no cover
+    pass
+else:
+    cleanup.addCleanUp(_InterfaceCache.cleanUp)
+
 
 @interface.implementer(IInternalObjectIO)
 class InterfaceObjectIO(AbstractDynamicObjectIO):
@@ -354,8 +367,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             cache.ext_primitive_out_ivars = self._ext_primitive_out_ivars_.union(keys)
         self._ext_primitive_out_ivars_ = cache.ext_primitive_out_ivars
 
-        if not validate_after_update:
-            self.validate_after_update = validate_after_update
+        self.validate_after_update = validate_after_update
 
     @property
     def schema(self):
@@ -381,7 +393,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 elif issubclass(field_type, _primitives):
                     result.add(n)
 
-        return result
+        return frozenset(result)
 
     def _ext_schemas_to_consider(self, ext_self):
         return interface.providedBy(ext_self)
@@ -392,16 +404,15 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     def _ext_all_possible_keys(self):
         cache = _InterfaceCache.cache_for(self, self._ext_self)
         if cache.ext_all_possible_keys is None:
-            cache.ext_all_possible_keys = [
+            cache.ext_all_possible_keys = frozenset((
                 n for n in self._iface.names(all=True)
                 if (not interface.interfaces.IMethod.providedBy(self._iface[n])
                     and not self._iface[n].queryTaggedValue('_ext_excluded_out', False))
-            ]
+            ))
         return cache.ext_all_possible_keys
 
-    def _ext_getattr(self, ext_self, k):
-        # TODO: Should this be directed through IField.get?
-        return getattr(ext_self, k)
+    # TODO: Should this be directed through IField.get?
+    _ext_getattr = staticmethod(getattr)
 
     def _ext_setattr(self, ext_self, k, value):
         validate_named_field_value(ext_self, self._iface, k, value)()
@@ -409,15 +420,15 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     def _ext_accept_external_id(self, ext_self, parsed):
         """
         If the interface we're working from has a tagged value
-        of `__external_accept_id__` on the `id` field, then
+        of ``__external_accept_id__`` on the ``id`` field, then
         this will return that value; otherwise, returns false.
         """
         __traceback_info__ = ext_self, parsed,
         cache = _InterfaceCache.cache_for(self, ext_self)
         if cache.ext_accept_external_id is None:
             try:
-                iface = cache.iface['id']
-                cache.ext_accept_external_id = iface.getTaggedValue('__external_accept_id__')
+                field = cache.iface['id']
+                cache.ext_accept_external_id = field.getTaggedValue('__external_accept_id__')
             except KeyError:
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
@@ -425,8 +436,13 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     def updateFromExternalObject(self, parsed, *args, **kwargs):
         result = super(InterfaceObjectIO, self).updateFromExternalObject(parsed, *args, **kwargs)
         # If we make it this far, then validate the object.
-        # TODO: Should probably just make sure that there are no /new/ validation errors added
-        # Best we can do right now is skip this step if asked
+
+        # TODO: Should probably just make sure that there are no /new/
+        # validation errors added Best we can do right now is skip
+        # this step if asked
+
+        # TODO: Swizzle this method at runtime to be in this object's
+        # dict, so we can elide the check.
         if self.validate_after_update:
             self._validate_after_update(self._iface, self._ext_self)
         return result
@@ -437,7 +453,10 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             __traceback_info__ = errors
             try:
                 raise errors[0][1]
-            except SchemaNotProvided as e:
+            except SchemaNotProvided as e: # pragma: no cover
+                # XXX: We shouldn't be able to get here;
+                # ext_setattr should be doing this
+                # This can probably be removed
                 if not e.args:  # zope.schema doesn't fill in the details, which sucks
                     e.args = (errors[0][0],)
                 raise
