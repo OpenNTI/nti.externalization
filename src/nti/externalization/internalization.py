@@ -154,15 +154,18 @@ def default_externalized_object_factory_finder(externalized_object):
 
         if not factory and StandardExternalFields_CLASS in externalized_object:
             class_name = externalized_object[StandardExternalFields_CLASS]
-            factory = component.queryAdapter(externalized_object,
-                                             IClassObjectFactory,
-                                             name=class_name)
-            if not factory:
-                factory = find_factory_for_class_name(class_name)
+            if class_name:
+                factory = component.queryAdapter(externalized_object,
+                                                 IClassObjectFactory,
+                                                 name=class_name)
+                if not factory:
+                    factory = find_factory_for_class_name(class_name)
     except (TypeError, KeyError):
         return None
 
     return factory
+# XXX: This is ugly and introduces a cycle. Fix this by converting to
+# a class?
 default_externalized_object_factory_finder.find_factory = default_externalized_object_factory_finder
 
 

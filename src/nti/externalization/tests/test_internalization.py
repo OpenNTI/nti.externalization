@@ -9,6 +9,8 @@ from __future__ import print_function
 import sys
 import unittest
 
+import fudge
+from zope import component
 from zope import interface
 from zope.interface.common.idatetime import IDate
 from zope.testing.cleanup import CleanUp
@@ -17,9 +19,12 @@ from nti.externalization.tests import ExternalizationLayerTest
 from nti.schema.interfaces import InvalidValue
 
 from .. import internalization as INT
+from ..interfaces import IClassObjectFactory
+from ..interfaces import IMimeObjectFactory
 
 from hamcrest import assert_that
 from hamcrest import calling
+from hamcrest import equal_to
 from hamcrest import has_length
 from hamcrest import has_property
 from hamcrest import is_
@@ -90,18 +95,98 @@ class TestEvents(CleanUp,
 class TestFunctions(CleanUp,
                     unittest.TestCase):
 
-
     def test_search_for_factory_no_type(self):
-        assert_that(INT._search_for_external_factory(''), is_(none()))
+        assert_that(INT.find_factory_for_class_name(''), is_(none()))
 
     def test_search_for_factory_updates_search_set(self):
         INT.LEGACY_FACTORY_SEARCH_MODULES.add(__name__)
-        assert_that(INT._search_for_external_factory('testfunctionss'), is_(none()))
+        assert_that(INT.find_factory_for_class_name('testfunctions'), is_(none()))
         assert_that(sys.modules[__name__], is_in(INT.LEGACY_FACTORY_SEARCH_MODULES))
         assert_that(__name__, is_not(is_in(INT.LEGACY_FACTORY_SEARCH_MODULES)))
 
         TestFunctions.__external_can_create__ = True
         try:
-            assert_that(INT._search_for_external_factory('testfunctionss'), TestFunctions)
+            assert_that(INT.find_factory_for_class_name('testfunctions'), equal_to(TestFunctions))
         finally:
             del TestFunctions.__external_can_create__
+
+
+class TestDefaultExternalizedObjectFactory(CleanUp,
+                                           unittest.TestCase):
+
+    @interface.implementer(IMimeObjectFactory, IClassObjectFactory)
+    class TrivialFactory(object):
+
+        def __init__(self, context):
+            self.context = context
+
+    def _callFUT(self, ext_obj):
+        from ..internalization import default_externalized_object_factory_finder_factory as f
+        return f(None)(ext_obj)
+
+    def test_with_none(self):
+        assert_that(self._callFUT(None), is_(none()))
+
+    def test_with_empty_sequences_and_mappings_find_nothing(self):
+        assert_that(self._callFUT({}), is_(none()))
+        assert_that(self._callFUT(set()), is_(none()))
+        assert_that(self._callFUT([]), is_(none()))
+        assert_that(self._callFUT(()), is_(none()))
+
+    @fudge.patch('nti.externalization.internalization.find_factory_for_class_name')
+    def test_with_blank_mime_type(self, _):
+        assert_that(self._callFUT({'MimeType': ''}), is_(none()))
+
+    @fudge.patch('nti.externalization.internalization.find_factory_for_class_name')
+    def test_with_black_class(self, _):
+        assert_that(self._callFUT({'Class': ''}), is_(none()))
+
+    @fudge.patch('nti.externalization.internalization.find_factory_for_class_name')
+    def test_with_mime_type_no_registrations(self, _):
+        assert_that(self._callFUT({'MimeType': 'mime'}), is_(none()))
+
+    def test_with_class_no_registrations(self):
+        assert_that(self._callFUT({'Class': 'no class'}), is_(none()))
+
+    def test_with_mime_type_registered_adapter_by_name(self):
+        ext = {'MimeType': 'mime'}
+        component.provideAdapter(self.TrivialFactory,
+                                 provides=IMimeObjectFactory,
+                                 adapts=(object,),
+                                 name=ext['MimeType'])
+
+        assert_that(self._callFUT(ext), is_(self.TrivialFactory))
+
+    def test_with_mime_type_registered_adapter_default(self):
+        ext = {'MimeType': 'mime'}
+        component.provideAdapter(self.TrivialFactory,
+                                 provides=IMimeObjectFactory,
+                                 adapts=(object,))
+
+        assert_that(self._callFUT(ext), is_(self.TrivialFactory))
+
+    def test_with_mime_type_registered_utility(self):
+        ext = {'MimeType': 'mime'}
+        component.provideUtility(self.TrivialFactory(None),
+                                 provides=IMimeObjectFactory,
+                                 name=ext['MimeType'])
+
+        assert_that(self._callFUT(ext), is_(self.TrivialFactory))
+
+    def test_with_class_registered_adapter(self):
+        ext = {'Class': 'mime'}
+        component.provideAdapter(self.TrivialFactory,
+                                 provides=IClassObjectFactory,
+                                 adapts=(object,),
+                                 name=ext['Class'])
+
+        assert_that(self._callFUT(ext), is_(self.TrivialFactory))
+
+
+    def test_with_class_registered_utility(self):
+        ext = {'Class': 'mime'}
+        component.provideUtility(self.TrivialFactory(None),
+                                 provides=IClassObjectFactory,
+                                 name=ext['Class'])
+
+        assert_that(self._callFUT(ext), is_(self.TrivialFactory))
