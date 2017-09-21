@@ -12,6 +12,7 @@ from __future__ import print_function
 import numbers
 
 import six
+from six import iteritems
 from zope import interface
 from zope import schema
 import zope.deferredimport
@@ -106,17 +107,17 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     _prefer_oid_ = False
 
     def _ext_all_possible_keys(self):
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     def _ext_setattr(self, ext_self, k, value):
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     def _ext_getattr(self, ext_self, k):
         """
         Return the attribute of the `ext_self` object with the external name `k`.
-        If the attribute does not exist, should raise (typically :class:`AttributeError`)
+        If the attribute does not exist, should raise (typically :exc:`AttributeError`)
         """
-        raise NotImplementedError()  # pragma: no cover
+        raise NotImplementedError()
 
     def _ext_keys(self):
         """
@@ -125,7 +126,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         See :meth:`_ext_all_possible_keys`. This implementation then filters out
         *private* attributes (those beginning with an underscore),
-        and those listed in `_excluded_in_ivars_.`
+        and those listed in ``_excluded_in_ivars_``.
         """
         # ext_self = self._ext_replacement()
         return [k for k in self._ext_all_possible_keys()
@@ -141,7 +142,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         return self._ext_primitive_out_ivars_
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
-        result = super(AbstractDynamicObjectIO, self).toExternalDictionary(mergeFrom=mergeFrom, **kwargs)
+        result = super(AbstractDynamicObjectIO, self).toExternalDictionary(mergeFrom=mergeFrom,
+                                                                           **kwargs)
         ext_self = self._ext_replacement()
         primitive_ext_keys = self._ext_primitive_keys()
         for k in self._ext_keys():
@@ -149,30 +151,36 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
                 # Standard key already added
                 continue
 
-            attr_val = self._ext_getattr(ext_self, k)
+            ext_val = attr_val = self._ext_getattr(ext_self, k)
             __traceback_info__ = k, attr_val
             if k not in primitive_ext_keys:
-                result[k] = toExternalObject(attr_val, **kwargs)
-            else:
-                result[k] = attr_val
+                ext_val = toExternalObject(attr_val, **kwargs)
 
-            if result[k] is not attr_val:
-                # We want to be sure things we externalize have the right parent relationship
-                # but if we are directly externalizing an existing object (e.g., primitive or something
-                # that uses a replacement) we don't want to change the relationship or even set one in the first
-                # place---if the object gets pickled later on, that could really screw things up
-                # (One symptom is InvalidObjectReference from ZODB across transactions/tests)
-                # if ILocation.providedBy( result[k] ): (throwing is faster
-                # that providedBy)
+            result[k] = ext_val
+
+            if ext_val is not attr_val:
+                # We want to be sure things we externalize have the
+                # right parent relationship but if we are directly
+                # externalizing an existing object (e.g., primitive or
+                # something that uses a replacement) we don't want to
+                # change the relationship or even set one in the first
+                # place---if the object gets pickled later on, that
+                # could really screw things up (One symptom is
+                # InvalidObjectReference from ZODB across
+                # transactions/tests) if ILocation.providedBy(
+                # result[k] ): (throwing is faster than providedBy)
                 try:
-                    result[k].__parent__ = ext_self
+                    ext_val.__parent__ = ext_self
                 except AttributeError:
+                    # toExternalObject is schizophrenic about when it converts
+                    # return values to LocatedExternalDict/List. Sometimes it
+                    # does, sometimes it does not.
                     pass
 
-        if      StandardExternalFields.ID in result \
-            and StandardExternalFields.OID in result \
-            and self._prefer_oid_ \
-            and result[StandardExternalFields.ID] != result[StandardExternalFields.OID]:
+        if (StandardExternalFields.ID in result
+                and StandardExternalFields.OID in result
+                and self._prefer_oid_
+                and result[StandardExternalFields.ID] != result[StandardExternalFields.OID]):
             result[StandardExternalFields.ID] = result[StandardExternalFields.OID]
         return result
 
@@ -187,9 +195,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
                 is passed. Keys are only accepted if they are in this list.
         """
         __traceback_info__ = k, ext_self, ext_keys
-        if k in self._excluded_in_ivars_:
-            return False
-        return k in ext_keys
+
+        return k not in self._excluded_in_ivars_ and k in ext_keys
 
     def _ext_accept_external_id(self, ext_self, parsed):
         """
@@ -205,26 +212,27 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         ext_self = self._ext_replacement()
         ext_keys = self._ext_all_possible_keys()
-        for k in parsed:
+        for k, v in iteritems(parsed):
             if not self._ext_accept_update_key(k, ext_self, ext_keys):
                 continue
-            __traceback_info__ = k,
-            self._ext_setattr(ext_self, k, parsed[k])
+            __traceback_info__ = (k, v)
+            self._ext_setattr(ext_self, k, v)
             updated = True
 
-        if      StandardExternalFields.CONTAINER_ID in parsed \
-            and getattr(ext_self, StandardInternalFields.CONTAINER_ID, parsed) is None:
+        # TODO: Should these go through _ext_setattr?
+        if (StandardExternalFields.CONTAINER_ID in parsed
+                and getattr(ext_self, StandardInternalFields.CONTAINER_ID, parsed) is None):
             setattr(ext_self,
                     StandardInternalFields.CONTAINER_ID,
                     parsed[StandardExternalFields.CONTAINER_ID])
-        if      StandardExternalFields.CREATOR in parsed \
-            and getattr(ext_self, StandardExternalFields.CREATOR, parsed) is None:
+        if (StandardExternalFields.CREATOR in parsed
+                and getattr(ext_self, StandardInternalFields.CREATOR, parsed) is None):
             setattr(ext_self,
-                    StandardExternalFields.CREATOR,
+                    StandardInternalFields.CREATOR,
                     parsed[StandardExternalFields.CREATOR])
-        if (    StandardExternalFields.ID in parsed
-            and getattr(ext_self, StandardInternalFields.ID, parsed) is None
-            and self._ext_accept_external_id(ext_self, parsed)):
+        if (StandardExternalFields.ID in parsed
+                and getattr(ext_self, StandardInternalFields.ID, parsed) is None
+                and self._ext_accept_external_id(ext_self, parsed)):
             setattr(ext_self,
                     StandardInternalFields.ID,
                     parsed[StandardExternalFields.ID])
@@ -235,7 +243,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 @interface.implementer(IInternalObjectIO)
 class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     """
-    Externalizes to a dictionary containing the members of __dict__ that do not start with an underscore.
+    Externalizes to a dictionary containing the members of ``__dict__``
+    that do not start with an underscore.
 
     Meant to be used as a super class; also can be used as an external object superclass.
     """
@@ -250,15 +259,14 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     def _ext_all_possible_keys(self):
         return self._ext_replacement().__dict__.keys()
 
-    def _ext_setattr(self, ext_self, k, value):
-        setattr(ext_self, k, value)
+    _ext_setattr = staticmethod(setattr)
 
-    def _ext_getattr(self, ext_self, k):
-        return getattr(ext_self, k)
+    _ext_getattr = staticmethod(getattr)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
-        return super(ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys) \
-            or (self._update_accepts_type_attrs and hasattr(ext_self, k))
+        sup = super(ExternalizableInstanceDict, self)
+        return (sup._ext_accept_update_key(k, ext_self, ext_keys)
+                or (self._update_accepts_type_attrs and hasattr(ext_self, k)))
 
     __repr__ = make_repr()
 
@@ -322,14 +330,14 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     def __init__(self, ext_self, iface_upper_bound=None, validate_after_update=True):
         """
         :param iface_upper_bound: The upper bound on the schema to use
-                to externalize `ext_self`; we will use the most derived sub-interface
-                of this interface that the object implements. Subclasses can either override this
-                constructor to pass this parameter (while taking one argument themselves,
-                to be usable as an adapter), or they can define the class
-                attribute ``_ext_iface_upper_bound``
+            to externalize `ext_self`; we will use the most derived sub-interface
+            of this interface that the object implements. Subclasses can either override this
+            constructor to pass this parameter (while taking one argument themselves,
+            to be usable as an adapter), or they can define the class
+            attribute ``_ext_iface_upper_bound``
         :param bool validate_after_update: If ``True`` (the default) then the entire
-                schema will be validated after an object has been updated with :meth:`update_from_external_object`,
-                not just the keys that were assigned.
+            schema will be validated after an object has been updated with
+            :meth:`update_from_external_object`, not just the keys that were assigned.
         """
         super(InterfaceObjectIO, self).__init__()
         self._ext_self = ext_self
@@ -386,8 +394,8 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         if cache.ext_all_possible_keys is None:
             cache.ext_all_possible_keys = [
                 n for n in self._iface.names(all=True)
-                if not interface.interfaces.IMethod.providedBy(self._iface[n])
-                   and not self._iface[n].queryTaggedValue('_ext_excluded_out', False)
+                if (not interface.interfaces.IMethod.providedBy(self._iface[n])
+                    and not self._iface[n].queryTaggedValue('_ext_excluded_out', False))
             ]
         return cache.ext_all_possible_keys
 
@@ -408,7 +416,8 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         cache = _InterfaceCache.cache_for(self, ext_self)
         if cache.ext_accept_external_id is None:
             try:
-                cache.ext_accept_external_id = cache.iface['id'].getTaggedValue('__external_accept_id__')
+                iface = cache.iface['id']
+                cache.ext_accept_external_id = iface.getTaggedValue('__external_accept_id__')
             except KeyError:
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
@@ -482,20 +491,24 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         # Presumably the user has given the correct branch to search.
 
         if iface_upper_bound is not None:
-            return super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(ext_self, iface_upper_bound)
+            return super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(
+                ext_self, iface_upper_bound)
 
-        most_derived = super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(ext_self, interface.Interface)
+        most_derived = super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(
+            ext_self, interface.Interface)
+
         # In theory, this is now the most derived interface.
         # If we have a graph that is not a tree, though, it may not be.
         # In that case, we are not suitable for use with this object
         for iface in self._ext_schemas_to_consider(ext_self):
             if not most_derived.isOrExtends(iface):
-                raise TypeError("Most derived interface %s does not extend %s; non-tree interface structure. "
-                                "Searching module %s and considered %s on object %s of class %s and type %s"
-                                % (most_derived, iface, self._ext_search_module,
-                                   list(self._ext_schemas_to_consider(ext_self)),
-                                   ext_self, ext_self.__class__,
-                                   type(ext_self)))
+                raise TypeError(
+                    "Most derived interface %s does not extend %s; non-tree interface structure. "
+                    "Searching module %s and considered %s on object %s of class %s and type %s"
+                    % (most_derived, iface, self._ext_search_module,
+                       list(self._ext_schemas_to_consider(ext_self)),
+                       ext_self, ext_self.__class__,
+                       type(ext_self)))
 
         return most_derived
 
