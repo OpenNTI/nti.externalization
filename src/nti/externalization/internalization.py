@@ -12,7 +12,6 @@ from __future__ import print_function
 
 # stdlib imports
 import collections
-from functools import partial
 import inspect
 import numbers
 import sys
@@ -189,20 +188,25 @@ def find_factory_for(externalized_object, registry=component):
     Given a :class:`IExternalizedObject`, locate and return a factory
     to produce a Python object to hold its contents.
     """
-    factory_finder = registry.getAdapter(externalized_object,
-                                         IExternalizedObjectFactoryFinder)
+    factory_finder = registry.queryAdapter(
+        externalized_object,
+        IExternalizedObjectFactoryFinder,
+        default=default_externalized_object_factory_finder)
     return factory_finder.find_factory(externalized_object)
 
 
 def _resolve_externals(object_io, updating_object, externalObject,
                        registry=component, context=None):
     # Run the resolution steps on the external object
+    # TODO: Document this.
 
     for keyPath in getattr(object_io, '__external_oids__', ()):
         # TODO: This version is very simple, generalize it
+        # TODO: This check seems weird. Why do we do it this way
+        # instead of getting the object and seeing if it's false?
         if keyPath not in externalObject:
             continue
-        externalObjectOid = externalObject.get(keyPath)
+        externalObjectOid = externalObject[keyPath]
         unwrap = False
         if not isinstance(externalObjectOid, collections.MutableSequence):
             externalObjectOid = [externalObjectOid, ]
@@ -216,22 +220,27 @@ def _resolve_externals(object_io, updating_object, externalObject,
         if unwrap and keyPath in externalObject:  # Only put it in if it was there to start with
             externalObject[keyPath] = externalObjectOid[0]
 
-    for ext_key, resolver_func in getattr(object_io, '__external_resolvers__', {}).iteritems():
-        if not externalObject.get(ext_key):
+    for ext_key, resolver_func in getattr(object_io, '__external_resolvers__', {}).items():
+        extValue = externalObject.get(ext_key)
+        if not extValue:
             continue
         # classmethods and static methods are implemented with descriptors,
         # which don't work when accessed through the dictionary in this way,
         # so we special case it so instances don't have to.
         if isinstance(resolver_func, (classmethod, staticmethod)):
             resolver_func = resolver_func.__get__(None, object_io.__class__)
-        elif len(inspect.getargspec(resolver_func)[0]) == 4:  # instance method
-            _resolver_func = resolver_func
-            resolver_func = partial(resolver_func, object_io)
-            #def resolver_func(x, y, z):
-            #    return _resolver_func(object_io, x, y, z)
 
-        externalObject[ext_key] = resolver_func(context, externalObject,
-                                                externalObject[ext_key])
+        try:
+            extValue = resolver_func(context, externalObject, extValue)
+        except TypeError:
+            # instance function?
+            # Note that the try/catch is still faster than
+            # what we were doing to detect instance functions, which was to use
+            # len(inspect.getargspec(func)[0]) == 4 by about 4,000X !
+            extValue = resolver_func(object_io, context, externalObject, extValue)
+
+        externalObject[ext_key] = extValue
+
 
 
 # Things we don't bother trying to internalize

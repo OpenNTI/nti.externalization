@@ -190,3 +190,98 @@ class TestDefaultExternalizedObjectFactory(CleanUp,
                                  name=ext['Class'])
 
         assert_that(self._callFUT(ext), is_(self.TrivialFactory))
+
+class TestFindFactoryFor(TestDefaultExternalizedObjectFactory):
+
+    def _callFUT(self, ext_obj):
+        from ..internalization import find_factory_for
+        return find_factory_for(ext_obj)
+
+class TestResolveExternals(CleanUp,
+                           unittest.TestCase):
+
+    def test_both_attrs_optional(self):
+        INT._resolve_externals(None, None, None)
+
+    def test_resolvers_classmethod(self):
+        class IO(object):
+
+            @classmethod
+            def a(cls, context, extobj, extvalue):
+                assert extvalue == 1
+                return 'a'
+
+            @staticmethod
+            def b(context, extobj, extvalue):
+                assert extvalue == 2
+                return 'b'
+
+            __external_resolvers__ = {
+                'a': a,
+                'b': b,
+                'c': None, # missing keys aren't called
+            }
+
+        ext_obj = {'a': 1, 'b': 2}
+
+        INT._resolve_externals(IO(), None, ext_obj)
+        assert_that(ext_obj, is_({'a': 'a', 'b': 'b'}))
+
+    def test_resolvers_instancemethod(self):
+        class IO(object):
+
+            def a(self, context, extobj, extvalue):
+                assert extvalue == 1
+                return 'a'
+
+            __external_resolvers__ = {
+                'a': a,
+            }
+
+        ext_obj = {'a': 1, 'b': 2}
+
+        INT._resolve_externals(IO(), None, ext_obj)
+        assert_that(ext_obj, is_({'a': 'a', 'b': 2}))
+
+    def test_oids_nothing_registered(self):
+        class IO(object):
+            __external_oids__ = ('a', 'b')
+
+        ext_value = {'a': None}
+        INT._resolve_externals(IO(), None, ext_value)
+        assert_that(ext_value, is_({'a': None}))
+
+    def test_oids_registered(self):
+        from nti.externalization.interfaces import IExternalReferenceResolver
+
+        class IO(object):
+            __external_oids__ = ('a', 'b')
+
+        class Resolver(object):
+
+            def __init__(self, *args):
+                pass
+
+            def resolve(self, value):
+                if value == 1:
+                    return 'a'
+                return 'b'
+
+        component.provideAdapter(Resolver,
+                                 provides=IExternalReferenceResolver,
+                                 adapts=(object, object))
+
+        ext_value = {'a': 1}
+        INT._resolve_externals(IO(), self, ext_value)
+        assert_that(ext_value, is_({'a': 'a'}))
+
+        ext_value = {'a': [1]}
+        INT._resolve_externals(IO(), self, ext_value)
+        assert_that(ext_value, is_({'a': ['a']}))
+
+        # tuples get wrapped too, which is weird and probably wrong
+        # in general. it works because json produces plain lists on reading
+
+        ext_value = {'a': (1,)}
+        INT._resolve_externals(IO(), self, ext_value)
+        assert_that(ext_value, is_({'a': 'b'}))
