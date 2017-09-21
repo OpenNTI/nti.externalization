@@ -47,6 +47,7 @@ from nti.externalization.interfaces import StandardExternalFields
 
 logger = __import__('logging').getLogger(__name__)
 
+
 LEGACY_FACTORY_SEARCH_MODULES = set()
 
 try:
@@ -64,6 +65,10 @@ def register_legacy_search_module(module_name):
     """
     The legacy creation search routines will use the modules
     registered by this method.
+
+    Note that there are no order guarantees about how
+    the modules will be searched. Duplicate class names are thus
+    undefined.
 
     :param module_name: Either the name of a module to look for
         at runtime in :data:`sys.modules`, or a module-like object
@@ -87,36 +92,40 @@ def _find_class_in_dict(className, mod_dict):
     return clazz if getattr(clazz, '__external_can_create__', False) else None
 
 
-def _search_for_external_factory(typeName, search_set=None):
+def _search_for_external_factory(typeName):
     """
-    Deprecated, legacy functionality. Given the name of a type, optionally ending in 's' for
-    plural, attempt to locate that type.
+    Deprecated, legacy functionality. Given the name of a type,
+    optionally ending in 's' for plural, attempt to locate that type.
+
+    For every string package name we find in ``LEGACY_FACTORY_SEARCH_MODULES``, we will
+    resolve the module and mutate the set to replace it.
     """
     if not typeName:
         return None
 
-    if search_set is None:
-        search_set = LEGACY_FACTORY_SEARCH_MODULES
-
+    search_set = LEGACY_FACTORY_SEARCH_MODULES
     className = typeName[0:-1] if typeName.endswith('s') else typeName
     result = None
 
-    for module_name in search_set:
+    updates = None
+    for module in search_set:
         # Support registering both names and actual module objects
-        mod_dict = getattr(module_name, '__dict__', None)
-        module = sys.modules.get(module_name) if mod_dict is None else module_name
-        if module is None:
-            try:
-                module = resolve(module_name)
-            except (AttributeError, ImportError):
-                # This is a programming error, so that's why we log it
-                logger.exception("Failed to resolve legacy factory search module %s",
-                                 module_name)
+        if not hasattr(module, '__dict__'):
+            # Let this throw ImportError, it's a programming bug
+            name = module
+            module = resolve(module)
+            if updates is None:
+                updates = []
+            updates.append((name, module))
 
-        value = getattr(module, '__dict__', _EMPTY_DICT) if mod_dict is None else mod_dict
-        result = _find_class_in_dict(className, value)
-        if result:
+        result = _find_class_in_dict(className, module.__dict__)
+        if result is not None:
             break
+
+    if updates:
+        for old_name, new_module in updates:
+            search_set.remove(old_name)
+            search_set.add(new_module)
 
     return result
 

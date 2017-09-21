@@ -9,7 +9,6 @@ from __future__ import print_function
 import datetime
 import json
 from numbers import Number
-import sys
 import unittest
 
 import fudge
@@ -44,7 +43,6 @@ from ..interfaces import IExternalObjectDecorator
 from ..interfaces import LocatedExternalDict
 from ..interfaces import LocatedExternalList
 from ..interfaces import StandardExternalFields
-from ..internalization import _search_for_external_factory
 from ..oids import fromExternalOID
 from ..oids import toExternalOID
 from ..persistence import NoPickle
@@ -200,31 +198,6 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(calling(toExternalObject).with_args([Raises()]),
                     raises(AssertionError))
 
-    def test_search_for_external(self):
-        class Y(object):
-            __external_can_create__ = True
-
-        class X(object):
-            pass
-        x = X()
-        x.FooBar = Y
-
-        # Something with a __dict__ already
-        assert_that(_search_for_external_factory('FooBar', search_set=[x]),
-                    same_instance(Y))
-
-        # Something in sysmodules
-        n = 'MyTestModule'
-        assert n not in sys.modules
-        sys.modules[n] = x
-
-        assert_that(_search_for_external_factory('FooBar', search_set=[n]),
-                    same_instance(Y))
-
-        del sys.modules[n]
-        # something unresolvable
-        assert_that(_search_for_external_factory('FooBar', search_set=[n]),
-                    is_(none()))
 
     def test_removed_unserializable(self):
         marker = object()
