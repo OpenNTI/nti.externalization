@@ -4,7 +4,6 @@
 Directives to be used in ZCML; helpers for registering factories
 for mime types.
 
-.. $Id$
 """
 
 from __future__ import absolute_import
@@ -27,13 +26,7 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
-
-
-
-
-
-
-
+# pylint: disable=protected-access,inherit-non-class
 
 @interface.implementer(IMimeObjectFactory)
 class _MimeObjectFactory(Factory):
@@ -96,11 +89,12 @@ def registerMimeFactories(_context, module):
         if mime_type and ext_create and module.__name__ == v_mod_name:
             logger.log(loglevels.TRACE,
                        "Registered mime factory utility %s = %s (%s)", k, v, mime_type)
+            factory = _MimeObjectFactory(v,
+                                         title=k,
+                                         interfaces=list(interface.implementedBy(v)))
             component_zcml.utility(_context,
                                    provides=IMimeObjectFactory,
-                                   component=_MimeObjectFactory(v,
-                                                                title=k,
-                                                                interfaces=list(interface.implementedBy(v))),
+                                   component=factory,
                                    name=mime_type)
         elif module.__name__ == v_mod_name and (mime_type or ext_create):
             # There will be lots of things that don't get registered.
@@ -116,25 +110,31 @@ class IAutoPackageExternalizationDirective(interface.Interface):
     and module names.
     """
 
-    root_interfaces = Tokens(title=u"The root interfaces defined by the package.",
-                             value_type=GlobalInterface(),
-                             required=True)
-    modules = Tokens(title=u"Module names that contain the implementations of the root_interfaces.",
-                     value_type=GlobalObject(),
-                     required=True)
+    root_interfaces = Tokens(
+        title=u"The root interfaces defined by the package.",
+        value_type=GlobalInterface(),
+        required=True)
+    modules = Tokens(
+        title=u"Module names that contain the implementations of the root_interfaces.",
+        value_type=GlobalObject(),
+        required=True)
 
-    factory_modules = Tokens(title=u"If given, module names that should be searched for internalization factories",
-                             description=u"If not given, all modules will be examined.",
-                             value_type=GlobalObject(),
-                             required=False)
+    factory_modules = Tokens(
+        title=u"If given, module names that should be searched for internalization factories",
+        description=u"If not given, all modules will be examined.",
+        value_type=GlobalObject(),
+        required=False)
 
-    iobase = GlobalObject(title=u"If given, a base class that will be used. You can customize aspects of externalization that way.",
-                          required=False)
+    iobase = GlobalObject(
+        title=(u"If given, a base class that will be used. "
+               u"You can customize aspects of externalization that way."),
+        required=False)
 
 
 
 
-def autoPackageExternalization(_context, root_interfaces, modules, factory_modules=None, iobase=None):
+def autoPackageExternalization(_context, root_interfaces, modules,
+                               factory_modules=None, iobase=None):
 
     ext_module_name = root_interfaces[0].__module__
     package_name = ext_module_name.rsplit('.', 1)[0]
@@ -160,7 +160,7 @@ def autoPackageExternalization(_context, root_interfaces, modules, factory_modul
     }
 
     if iobase:
-        bases = (iobase, AutoPackageSearchingScopedInterfaceObjectIO,) 
+        bases = (iobase, AutoPackageSearchingScopedInterfaceObjectIO,)
     else:
         bases = (AutoPackageSearchingScopedInterfaceObjectIO,)
 
