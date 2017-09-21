@@ -11,7 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 from ZODB import loglevels
-from ZODB.POSException import POSError
+
 from zope import interface
 from zope.component import zcml as component_zcml
 from zope.component.factory import Factory
@@ -41,7 +41,7 @@ class _MimeObjectFactory(Factory):
         # of the same module from different places from conflicting.
         try:
             return self._callable is other._callable
-        except AttributeError:
+        except AttributeError: # pragma: no cover
             return NotImplemented
 
     def __hash__(self):
@@ -73,34 +73,36 @@ def registerMimeFactories(_context, module):
     """
     # This is a pretty loose check. We can probably do better. For example,
     # pass an interface parameter and only register things that provide
-    # that interface
-    for k, v in module.__dict__.items():
-        __traceback_info__ = k, v
+    # that interface, or at least check to see if they are a ``type``
+    mod_name = module.__name__
+    for object_name, value in vars(module).items():
+        __traceback_info__ = object_name, value
+
         try:
-            mime_type = getattr(v, 'mimeType', getattr(v, 'mime_type', None))
-            ext_create = getattr(v, '__external_can_create__', False)
-            v_mod_name = getattr(v, '__module__', None)
-        except POSError:
-            # This is a problem in the module. Module objects shouldn't do
-            # this.
-            logger.warn("Failed to inspect %s in %s", k, module)
+            ext_create = value.__external_can_create__
+            v_mod_name = value.__module__
+        except AttributeError:
             continue
 
-        if mime_type and ext_create and module.__name__ == v_mod_name:
+        try:
+            mime_type = value.mimeType
+        except AttributeError:
+            try:
+                mime_type = value.mime_type
+            except AttributeError:
+                continue
+
+        if mime_type and ext_create and mod_name == v_mod_name:
             logger.log(loglevels.TRACE,
-                       "Registered mime factory utility %s = %s (%s)", k, v, mime_type)
-            factory = _MimeObjectFactory(v,
-                                         title=k,
-                                         interfaces=list(interface.implementedBy(v)))
+                       "Registered mime factory utility %s = %s (%s)",
+                       object_name, value, mime_type)
+            factory = _MimeObjectFactory(value,
+                                         title=object_name,
+                                         interfaces=list(interface.implementedBy(value)))
             component_zcml.utility(_context,
                                    provides=IMimeObjectFactory,
                                    component=factory,
                                    name=mime_type)
-        elif module.__name__ == v_mod_name and (mime_type or ext_create):
-            # There will be lots of things that don't get registered.
-            # Only complain if it looks like they tried and got it half right
-            logger.log(loglevels.TRACE, "Nothing to register on %s (mt: %s ext: %s mod: %s)",
-                       k, mime_type, ext_create, v_mod_name)
 
 
 class IAutoPackageExternalizationDirective(interface.Interface):
