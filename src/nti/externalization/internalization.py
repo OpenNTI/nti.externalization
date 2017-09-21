@@ -12,6 +12,7 @@ from __future__ import print_function
 
 # stdlib imports
 import collections
+from functools import partial
 import inspect
 import numbers
 import sys
@@ -31,6 +32,7 @@ from zope.schema.interfaces import ValidationError
 from zope.schema.interfaces import WrongContainedType
 from zope.schema.interfaces import WrongType
 
+from nti.externalization._compat import identity
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
 from nti.externalization.interfaces import IExternalReferenceResolver
@@ -40,6 +42,8 @@ from nti.externalization.interfaces import IMimeObjectFactory
 from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import StandardExternalFields
 
+# pylint: disable=protected-access,ungrouped-imports,too-many-branches
+# pylint: disable=redefined-outer-name
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -47,7 +51,7 @@ LEGACY_FACTORY_SEARCH_MODULES = set()
 
 try:
     from zope.testing.cleanup import addCleanUp
-except ImportError:
+except ImportError: # pragma: no cover
     pass
 else:
     addCleanUp(LEGACY_FACTORY_SEARCH_MODULES.clear)
@@ -210,9 +214,9 @@ def _resolve_externals(object_io, updating_object, externalObject,
             resolver_func = resolver_func.__get__(None, object_io.__class__)
         elif len(inspect.getargspec(resolver_func)[0]) == 4:  # instance method
             _resolver_func = resolver_func
-
-            def resolver_func(x, y, z):
-                return _resolver_func(object_io, x, y, z)
+            resolver_func = partial(resolver_func, object_io)
+            #def resolver_func(x, y, z):
+            #    return _resolver_func(object_io, x, y, z)
 
         externalObject[ext_key] = resolver_func(context, externalObject,
                                                 externalObject[ext_key])
@@ -290,29 +294,38 @@ def update_from_external_object(containedObject, externalObject,
 
     :param containedObject: The object to update.
     :param externalObject: The object (typically a mapping or sequence) to update
-            the object from. Usually this is obtained by parsing an external
-            format like JSON.
+        the object from. Usually this is obtained by parsing an external
+        format like JSON.
     :param context: An object passed to the update methods.
-    :param require_updater: If True (not the default) an exception will be raised
-            if no implementation of :class:`~nti.externalization.interfaces.IInternalObjectUpdater` can be found
-            for the `containedObject.`
-    :param bool notify: If ``True`` (the default), then if the updater for the `containedObject` either has no preference
-            (returns None) or indicates that the object has changed,
-            then an :class:`~nti.externalization.interfaces.IObjectModifiedFromExternalEvent` will be fired. This may
-            be a recursive process so a top-level call to this object may spawn
-            multiple events. The events that are fired will have a ``descriptions`` list containing
-            one or more :class:`~zope.lifecycleevent.interfaces.IAttributes` each with
-            ``attributes`` for each attribute we modify (assuming that the keys in the ``externalObject``
-            map one-to-one to an attribute; if this is the case and we can also find an interface
-            declaring the attribute, then the ``IAttributes`` will have the right value for ``interface``
-            as well).
-    :param callable object_hook: If given, called with the results of every nested object
-            as it has been updated. The return value will be used instead of the nested object.
-            Signature ``f(k,v,x)`` where ``k`` is either the key name, or None in the case of a sequence,
-            ``v`` is the newly-updated value, and ``x`` is the external object used to update ``v``.
-    :param callable pre_hook: If given, called with the before update_from_external_object is
-            called for every nested object. Signature ``f(k,x)`` where ``k`` is either the key name,
-            or None in the case of a sequence and ``x`` is the external object
+    :param require_updater: If True (not the default) an exception
+        will be raised if no implementation of
+        :class:`~nti.externalization.interfaces.IInternalObjectUpdater`
+        can be found for the `containedObject.`
+    :keyword bool notify: If ``True`` (the default), then if the updater
+        for the `containedObject` either has no preference (returns
+        None) or indicates that the object has changed, then an
+        :class:`~nti.externalization.interfaces.IObjectModifiedFromExternalEvent`
+        will be fired. This may be a recursive process so a top-level
+        call to this object may spawn multiple events. The events that
+        are fired will have a ``descriptions`` list containing one or
+        more :class:`~zope.lifecycleevent.interfaces.IAttributes` each
+        with ``attributes`` for each attribute we modify (assuming
+        that the keys in the ``externalObject`` map one-to-one to an
+        attribute; if this is the case and we can also find an
+        interface declaring the attribute, then the ``IAttributes``
+        will have the right value for ``interface`` as well).
+    :keyword callable object_hook: If given, called with the results of
+        every nested object as it has been updated. The return
+        value will be used instead of the nested object. Signature
+        ``f(k,v,x)`` where ``k`` is either the key name, or None
+        in the case of a sequence, ``v`` is the newly-updated
+        value, and ``x`` is the external object used to update
+        ``v``.
+    :keyword callable pre_hook: If given, called with the before
+        update_from_external_object is called for every nested object.
+        Signature ``f(k,x)`` where ``k`` is either the key name, or
+        None in the case of a sequence and ``x`` is the external
+        object
     :return: `containedObject` after updates from `externalObject`
     """
 
@@ -367,11 +380,11 @@ def update_from_external_object(containedObject, externalObject,
                 k, factory(), v, kwargs) if factory else v
 
     updater = None
-    if      hasattr(containedObject, 'updateFromExternalObject') \
+    if hasattr(containedObject, 'updateFromExternalObject') \
         and not getattr(containedObject, '__ext_ignore_updateFromExternalObject__', False):
-        # legacy support. The __ext_ignore_updateFromExternalObject__ allows a transitition to an adapter
-        # without changing existing callers and without triggering infinite
-        # recursion
+        # legacy support. The __ext_ignore_updateFromExternalObject__
+        # allows a transition to an adapter without changing
+        # existing callers and without triggering infinite recursion
         updater = containedObject
     else:
         if require_updater:
@@ -496,7 +509,7 @@ def validate_field_value(self, field_name, field, value):
         # The field may be able to handle the whole thing by itself or we may need
         # to do the individual objects
 
-        def converter(x): return x
+        converter = identity
         loop = True
         if hasattr(field, 'fromObject'):
             converter = field.fromObject
@@ -529,9 +542,9 @@ def validate_field_value(self, field_name, field, value):
         finally:
             del exc_info
 
-    if (    field.readonly
-        and field.get(self) is None
-        and field.queryTaggedValue('_ext_allow_initial_set')):
+    if (field.readonly
+            and field.get(self) is None
+            and field.queryTaggedValue('_ext_allow_initial_set')):
         if value is not None:
             # First time through we get to set it, but we must bypass
             # the field
@@ -554,9 +567,10 @@ def validate_named_field_value(self, iface, field_name, value):
     validate that the given ``value`` is appropriate to set. See :func:`validate_field_value`
     for details.
 
-    :param string field_name: The name of a field contained in `iface`. May name
-            a regular :class:`zope.interface.Attribute`, or a :class:`zope.schema.interfaces.IField`;
-            if the latter, extra validation will be possible.
+    :param string field_name: The name of a field contained in
+        `iface`. May name a regular :class:`zope.interface.Attribute`,
+        or a :class:`zope.schema.interfaces.IField`; if the latter,
+        extra validation will be possible.
 
     :return: A callable of no arguments to call to actually set the value.
     """

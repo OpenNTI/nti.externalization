@@ -20,10 +20,6 @@ from ZODB.POSException import POSKeyError
 import persistent
 import six
 
-try:
-    from cytoolz import identity
-except ImportError: # PyPy pragma: no cover
-    from toolz import identity
 
 from zope import component
 from zope import deprecation
@@ -37,6 +33,7 @@ from zope.security.interfaces import IPrincipal
 from zope.security.management import system_user
 
 from nti.externalization._compat import to_unicode
+from nti.externalization._compat import identity
 from nti.externalization._pyramid import ThreadLocalManager
 from nti.externalization._pyramid import get_current_request
 from nti.externalization.interfaces import IExternalMappingDecorator

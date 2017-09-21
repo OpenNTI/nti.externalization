@@ -26,3 +26,8 @@ def bytes_(s, encoding='utf-8', errors='strict'):
     if not isinstance(s, bytes) and s is not None:
         s = s.encode(encoding, errors)
     return s
+
+try:
+    from cytoolz import identity
+except ImportError: # PyPy pragma: no cover
+    from toolz import identity
