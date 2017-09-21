@@ -191,8 +191,9 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         """
         Returns whether or not this key should be accepted for setting
         on the object, or silently ignored.
+
         :param ext_keys: As an optimization, the value of :meth:`_ext_all_possible_keys`
-                is passed. Keys are only accepted if they are in this list.
+            is passed. Keys are only accepted if they are in this list.
         """
         __traceback_info__ = k, ext_self, ext_keys
 
@@ -202,6 +203,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         """
         If the object we're updating does not have an ``id`` set, but there is an
         ``ID`` in the external object, should we be able to use it?
+
         :return: boolean
         """
         __traceback_info__ = ext_self, parsed

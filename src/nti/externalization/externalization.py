@@ -575,6 +575,7 @@ def decorate_external_mapping(self, result, registry=component, request=_NotGive
         for decorator in registry.subscribers((self, request), IExternalMappingDecorator):
             decorator.decorateExternalMapping(self, result)
 
+    return result
 
 toExternalDictionary = to_standard_external_dictionary
 deprecation.deprecated('toExternalDictionary',

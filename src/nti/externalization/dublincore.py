@@ -4,11 +4,11 @@
 Externalization support for things that implement the interfaces
 of :mod:`zope.dublincore.interfaces`.
 
-.. note:: We are "namespacing" the dublincore properties, since they have
-  defined meanings we don't control. We are currently doing this by simply prefixing
-  them with 'DC'. This can probably be done better.
+.. note::
+   We are "namespacing" the dublincore properties, since they have
+   defined meanings we don't control. We are currently doing this by simply prefixing
+   them with 'DC' for ease of access in JavaScript.
 
-.. $Id$
 """
 
 from __future__ import absolute_import
