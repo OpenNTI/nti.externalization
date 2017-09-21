@@ -50,6 +50,8 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         """
         Assigned as the tagged value ``__external_class_name__`` to each
         interface. This will be called on an instance implementing iface.
+
+        .. seealso:: :class:`~.InterfaceObjectIO`
         """
         # Use the __class__, not type(), to work with proxies
         return cls._ap_compute_external_class_name_from_concrete_class(impl.__class__)
@@ -143,57 +145,57 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
             for _, v in mod.__dict__.items():
                 # ignore imports and non-concrete classes
                 # NOTE: using issubclass to properly support metaclasses
-                if     getattr(v, '__module__', None) != mod.__name__ \
+                if getattr(v, '__module__', None) != mod.__name__ \
                     or not issubclass(type(v), type):
                     continue
-                # implementation_name = k
-                implementation_class = v
-                # Does this implement something that should be externalizable?
-                check_ext = any(iface.queryTaggedValue('__external_class_name__')
-                                for iface in interface.implementedBy(implementation_class))
-                if check_ext:
-                    ext_class_name = cls._ap_compute_external_class_name_from_concrete_class(implementation_class)
-
-                    setattr(_ClassNameRegistry,
-                            ext_class_name,
-                            implementation_class)
-
-                    if not implementation_class.__dict__.get('mimeType', None):
-                        # NOT hasattr. We don't use hasattr because inheritance would
-                        # throw us off. It could be something we added, and iteration order
-                        # is not defined (if we got the subclass first we're good, we fail if we
-                        # got superclass first).
-                        # Also, not a simple 'in' check. We want to allow for setting mimeType = None
-                        # in the dict for static analysis purposes
-
-                        # legacy check
-                        if 'mime_type' in implementation_class.__dict__:
-                            setattr(implementation_class, 'mimeType',
-                                    implementation_class.__dict__['mime_type'])
-                        else:
-                            setattr(implementation_class,
-                                    'mimeType',
-                                    cls._ap_compute_external_mimetype(package_name,
-                                                                      implementation_class,
-                                                                      ext_class_name))
-                            setattr(implementation_class,
-                                    'mime_type',
-                                    implementation_class.mimeType)
-
-                        # well it does now
-                        if not IContentTypeAware.implementedBy(implementation_class):
-                            interface.classImplements(implementation_class,
-                                                      IContentTypeAware)
-
-                    # Opt in for creating, unless explicitly disallowed
-                    if not hasattr(implementation_class, '__external_can_create__'):
-                        setattr(implementation_class,
-                                '__external_can_create__',
-                                True)
-                        # Let them have containers
-                        if not hasattr(implementation_class, 'containerId'):
-                            setattr(implementation_class, 'containerId', None)
+                cls._ap_handle_one_potential_factory_class(_ClassNameRegistry, package_name, v)
         return _ClassNameRegistry
+
+    @classmethod
+    def _ap_handle_one_potential_factory_class(cls, namespace, package_name, implementation_class):
+        # Private helper function
+        # Does this implement something that should be externalizable?
+        check_ext = any(iface.queryTaggedValue('__external_class_name__')
+                        for iface in interface.implementedBy(implementation_class))
+        if not check_ext:
+            return
+
+        ext_class_name = cls._ap_compute_external_class_name_from_concrete_class(implementation_class)
+
+        setattr(namespace,
+                ext_class_name,
+                implementation_class)
+
+        if not implementation_class.__dict__.get('mimeType', None):
+            # NOT hasattr. We don't use hasattr because inheritance would
+            # throw us off. It could be something we added, and iteration order
+            # is not defined (if we got the subclass first we're good, we fail if we
+            # got superclass first).
+            # Also, not a simple 'in' check. We want to allow for setting mimeType = None
+            # in the dict for static analysis purposes
+
+            # legacy check
+            if 'mime_type' in implementation_class.__dict__:
+                implementation_class.mimeType = implementation_class.mime_type
+            else:
+                implementation_class.mimeType = cls._ap_compute_external_mimetype(
+                    package_name,
+                    implementation_class,
+                    ext_class_name)
+                implementation_class.mime_type = implementation_class.mimeType
+
+            if not IContentTypeAware.implementedBy(implementation_class):
+                # well it does now
+                interface.classImplements(implementation_class,
+                                          IContentTypeAware)
+
+        # Opt in for creating, unless explicitly disallowed
+        if not hasattr(implementation_class, '__external_can_create__'):
+            implementation_class.__external_can_create__ = True
+
+            # Let them have containers
+            if not hasattr(implementation_class, 'containerId'):
+                implementation_class.containerId = None
 
     @classmethod
     def _ap_find_package_name(cls):
@@ -223,8 +225,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         package_name = cls._ap_find_package_name()
 
         # Now the interfaces
-        package_ifaces = dottedname.resolve(package_name + '.interfaces')
-        return package_ifaces
+        return dottedname.resolve(package_name + '.interfaces')
 
     @classmethod
     def __class_init__(cls):  # ExtensionClass.Base class initializer
@@ -236,6 +237,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         :func:`_ap_enumerate_externalizable_root_interfaces`
         externalizable by setting the ``__external_class_name__``
         tagged value (to :func:`_ap_compute_external_class_name_from_interface_and_instance`).
+        (See :class:`~.InterfaceObjectIO`.)
 
         Then, find all of the object factories and initialize them
         using :func:`_ap_find_factories`. Finally, the namespace object that was
@@ -245,9 +247,9 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
            and disabled by default.
         """
         # Do nothing when this class itself is initted
-        if      cls.__name__ == 'AutoPackageSearchingScopedInterfaceObjectIO' \
+        if cls.__name__ == 'AutoPackageSearchingScopedInterfaceObjectIO' \
             and cls.__module__ == __name__:
-            return
+            return False
 
         # First, get the correct working module
         package_name = cls._ap_find_package_name()
