@@ -161,10 +161,9 @@ def autoPackageExternalization(_context, root_interfaces, modules,
         '_ap_enumerate_externalizable_root_interfaces': _ap_enumerate_externalizable_root_interfaces
     }
 
+    bases = (AutoPackageSearchingScopedInterfaceObjectIO,)
     if iobase:
-        bases = (iobase, AutoPackageSearchingScopedInterfaceObjectIO,)
-    else:
-        bases = (AutoPackageSearchingScopedInterfaceObjectIO,)
+        bases = (iobase,) + bases
 
     cls_iio = type('AutoPackageSearchingScopedInterfaceObjectIO',
                    bases,

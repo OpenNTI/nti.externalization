@@ -11,26 +11,24 @@ from __future__ import print_function
 import unittest
 
 from zope import component
+from zope import interface
 from zope.component.testing import PlacelessSetup
 from zope.configuration import xmlconfig
 
 from nti.externalization.interfaces import IMimeObjectFactory
-from nti.testing import base
-from nti.testing import matchers
 from nti.testing.matchers import is_empty
 
 from hamcrest import assert_that
-from hamcrest import has_entry
-from hamcrest import has_key
-from hamcrest import is_
 from hamcrest import is_not
+from hamcrest import has_length
 from hamcrest import none
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
+# pylint: disable=inherit-non-class
 
-class TestZCML(PlacelessSetup,
-               unittest.TestCase):
+class TestRegisterMimeFactoriesZCML(PlacelessSetup,
+                                    unittest.TestCase):
 
     SCAN_THIS_MODULE = """
         <configure xmlns:ext="http://nextthought.com/ntp/ext">
@@ -162,3 +160,31 @@ class TestZCML(PlacelessSetup,
             assert_that(list(gsm.registeredUtilities()), is_empty())
         finally:
             del self._getModule().Factory
+
+class IExtRoot(interface.Interface):
+    pass
+
+class IOBase(object):
+
+    @classmethod
+    def _ap_find_package_interface_module(cls):
+        import sys
+        return sys.modules[__name__]
+
+class TestAutoPackageZCML(PlacelessSetup,
+                          unittest.TestCase):
+    SCAN_THIS_MODULE = """
+        <configure xmlns:ext="http://nextthought.com/ntp/ext">
+           <include package="nti.externalization" file="meta.zcml" />
+           <ext:registerAutoPackageIO root_interfaces="%s.IExtRoot" modules="%s"
+              iobase="%s.IOBase" />
+        </configure>
+        """ % (__name__, __name__, __name__)
+
+    def test_scan_package_empty(self):
+        xmlconfig.string(self.SCAN_THIS_MODULE)
+        gsm = component.getGlobalSiteManager()
+        # The interfaces IExtRoot and IInternalObjectIO were registered
+        assert_that(list(gsm.registeredUtilities()), has_length(2))
+        # The root interface was registered
+        assert_that(list(gsm.registeredAdapters()), has_length(1))
