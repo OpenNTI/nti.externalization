@@ -40,7 +40,7 @@ def environ_tz():
     finally:
         if tz: # pragma: no cover
             os.environ['TZ'] = tz
-        else:
+        else: # pragma: no cover
             del os.environ['TZ']
         time.tzset()
 
