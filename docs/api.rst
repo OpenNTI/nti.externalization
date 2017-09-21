@@ -19,7 +19,7 @@ Datastructures
    :private-members:
 
 Datetime
-==========
+========
 
 .. automodule:: nti.externalization.datetime
 
@@ -44,7 +44,7 @@ Internalization
 .. automodule:: nti.externalization.internalization
 
 OIDs
-===============
+====
 
 .. automodule:: nti.externalization.oids
 
@@ -72,3 +72,9 @@ ZCML
 ====
 
 .. automodule:: nti.externalization.zcml
+
+Package IO
+==========
+
+.. automodule:: nti.externalization.autopackage
+   :private-members:

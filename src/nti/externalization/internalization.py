@@ -45,6 +45,13 @@ logger = __import__('logging').getLogger(__name__)
 
 LEGACY_FACTORY_SEARCH_MODULES = set()
 
+try:
+    from zope.testing.cleanup import addCleanUp
+except ImportError:
+    pass
+else:
+    addCleanUp(LEGACY_FACTORY_SEARCH_MODULES.clear)
+
 StandardExternalFields_CLASS = StandardExternalFields.CLASS
 StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
 
@@ -53,6 +60,10 @@ def register_legacy_search_module(module_name):
     """
     The legacy creation search routines will use the modules
     registered by this method.
+
+    :param module_name: Either the name of a module to look for
+        at runtime in :data:`sys.modules`, or a module-like object
+        having a ``__dict__``.
     """
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)

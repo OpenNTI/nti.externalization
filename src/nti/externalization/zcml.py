@@ -107,9 +107,17 @@ def registerMimeFactories(_context, module):
 
 class IAutoPackageExternalizationDirective(interface.Interface):
     """
-    This directive combines the effects of :class:`.IRegisterInternalizationMimeFactoriesDirective`
-    with that of :mod:`.autopackage`, removing all need to repeat root interfaces
-    and module names.
+    This directive combines the effects of
+    :class:`.IRegisterInternalizationMimeFactoriesDirective` with that
+    of :mod:`.autopackage`, removing all need to repeat root
+    interfaces and module names.
+
+    After this directive is complete, a new class that descends from
+    :class:`~.AutoPackageSearchingScopedInterfaceObjectIO` will be
+    registered as the :class:`~nti.externalization.interfaces.IInternalObjectIO` adapter for all of
+    the *root_interface* objects, and the *modules* (or
+    *factory_modules*) will be searched for object factories via
+    :func:`registerMimeFactories`.
     """
 
     root_interfaces = Tokens(
