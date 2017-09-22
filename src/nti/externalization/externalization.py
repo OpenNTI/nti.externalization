@@ -19,6 +19,7 @@ import BTrees.OOBTree
 from ZODB.POSException import POSKeyError
 import persistent
 import six
+from six import text_type
 
 
 from zope import component
@@ -147,16 +148,16 @@ class _ExternalizationState(object):
     name = u''
     request = None
     registry = None
+    # We take a similar approach to pickle.Pickler
+    # for memoizing objects we've seen:
+    # we map the id of an object to a two tuple: (obj, external-value)
+    # the original object is kept in the tuple to keep transient objects alive
+    # and thus ensure no overlapping ids
+    memo = None
 
-    def __init__(self, kwargs):
-        # We take a similar approach to pickle.Pickler
-        # for memoizing objects we've seen:
-        # we map the id of an object to a two tuple: (obj, external-value)
-        # the original object is kept in the tuple to keep transient objects alive
-        # and thus ensure no overlapping ids
-        self.memo = {}
-        # Allow it to be passed as a kwarg to override
+    def __init__(self, memos, kwargs):
         self.__dict__.update(kwargs)
+        self.memo = memos[self.name]
 
 class _RecursiveCallState(dict):
     pass
@@ -170,11 +171,11 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
     __traceback_info__ = obj
 
     orig_obj = obj
-    orig_obj_id = id(obj)
+    orig_obj_id = id(obj) # XXX: Relatively expensive on PyPy
     if useCache:
         value = state.memo.get(orig_obj_id, None)
         result = value[1] if value is not None else None
-        if result is None:  # mark
+        if result is None:  # mark as in progress
             state.memo[orig_obj_id] = (orig_obj, _marker)
         elif result is not _marker:
             return result
@@ -337,27 +338,23 @@ def toExternalObject(obj,
     if isinstance(obj, _primitives):
         return obj
 
-    v = dict(locals())
-    v.pop('obj')
-    state = _ExternalizationState(v)
-
     if name is _NotGiven:
         name = _manager.get()['name']
     if name is _NotGiven:
         name = ''
+    if request is _NotGiven:
+        request = get_current_request()
 
     memos = _manager.get()['memos']
     if memos is None:
         memos = defaultdict(dict)
 
+    v = dict(locals())
+    v.pop('obj')
+    v.pop("memos")
+    state = _ExternalizationState(memos, v)
+
     _manager.push({'name': name, 'memos': memos})
-
-    state.name = name
-    state.memo = memos[name]
-
-    if request is _NotGiven:
-        request = get_current_request()
-    state.request = request
 
     try:
         return _to_external_object_state(obj, state, top_level=True,
@@ -418,8 +415,14 @@ def choose_field(result, self, ext_name,
 
         if value is not None:
             # If the creator is the system user, catch it here
-            if ext_name == StandardExternalFields_CREATOR and is_system_user(value):
-                value = SYSTEM_USER_NAME
+            # XXX: Document this behaviour.
+            if ext_name == StandardExternalFields_CREATOR:
+                if is_system_user(value):
+                    value = SYSTEM_USER_NAME
+                else:
+                    # This is a likely recursion point, we want to be
+                    # sure we don't do that.
+                    value = text_type(value)
                 result[ext_name] = value
                 return value
             value = converter(value)
@@ -504,6 +507,8 @@ def setExternalIdentifiers(self, result):
     return (oid, ntiid)
 set_external_identifiers = hookable(setExternalIdentifiers)
 
+def _should_never_convert(x):
+    raise AssertionError("We should not be converting")
 
 def to_standard_external_dictionary(self, mergeFrom=None,
                                     registry=component,
@@ -540,7 +545,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
     _choose_field(result, self, StandardExternalFields_CREATOR,
                   fields=(StandardInternalFields_CREATOR,
                           StandardExternalFields_CREATOR),
-                  converter=to_unicode)
+                  converter=_should_never_convert)
 
     to_standard_external_last_modified_time(self, _write_into=result)
     to_standard_external_created_time(self, _write_into=result)
