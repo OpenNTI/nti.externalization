@@ -255,6 +255,57 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(result, is_({StandardExternalFields.CREATOR: SYSTEM_USER_NAME}))
 
 
+    def test_recursive_call_name(self):
+
+        class Top(object):
+
+            def toExternalObject(self, **kwargs):
+                assert_that(kwargs, has_entry('name', 'TopName'))
+
+                middle = Middle()
+
+                return toExternalObject(middle) # No name argument
+
+        class Middle(object):
+
+            def toExternalObject(self, **kwargs):
+                assert_that(kwargs, has_entry('name', 'TopName'))
+
+                bottom = Bottom()
+
+                return toExternalObject(bottom, name='BottomName')
+
+        class Bottom(object):
+
+            def toExternalObject(self, **kwargs):
+                assert_that(kwargs, has_entry('name', 'BottomName'))
+
+                return "Bottom"
+
+        assert_that(toExternalObject(Top(), name='TopName'),
+                    is_("Bottom"))
+
+    def test_recursive_call_minimizes_dict(self):
+
+        class O(object):
+            ext_obj = None
+
+            def toExternalObject(self, **kwargs):
+                return {"Hi": 42,
+                        "kid": toExternalObject(self.ext_obj)}
+
+        top = O()
+        child = O()
+        top.ext_obj = child
+        child.ext_obj = top
+
+        result = toExternalObject(top)
+        assert_that(result,
+                    is_({'Hi': 42,
+                         'kid': {'Hi': 42,
+                                 'kid': {u'Class': 'O'}}}))
+
+
 class TestDecorators(CleanUp,
                      unittest.TestCase):
 
