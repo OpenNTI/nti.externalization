@@ -171,7 +171,9 @@ intersphinx_mapping = {
     'https://persistent.readthedocs.io/en/latest': None,
     'https://zopecomponent.readthedocs.io/en/latest': None,
     'https://zopedublincore.readthedocs.io/en/latest': None,
+    'https://zopehookable.readthedocs.io/en/latest': None,
     'https://zodb.readthedocs.io/en/latest': None,
+    "https://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
 }
 
 extlinks = {

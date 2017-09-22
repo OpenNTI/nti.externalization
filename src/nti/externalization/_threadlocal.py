@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Extension points for connecting to Pyramid.
-
-XXX TODO: Define get_current_request as a zope.hookable function
-and let the application determine what framework to connect to.
+Thread local utilities.
 """
 
 from __future__ import absolute_import
@@ -13,14 +10,6 @@ from __future__ import print_function
 
 # stdlib imports
 import threading
-
-try:
-    from pyramid.threadlocal import get_current_request
-except ImportError:
-    def get_current_request():
-        return None
-else: # pragma: no cover
-    get_current_request = get_current_request
 
 class ThreadLocalManager(threading.local):
 
