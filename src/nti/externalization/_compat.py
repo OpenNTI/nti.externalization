@@ -8,12 +8,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from six import text_type
 
 def to_unicode(s, encoding='utf-8', err='strict'):
     """
     Decode a byte sequence and unicode result
     """
-    return s.decode(encoding, err) if isinstance(s, bytes) else s
+    if not isinstance(s, text_type) and s is not None:
+        s = s.decode(encoding, err)
+    return s
 
 text_ = to_unicode
 

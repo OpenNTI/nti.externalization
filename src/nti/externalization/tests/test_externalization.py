@@ -254,57 +254,10 @@ class TestFunctions(ExternalizationLayerTest):
                      StandardExternalFields.CREATOR, fields=('user',))
         assert_that(result, is_({StandardExternalFields.CREATOR: SYSTEM_USER_NAME}))
 
-
-    def test_recursive_call_name(self):
-
-        class Top(object):
-
-            def toExternalObject(self, **kwargs):
-                assert_that(kwargs, has_entry('name', 'TopName'))
-
-                middle = Middle()
-
-                return toExternalObject(middle) # No name argument
-
-        class Middle(object):
-
-            def toExternalObject(self, **kwargs):
-                assert_that(kwargs, has_entry('name', 'TopName'))
-
-                bottom = Bottom()
-
-                return toExternalObject(bottom, name='BottomName')
-
-        class Bottom(object):
-
-            def toExternalObject(self, **kwargs):
-                assert_that(kwargs, has_entry('name', 'BottomName'))
-
-                return "Bottom"
-
-        assert_that(toExternalObject(Top(), name='TopName'),
-                    is_("Bottom"))
-
-    def test_recursive_call_minimizes_dict(self):
-
-        class O(object):
-            ext_obj = None
-
-            def toExternalObject(self, **kwargs):
-                return {"Hi": 42,
-                        "kid": toExternalObject(self.ext_obj)}
-
-        top = O()
-        child = O()
-        top.ext_obj = child
-        child.ext_obj = top
-
-        result = toExternalObject(top)
-        assert_that(result,
-                    is_({'Hi': 42,
-                         'kid': {'Hi': 42,
-                                 'kid': {u'Class': 'O'}}}))
-
+    def test_never_happens(self):
+        from nti.externalization.externalization import _should_never_convert
+        with self.assertRaises(AssertionError):
+            _should_never_convert(None)
 
 class TestDecorators(CleanUp,
                      unittest.TestCase):
@@ -607,6 +560,78 @@ class TestToExternalObject(ExternalizationLayerTest):
 
         assert_that(calling(toExternalObject).with_args(Foo(), catch_components=MyException),
                     raises(MyException))
+
+    def test_recursive_call_name(self):
+
+        class Top(object):
+
+            def toExternalObject(self, **kwargs):
+                assert_that(kwargs, has_entry('name', 'TopName'))
+
+                middle = Middle()
+
+                return toExternalObject(middle) # No name argument
+
+        class Middle(object):
+
+            def toExternalObject(self, **kwargs):
+                assert_that(kwargs, has_entry('name', 'TopName'))
+
+                bottom = Bottom()
+
+                return toExternalObject(bottom, name='BottomName')
+
+        class Bottom(object):
+
+            def toExternalObject(self, **kwargs):
+                assert_that(kwargs, has_entry('name', 'BottomName'))
+
+                return "Bottom"
+
+        assert_that(toExternalObject(Top(), name='TopName'),
+                    is_("Bottom"))
+
+    def test_recursive_call_minimizes_dict(self):
+
+        class O(object):
+            ext_obj = None
+
+            def toExternalObject(self, **kwargs):
+                return {"Hi": 42,
+                        "kid": toExternalObject(self.ext_obj)}
+
+        top = O()
+        child = O()
+        top.ext_obj = child
+        child.ext_obj = top
+
+        result = toExternalObject(top)
+        assert_that(result,
+                    is_({'Hi': 42,
+                         'kid': {'Hi': 42,
+                                 'kid': {u'Class': 'O'}}}))
+
+    def test_recursive_call_on_creator(self):
+        # Make sure that we properly handle recursive calls on a
+        # field we want to pre-convert to a str, creator.
+
+        class O(object):
+            def __init__(self):
+                self.creator = self
+
+            def __str__(self):
+                return "creator"
+
+            def toExternalObject(self, *args, **kwargs):
+                return to_standard_external_dictionary(self)
+
+        result = toExternalObject(O())
+        assert_that(result, has_entry('Creator', 'creator'))
+
+        # Serialize to JSON too to make sure we get the right thing
+        from ..representation import to_json_representation_externalized
+        s = to_json_representation_externalized(result)
+        assert_that(s, is_('{"Class": "O", "Creator": "creator"}'))
 
 
 @NoPickle

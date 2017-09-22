@@ -19,6 +19,7 @@ import BTrees.OOBTree
 from ZODB.POSException import POSKeyError
 import persistent
 import six
+from six import text_type
 
 
 from zope import component
@@ -414,8 +415,14 @@ def choose_field(result, self, ext_name,
 
         if value is not None:
             # If the creator is the system user, catch it here
-            if ext_name == StandardExternalFields_CREATOR and is_system_user(value):
-                value = SYSTEM_USER_NAME
+            # XXX: Document this behaviour.
+            if ext_name == StandardExternalFields_CREATOR:
+                if is_system_user(value):
+                    value = SYSTEM_USER_NAME
+                else:
+                    # This is a likely recursion point, we want to be
+                    # sure we don't do that.
+                    value = text_type(value)
                 result[ext_name] = value
                 return value
             value = converter(value)
@@ -500,6 +507,8 @@ def setExternalIdentifiers(self, result):
     return (oid, ntiid)
 set_external_identifiers = hookable(setExternalIdentifiers)
 
+def _should_never_convert(x):
+    raise AssertionError("We should not be converting")
 
 def to_standard_external_dictionary(self, mergeFrom=None,
                                     registry=component,
@@ -536,7 +545,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
     _choose_field(result, self, StandardExternalFields_CREATOR,
                   fields=(StandardInternalFields_CREATOR,
                           StandardExternalFields_CREATOR),
-                  converter=to_unicode)
+                  converter=_should_never_convert)
 
     to_standard_external_last_modified_time(self, _write_into=result)
     to_standard_external_created_time(self, _write_into=result)
