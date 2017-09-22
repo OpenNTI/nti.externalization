@@ -15,10 +15,13 @@ import collections
 import inspect
 import numbers
 import sys
+import warnings
 
 from persistent.interfaces import IPersistent
-import six
+from six import string_types
+from six import text_type
 from six import reraise
+from six import iteritems
 from zope import component
 from zope import interface
 from zope.dottedname.resolve import resolve
@@ -31,6 +34,7 @@ from zope.schema.interfaces import ValidationError
 from zope.schema.interfaces import WrongContainedType
 from zope.schema.interfaces import WrongType
 
+from nti.externalization._compat import identity
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
 from nti.externalization.interfaces import IExternalReferenceResolver
@@ -40,10 +44,20 @@ from nti.externalization.interfaces import IMimeObjectFactory
 from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import StandardExternalFields
 
+# pylint: disable=protected-access,ungrouped-imports,too-many-branches
+# pylint: disable=redefined-outer-name
 
 logger = __import__('logging').getLogger(__name__)
 
+
 LEGACY_FACTORY_SEARCH_MODULES = set()
+
+try:
+    from zope.testing.cleanup import addCleanUp
+except ImportError: # pragma: no cover
+    pass
+else:
+    addCleanUp(LEGACY_FACTORY_SEARCH_MODULES.clear)
 
 StandardExternalFields_CLASS = StandardExternalFields.CLASS
 StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
@@ -53,6 +67,14 @@ def register_legacy_search_module(module_name):
     """
     The legacy creation search routines will use the modules
     registered by this method.
+
+    Note that there are no order guarantees about how
+    the modules will be searched. Duplicate class names are thus
+    undefined.
+
+    :param module_name: Either the name of a module to look for
+        at runtime in :data:`sys.modules`, or a module-like object
+        having a ``__dict__``.
     """
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
@@ -72,36 +94,40 @@ def _find_class_in_dict(className, mod_dict):
     return clazz if getattr(clazz, '__external_can_create__', False) else None
 
 
-def _search_for_external_factory(typeName, search_set=None):
+def _search_for_external_factory(typeName):
     """
-    Deprecated, legacy functionality. Given the name of a type, optionally ending in 's' for
-    plural, attempt to locate that type.
+    Deprecated, legacy functionality. Given the name of a type,
+    optionally ending in 's' for plural, attempt to locate that type.
+
+    For every string package name we find in ``LEGACY_FACTORY_SEARCH_MODULES``, we will
+    resolve the module and mutate the set to replace it.
     """
     if not typeName:
         return None
 
-    if search_set is None:
-        search_set = LEGACY_FACTORY_SEARCH_MODULES
-
+    search_set = LEGACY_FACTORY_SEARCH_MODULES
     className = typeName[0:-1] if typeName.endswith('s') else typeName
     result = None
 
-    for module_name in search_set:
+    updates = None
+    for module in search_set:
         # Support registering both names and actual module objects
-        mod_dict = getattr(module_name, '__dict__', None)
-        module = sys.modules.get(module_name) if mod_dict is None else module_name
-        if module is None:
-            try:
-                module = resolve(module_name)
-            except (AttributeError, ImportError):
-                # This is a programming error, so that's why we log it
-                logger.exception("Failed to resolve legacy factory search module %s",
-                                 module_name)
+        if not hasattr(module, '__dict__'):
+            # Let this throw ImportError, it's a programming bug
+            name = module
+            module = resolve(module)
+            if updates is None:
+                updates = []
+            updates.append((name, module))
 
-        value = getattr(module, '__dict__', _EMPTY_DICT) if mod_dict is None else mod_dict
-        result = _find_class_in_dict(className, value)
-        if result:
+        result = _find_class_in_dict(className, module.__dict__)
+        if result is not None:
             break
+
+    if updates:
+        for old_name, new_module in updates:
+            search_set.remove(old_name)
+            search_set.add(new_module)
 
     return result
 
@@ -130,15 +156,21 @@ def default_externalized_object_factory_finder(externalized_object):
 
         if not factory and StandardExternalFields_CLASS in externalized_object:
             class_name = externalized_object[StandardExternalFields_CLASS]
-            factory = component.queryAdapter(externalized_object,
-                                             IClassObjectFactory,
-                                             name=class_name)
-            if not factory:
-                factory = find_factory_for_class_name(class_name)
+            if class_name:
+                factory = component.queryAdapter(externalized_object,
+                                                 IClassObjectFactory,
+                                                 name=class_name)
+                if not factory:
+                    factory = find_factory_for_class_name(class_name)
     except (TypeError, KeyError):
+        # XXX: These catches are too broad. If there is a programming error
+        # in the adapter (eg, it doesn't have the correct __init__), we
+        # want that to propagate.
         return None
 
     return factory
+# XXX: This is ugly and introduces a cycle. Fix this by converting to
+# a class?
 default_externalized_object_factory_finder.find_factory = default_externalized_object_factory_finder
 
 
@@ -162,20 +194,25 @@ def find_factory_for(externalized_object, registry=component):
     Given a :class:`IExternalizedObject`, locate and return a factory
     to produce a Python object to hold its contents.
     """
-    factory_finder = registry.getAdapter(externalized_object,
-                                         IExternalizedObjectFactoryFinder)
+    factory_finder = registry.queryAdapter(
+        externalized_object,
+        IExternalizedObjectFactoryFinder,
+        default=default_externalized_object_factory_finder)
     return factory_finder.find_factory(externalized_object)
 
 
 def _resolve_externals(object_io, updating_object, externalObject,
                        registry=component, context=None):
     # Run the resolution steps on the external object
+    # TODO: Document this.
 
     for keyPath in getattr(object_io, '__external_oids__', ()):
         # TODO: This version is very simple, generalize it
+        # TODO: This check seems weird. Why do we do it this way
+        # instead of getting the object and seeing if it's false?
         if keyPath not in externalObject:
             continue
-        externalObjectOid = externalObject.get(keyPath)
+        externalObjectOid = externalObject[keyPath]
         unwrap = False
         if not isinstance(externalObjectOid, collections.MutableSequence):
             externalObjectOid = [externalObjectOid, ]
@@ -189,26 +226,31 @@ def _resolve_externals(object_io, updating_object, externalObject,
         if unwrap and keyPath in externalObject:  # Only put it in if it was there to start with
             externalObject[keyPath] = externalObjectOid[0]
 
-    for ext_key, resolver_func in getattr(object_io, '__external_resolvers__', {}).iteritems():
-        if not externalObject.get(ext_key):
+    for ext_key, resolver_func in getattr(object_io, '__external_resolvers__', {}).items():
+        extValue = externalObject.get(ext_key)
+        if not extValue:
             continue
         # classmethods and static methods are implemented with descriptors,
         # which don't work when accessed through the dictionary in this way,
         # so we special case it so instances don't have to.
-        if isinstance(resolver_func, classmethod) or isinstance(resolver_func, staticmethod):
+        if isinstance(resolver_func, (classmethod, staticmethod)):
             resolver_func = resolver_func.__get__(None, object_io.__class__)
-        elif len(inspect.getargspec(resolver_func)[0]) == 4:  # instance method
-            _resolver_func = resolver_func
 
-            def resolver_func(x, y, z):
-                return _resolver_func(object_io, x, y, z)
+        try:
+            extValue = resolver_func(context, externalObject, extValue)
+        except TypeError:
+            # instance function?
+            # Note that the try/catch is still faster than
+            # what we were doing to detect instance functions, which was to use
+            # len(inspect.getargspec(func)[0]) == 4 by about 4,000X !
+            extValue = resolver_func(object_io, context, externalObject, extValue)
 
-        externalObject[ext_key] = resolver_func(context, externalObject,
-                                                externalObject[ext_key])
+        externalObject[ext_key] = extValue
+
 
 
 # Things we don't bother trying to internalize
-_primitives = six.string_types + (numbers.Number, bool)
+_primitives = string_types + (numbers.Number, bool)
 
 
 def _pre_hook(k, x):
@@ -223,7 +265,7 @@ def _object_hook(k, v, x):
 def _recall(k, obj, ext_obj, kwargs):
     obj = update_from_external_object(obj, ext_obj, **kwargs)
     obj = kwargs['object_hook'](k, obj, ext_obj)
-    if IPersistent.providedBy(obj):
+    if IPersistent.providedBy(obj): # pragma: no cover
         obj._v_updated_from_external_source = ext_obj
     return obj
 
@@ -248,22 +290,24 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
         if iface_attr:
             iface_providing_attr = iface_attr.interface
         descriptions[iface_providing_attr].append(k)
-    attributes = [
-        Attributes(iface, *keys) for iface, keys in descriptions.items()
-    ]
+    attributes = [Attributes(iface, *sorted(keys))
+                  for iface, keys in descriptions.items()]
     event = eventFactory(containedObject, *attributes, **kwargs)
     event.external_value = externalObject
     # Let the updater have its shot at modifying the event, too, adding
     # interfaces or attributes. (Note: this was added to be able to provide
     # sharedWith information on the event, since that makes for a better stream.
-    # If that use case expands, revisit this interface
+    # If that use case expands, revisit this interface.
+    # XXX: Document and test this.
     try:
         meth = updater._ext_adjust_modified_event
     except AttributeError:
         pass
     else:
-        event = meth(event)
+        event = meth(event) # pragma: no cover
     _zope_event_notify(event)
+    return event
+
 notify_modified = notifyModified
 
 
@@ -278,31 +322,48 @@ def update_from_external_object(containedObject, externalObject,
 
     :param containedObject: The object to update.
     :param externalObject: The object (typically a mapping or sequence) to update
-            the object from. Usually this is obtained by parsing an external
-            format like JSON.
+        the object from. Usually this is obtained by parsing an external
+        format like JSON.
     :param context: An object passed to the update methods.
-    :param require_updater: If True (not the default) an exception will be raised
-            if no implementation of :class:`~nti.externalization.interfaces.IInternalObjectUpdater` can be found
-            for the `containedObject.`
-    :param bool notify: If ``True`` (the default), then if the updater for the `containedObject` either has no preference
-            (returns None) or indicates that the object has changed,
-            then an :class:`~nti.externalization.interfaces.IObjectModifiedFromExternalEvent` will be fired. This may
-            be a recursive process so a top-level call to this object may spawn
-            multiple events. The events that are fired will have a ``descriptions`` list containing
-            one or more :class:`~zope.lifecycleevent.interfaces.IAttributes` each with
-            ``attributes`` for each attribute we modify (assuming that the keys in the ``externalObject``
-            map one-to-one to an attribute; if this is the case and we can also find an interface
-            declaring the attribute, then the ``IAttributes`` will have the right value for ``interface``
-            as well).
-    :param callable object_hook: If given, called with the results of every nested object
-            as it has been updated. The return value will be used instead of the nested object.
-            Signature ``f(k,v,x)`` where ``k`` is either the key name, or None in the case of a sequence,
-            ``v`` is the newly-updated value, and ``x`` is the external object used to update ``v``.
-    :param callable pre_hook: If given, called with the before update_from_external_object is
-            called for every nested object. Signature ``f(k,x)`` where ``k`` is either the key name,
-            or None in the case of a sequence and ``x`` is the external object
+    :param require_updater: If True (not the default) an exception
+        will be raised if no implementation of
+        :class:`~nti.externalization.interfaces.IInternalObjectUpdater`
+        can be found for the `containedObject.`
+    :keyword bool notify: If ``True`` (the default), then if the updater
+        for the `containedObject` either has no preference (returns
+        None) or indicates that the object has changed, then an
+        :class:`~nti.externalization.interfaces.IObjectModifiedFromExternalEvent`
+        will be fired. This may be a recursive process so a top-level
+        call to this object may spawn multiple events. The events that
+        are fired will have a ``descriptions`` list containing one or
+        more :class:`~zope.lifecycleevent.interfaces.IAttributes` each
+        with ``attributes`` for each attribute we modify (assuming
+        that the keys in the ``externalObject`` map one-to-one to an
+        attribute; if this is the case and we can also find an
+        interface declaring the attribute, then the ``IAttributes``
+        will have the right value for ``interface`` as well).
+    :keyword callable object_hook: If given, called with the results of
+        every nested object as it has been updated. The return
+        value will be used instead of the nested object. Signature
+        ``f(k,v,x)`` where ``k`` is either the key name, or None
+        in the case of a sequence, ``v`` is the newly-updated
+        value, and ``x`` is the external object used to update
+        ``v``. Deprecated.
+    :keyword callable pre_hook: If given, called with the before
+        update_from_external_object is called for every nested object.
+        Signature ``f(k,x)`` where ``k`` is either the key name, or
+        None in the case of a sequence and ``x`` is the external
+        object. Deprecated.
     :return: `containedObject` after updates from `externalObject`
     """
+
+    if pre_hook is not None and pre_hook is not _pre_hook: # pragma: no cover
+        for i in range(3):
+            warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
+
+    if object_hook is not None and object_hook is not _object_hook: # pragma: no cover
+        for i in range(3):
+            warnings.warn('object_hook is deprecated', FutureWarning, stacklevel=i)
 
     pre_hook = _pre_hook if pre_hook is None else pre_hook
     object_hook = _object_hook if object_hook is None else object_hook
@@ -326,10 +387,12 @@ def update_from_external_object(containedObject, externalObject,
     # python types
     if isinstance(externalObject, collections.MutableSequence):
         tmp = []
-        for i in externalObject:
-            kwargs['pre_hook'](None, i)
-            factory = find_factory_for(i, registry=registry)
-            tmp.append(_recall(None, factory(), i, kwargs) if factory else i)
+        for value in externalObject:
+            pre_hook(None, value)
+            factory = find_factory_for(value, registry=registry)
+            tmp.append(_recall(None, factory(), value, kwargs) if factory else value)
+        # XXX: TODO: Should we be assigning this to the slice of externalObject?
+        # in-place?
         return tmp
 
     assert isinstance(externalObject, collections.MutableMapping)
@@ -337,29 +400,31 @@ def update_from_external_object(containedObject, externalObject,
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
     external_keys = list()
-    for k, v in externalObject.iteritems():
+    for k, v in iteritems(externalObject):
         external_keys.append(k)
         if isinstance(v, _primitives):
             continue
 
-        kwargs['pre_hook'](k, v)
+        pre_hook(k, v)
 
         if isinstance(v, collections.MutableSequence):
             # Update the sequence in-place
+            # XXX: This is not actually updating it.
+            # We need to slice externalObject[k[:]]
             __traceback_info__ = k, v
             v = _recall(k, (), v, kwargs)
             externalObject[k] = v
         else:
             factory = find_factory_for(v, registry=registry)
-            externalObject[k] = _recall(
-                k, factory(), v, kwargs) if factory else v
+            if factory:
+                externalObject[k] = _recall(k, factory(), v, kwargs)
 
     updater = None
-    if      hasattr(containedObject, 'updateFromExternalObject') \
+    if hasattr(containedObject, 'updateFromExternalObject') \
         and not getattr(containedObject, '__ext_ignore_updateFromExternalObject__', False):
-        # legacy support. The __ext_ignore_updateFromExternalObject__ allows a transitition to an adapter
-        # without changing existing callers and without triggering infinite
-        # recursion
+        # legacy support. The __ext_ignore_updateFromExternalObject__
+        # allows a transition to an adapter without changing
+        # existing callers and without triggering infinite recursion
         updater = containedObject
     else:
         if require_updater:
@@ -376,6 +441,8 @@ def update_from_external_object(containedObject, externalObject,
 
         updated = None
         # The signature may vary.
+        # XXX: This is slow and cumbersome and needs to go.
+        # See https://github.com/NextThought/nti.externalization/issues/30
         argspec = inspect.getargspec(updater.updateFromExternalObject)
         if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
             updated = updater.updateFromExternalObject(externalObject,
@@ -414,7 +481,7 @@ def validate_field_value(self, field_name, field, value):
     __traceback_info__ = field_name, value
     field = field.bind(self)
     try:
-        if isinstance(value, six.text_type) and IFromUnicode.providedBy(field):
+        if isinstance(value, text_type) and IFromUnicode.providedBy(field):
             value = field.fromUnicode(value)  # implies validation
         else:
             field.validate(value)
@@ -440,17 +507,20 @@ def validate_field_value(self, field_name, field, value):
         # Like SchemaNotProvided, but for a primitive type,
         # most commonly a date
         # Can we adapt?
-        if len(e.args) != 3:
+        if len(e.args) != 3: # pragma: no cover
             raise
         exc_info = sys.exc_info()
         exp_type = e.args[1]
         # If the type unambiguously implements an interface (one interface)
         # that's our target. IDate does this
         if len(list(interface.implementedBy(exp_type))) != 1:
-            raise
+            try:
+                raise
+            finally:
+                del exc_info
         schema = list(interface.implementedBy(exp_type))[0]
         try:
-            value = component.getAdapter(value, schema)
+            value = schema(value)
         except (LookupError, TypeError):
             # No registered adapter, darn
             raise reraise(*exc_info)
@@ -474,17 +544,16 @@ def validate_field_value(self, field_name, field, value):
         # if the error is one that may be solved via simple adaptation
         # TODO: This is also thrown from IObject fields when validating the
         # fields of the object
-        exc_info = sys.exc_info()
         if not e.args or not all((isinstance(x, SchemaNotProvided) for x in e.args[0])):
-            raise
-
+            raise # pragma: no cover
+        exc_info = sys.exc_info()
         # IObject provides `schema`, which is an interface, so we can adapt
         # using it. Some other things do not, for example nti.schema.field.Variant
         # They might provide a `fromObject` function to do the conversion
         # The field may be able to handle the whole thing by itself or we may need
         # to do the individual objects
 
-        def converter(x): return x
+        converter = identity
         loop = True
         if hasattr(field, 'fromObject'):
             converter = field.fromObject
@@ -517,9 +586,9 @@ def validate_field_value(self, field_name, field, value):
         finally:
             del exc_info
 
-    if (    field.readonly
-        and field.get(self) is None
-        and field.queryTaggedValue('_ext_allow_initial_set')):
+    if (field.readonly
+            and field.query(self) is None
+            and field.queryTaggedValue('_ext_allow_initial_set')):
         if value is not None:
             # First time through we get to set it, but we must bypass
             # the field
@@ -542,9 +611,10 @@ def validate_named_field_value(self, iface, field_name, value):
     validate that the given ``value`` is appropriate to set. See :func:`validate_field_value`
     for details.
 
-    :param string field_name: The name of a field contained in `iface`. May name
-            a regular :class:`zope.interface.Attribute`, or a :class:`zope.schema.interfaces.IField`;
-            if the latter, extra validation will be possible.
+    :param string field_name: The name of a field contained in
+        `iface`. May name a regular :class:`zope.interface.Attribute`,
+        or a :class:`zope.schema.interfaces.IField`; if the latter,
+        extra validation will be possible.
 
     :return: A callable of no arguments to call to actually set the value.
     """

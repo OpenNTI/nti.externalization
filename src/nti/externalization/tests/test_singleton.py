@@ -10,6 +10,7 @@ from nti.externalization.tests import ExternalizationLayerTest
 
 from hamcrest import assert_that
 from hamcrest import is_
+from hamcrest import is_not
 from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
@@ -40,3 +41,15 @@ class TestSingleton(ExternalizationLayerTest):
 
         with self.assertRaises(AttributeError):
             getattr(x, '__dict__')
+
+    def test_singleton_when_ancestor_is_singleton(self):
+        X = SingletonDecorator('X', (object,), {})
+        Y = SingletonDecorator('Y', (X,), {})
+        class Z(Y):
+            pass
+
+        assert_that(X(), is_(same_instance(X())))
+        assert_that(Y(), is_(same_instance(Y())))
+        assert_that(Z(), is_(same_instance(Z())))
+        assert_that(X(), is_not(same_instance(Z())))
+        assert_that(Y(), is_not(same_instance(Z())))

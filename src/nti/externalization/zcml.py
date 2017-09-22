@@ -4,7 +4,6 @@
 Directives to be used in ZCML; helpers for registering factories
 for mime types.
 
-.. $Id$
 """
 
 from __future__ import absolute_import
@@ -12,7 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 from ZODB import loglevels
-from ZODB.POSException import POSError
+
 from zope import interface
 from zope.component import zcml as component_zcml
 from zope.component.factory import Factory
@@ -27,13 +26,7 @@ __docformat__ = "restructuredtext en"
 
 logger = __import__('logging').getLogger(__name__)
 
-
-
-
-
-
-
-
+# pylint: disable=protected-access,inherit-non-class
 
 @interface.implementer(IMimeObjectFactory)
 class _MimeObjectFactory(Factory):
@@ -48,7 +41,7 @@ class _MimeObjectFactory(Factory):
         # of the same module from different places from conflicting.
         try:
             return self._callable is other._callable
-        except AttributeError:
+        except AttributeError: # pragma: no cover
             return NotImplemented
 
     def __hash__(self):
@@ -80,72 +73,91 @@ def registerMimeFactories(_context, module):
     """
     # This is a pretty loose check. We can probably do better. For example,
     # pass an interface parameter and only register things that provide
-    # that interface
-    for k, v in module.__dict__.items():
-        __traceback_info__ = k, v
+    # that interface, or at least check to see if they are a ``type``
+    mod_name = module.__name__
+    for object_name, value in vars(module).items():
+        __traceback_info__ = object_name, value
+
         try:
-            mime_type = getattr(v, 'mimeType', getattr(v, 'mime_type', None))
-            ext_create = getattr(v, '__external_can_create__', False)
-            v_mod_name = getattr(v, '__module__', None)
-        except POSError:
-            # This is a problem in the module. Module objects shouldn't do
-            # this.
-            logger.warn("Failed to inspect %s in %s", k, module)
+            ext_create = value.__external_can_create__
+            v_mod_name = value.__module__
+        except AttributeError:
             continue
 
-        if mime_type and ext_create and module.__name__ == v_mod_name:
+        try:
+            mime_type = value.mimeType
+        except AttributeError:
+            try:
+                mime_type = value.mime_type
+            except AttributeError:
+                continue
+
+        if mime_type and ext_create and mod_name == v_mod_name:
             logger.log(loglevels.TRACE,
-                       "Registered mime factory utility %s = %s (%s)", k, v, mime_type)
+                       "Registered mime factory utility %s = %s (%s)",
+                       object_name, value, mime_type)
+            factory = _MimeObjectFactory(value,
+                                         title=object_name,
+                                         interfaces=list(interface.implementedBy(value)))
             component_zcml.utility(_context,
                                    provides=IMimeObjectFactory,
-                                   component=_MimeObjectFactory(v,
-                                                                title=k,
-                                                                interfaces=list(interface.implementedBy(v))),
+                                   component=factory,
                                    name=mime_type)
-        elif module.__name__ == v_mod_name and (mime_type or ext_create):
-            # There will be lots of things that don't get registered.
-            # Only complain if it looks like they tried and got it half right
-            logger.log(loglevels.TRACE, "Nothing to register on %s (mt: %s ext: %s mod: %s)",
-                       k, mime_type, ext_create, v_mod_name)
 
 
 class IAutoPackageExternalizationDirective(interface.Interface):
     """
-    This directive combines the effects of :class:`.IRegisterInternalizationMimeFactoriesDirective`
-    with that of :mod:`.autopackage`, removing all need to repeat root interfaces
-    and module names.
+    This directive combines the effects of
+    :class:`.IRegisterInternalizationMimeFactoriesDirective` with that
+    of :mod:`.autopackage`, removing all need to repeat root
+    interfaces and module names.
+
+    After this directive is complete, a new class that descends from
+    :class:`~.AutoPackageSearchingScopedInterfaceObjectIO` will be
+    registered as the :class:`~nti.externalization.interfaces.IInternalObjectIO` adapter for all of
+    the *root_interface* objects, and the *modules* (or
+    *factory_modules*) will be searched for object factories via
+    :func:`registerMimeFactories`.
     """
 
-    root_interfaces = Tokens(title=u"The root interfaces defined by the package.",
-                             value_type=GlobalInterface(),
-                             required=True)
-    modules = Tokens(title=u"Module names that contain the implementations of the root_interfaces.",
-                     value_type=GlobalObject(),
-                     required=True)
+    root_interfaces = Tokens(
+        title=u"The root interfaces defined by the package.",
+        value_type=GlobalInterface(),
+        required=True)
+    modules = Tokens(
+        title=u"Module names that contain the implementations of the root_interfaces.",
+        value_type=GlobalObject(),
+        required=True)
 
-    factory_modules = Tokens(title=u"If given, module names that should be searched for internalization factories",
-                             description=u"If not given, all modules will be examined.",
-                             value_type=GlobalObject(),
-                             required=False)
+    factory_modules = Tokens(
+        title=u"If given, module names that should be searched for internalization factories",
+        description=u"If not given, all modules will be examined.",
+        value_type=GlobalObject(),
+        required=False)
 
-    iobase = GlobalObject(title=u"If given, a base class that will be used. You can customize aspects of externalization that way.",
-                          required=False)
+    iobase = GlobalObject(
+        title=(u"If given, a base class that will be used. "
+               u"You can customize aspects of externalization that way."),
+        required=False)
 
 
 
 
-def autoPackageExternalization(_context, root_interfaces, modules, factory_modules=None, iobase=None):
+def autoPackageExternalization(_context, root_interfaces, modules,
+                               factory_modules=None, iobase=None):
 
     ext_module_name = root_interfaces[0].__module__
     package_name = ext_module_name.rsplit('.', 1)[0]
 
+    root_interfaces = frozenset(root_interfaces)
     @classmethod
     def _ap_enumerate_externalizable_root_interfaces(cls, unused_ifaces):
         return root_interfaces
 
+    module_names = frozenset([m.__name__.split('.')[-1] for m in modules])
     @classmethod
     def _ap_enumerate_module_names(cls):
-        return [m.__name__.split('.')[-1] for m in modules]
+        return module_names
 
     @classmethod
     def _ap_find_package_name(cls):
@@ -159,10 +171,9 @@ def autoPackageExternalization(_context, root_interfaces, modules, factory_modul
         '_ap_enumerate_externalizable_root_interfaces': _ap_enumerate_externalizable_root_interfaces
     }
 
+    bases = (AutoPackageSearchingScopedInterfaceObjectIO,)
     if iobase:
-        bases = (iobase, AutoPackageSearchingScopedInterfaceObjectIO,) 
-    else:
-        bases = (AutoPackageSearchingScopedInterfaceObjectIO,)
+        bases = (iobase,) + bases
 
     cls_iio = type('AutoPackageSearchingScopedInterfaceObjectIO',
                    bases,

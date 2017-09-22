@@ -21,7 +21,6 @@ character).
 We also put a version marker at the end of the string so we can evolve
 this algorithm gracefully but still honor codes in the wild.
 
-.. $Id$
 """
 
 from __future__ import absolute_import
@@ -31,15 +30,12 @@ from __future__ import print_function
 # stdlib imports
 import string
 
-import six
-
-
 try:
-    from string import maketrans
-    from string import translate
-except ImportError:
     maketrans = str.maketrans
-    translate = str.translate
+except AttributeError: # Python 2
+    from string import maketrans
+
+translate = str.translate
 
 # In the first version of the protocol, the version marker, which would
 # come at the end, is always omitted. Subsequent versions will append
@@ -76,12 +72,12 @@ def from_external_string(key):
     if not key:
         raise ValueError("Improper key")
 
-    if six.PY2 and isinstance(key, six.text_type):
-        # Unicode keys cause problems: The _TRANSTABLE is coerced
+    if not isinstance(key, str):
+        # Unicode keys cause problems on Python 2: The _TRANSTABLE is coerced
         # to Unicode, which fails because it contains non-ASCII values.
         # So instead, we encode the unicode string to ascii, which, if it is a
         # valid key, will work
-        key = key.encode('ascii')
+        key = key.decode('ascii') if isinstance(key, bytes) else key.encode('ascii')
 
     # strip the version if needed
     key = key[:-1] if key[-1] == _VERSION else key

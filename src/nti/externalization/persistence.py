@@ -15,6 +15,7 @@ import persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
 from persistent.wref import WeakRef as PWeakRef
+from six import iteritems
 from zope import interface
 
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
@@ -85,18 +86,16 @@ def setPersistentStateChanged(obj):
 
 def _weakRef_toExternalObject(self):
     val = self()
-    if val is None:
-        return None
-    return toExternalObject(val)
+    if val is not None:
+        return toExternalObject(val)
 PWeakRef.toExternalObject = _weakRef_toExternalObject
 interface.classImplements(PWeakRef, IExternalObject)
 
 
 def _weakRef_toExternalOID(self):
     val = self()
-    if val is None:
-        return None
-    return toExternalOID(val)
+    if val is not None:
+        return toExternalOID(val)
 PWeakRef.toExternalOID = _weakRef_toExternalOID
 
 
@@ -109,12 +108,9 @@ class PersistentExternalizableDictionary(PersistentPropertyHolder,
     :func:`toExternalObject`.
     """
 
-    def __init__(self, data=None, **kwargs):
-        super(PersistentExternalizableDictionary, self).__init__(data, **kwargs)
-
     def toExternalDictionary(self, *args, **kwargs):
         result = super(PersistentExternalizableDictionary, self).toExternalDictionary(self, *args, **kwargs)
-        for key, value in self.iteritems():
+        for key, value in iteritems(self):
             result[key] = toExternalObject(value, *args, **kwargs)
         return result
 
@@ -241,11 +237,10 @@ def NoPickle(cls):
 
     msg = "Not allowed to pickle %s" % cls
 
-    def __reduce_ex__(self, protocol):
+    def __reduce_ex__(self, protocol=0):
         raise TypeError(msg)
 
-    def __reduce__(self):
-        return self.__reduce_ex__(0)
+    __reduce__ = __reduce_ex__
 
     cls.__reduce__ = __reduce__
     cls.__reduce_ex__ = __reduce_ex__
