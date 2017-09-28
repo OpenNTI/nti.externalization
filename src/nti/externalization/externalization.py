@@ -28,15 +28,14 @@ from zope import interface
 
 import zope.deferredimport
 from zope.dublincore.interfaces import IDCTimes
-from zope.hookable import hookable
 from zope.interface.common.sequence import IFiniteSequence
 from zope.security.interfaces import IPrincipal
 from zope.security.management import system_user
 
-from nti.externalization._compat import to_unicode
 from nti.externalization._compat import identity
-from nti.externalization._pyramid import ThreadLocalManager
-from nti.externalization._pyramid import get_current_request
+from nti.externalization._threadlocal import ThreadLocalManager
+from nti.externalization.extension_points import get_current_request
+from nti.externalization.extension_points import set_external_identifiers
 from nti.externalization.interfaces import IExternalMappingDecorator
 from nti.externalization.interfaces import IExternalObject
 from nti.externalization.interfaces import IExternalObjectDecorator
@@ -46,7 +45,6 @@ from nti.externalization.interfaces import INonExternalizableReplacer
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import StandardInternalFields
-from nti.externalization.oids import to_external_oid
 
 
 logger = __import__('logging').getLogger(__name__)
@@ -402,7 +400,9 @@ def choose_field(result, self, ext_name,
                  converter=identity,
                  fields=(),
                  sup_iface=None, sup_fields=(), sup_converter=identity):
-
+    # XXX: We have a public user of this in nti.ntiids.oids. We need
+    # to document this and probably move it to a different module, or
+    # provide a cleaner simpler replacement.
     for x in fields:
         try:
             value = getattr(self, x)
@@ -499,13 +499,6 @@ def _ext_class_if_needed(self, result):
             result[StandardExternalFields_CLASS] = self.__class__.__name__
 
 
-def setExternalIdentifiers(self, result):
-    ntiid = oid = to_unicode(to_external_oid(self))
-    if ntiid:
-        result[StandardExternalFields_OID] = oid
-        result[StandardExternalFields_NTIID] = ntiid
-    return (oid, ntiid)
-set_external_identifiers = hookable(setExternalIdentifiers)
 
 def _should_never_convert(x):
     raise AssertionError("We should not be converting")
