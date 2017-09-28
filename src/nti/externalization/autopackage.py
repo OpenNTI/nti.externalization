@@ -27,6 +27,9 @@ logger = __import__('logging').getLogger(__name__)
 # import ExtensionClass
 
 
+class _ClassNameRegistry(object):
+    __name__ = ''
+
 class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO):
     """
     A special, magic, type of interface-driven input and output, one designed
@@ -139,8 +142,8 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         :class:`zope.mimetype.interfaces.IContentTypeAware`.
         """
 
-        class _ClassNameRegistry(object):
-            pass
+        registry = _ClassNameRegistry()
+        registry.__name__ = package_name
 
         for mod_name in cls._ap_enumerate_module_names():
             mod = dottedname.resolve(package_name + '.' + mod_name)
@@ -150,8 +153,8 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
                 if getattr(v, '__module__', None) != mod.__name__ \
                     or not issubclass(type(v), type):
                     continue
-                cls._ap_handle_one_potential_factory_class(_ClassNameRegistry, package_name, v)
-        return _ClassNameRegistry
+                cls._ap_handle_one_potential_factory_class(registry, package_name, v)
+        return registry
 
     @classmethod
     def _ap_handle_one_potential_factory_class(cls, namespace, package_name, implementation_class):
@@ -271,3 +274,5 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         # XXX: Return this instead of setting it now so that the ZCML
         # directive has more control.
         register_legacy_search_module(factories)
+
+        return factories
