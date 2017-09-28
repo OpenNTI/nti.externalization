@@ -15,6 +15,7 @@ import collections
 import inspect
 import numbers
 import sys
+import types
 import warnings
 
 from persistent.interfaces import IPersistent
@@ -119,16 +120,29 @@ def __register_legacy_if_not(gsm, name, factory):
 
     gsm.registerUtility(factory, name=name, provided=_ILegacySearchModuleFactory)
 
-def _register_factories_from_module_dict(mod_dict):
+def _find_factories_in_module(module,
+                              case_sensitive=False):
+    mod_name = module.__name__
+    # If we're dealing with a namespace object, such as what
+    # AutoPackaegIO produces, it may represent types from many modules
+    # on purpose. OTOH, if we get here via a string that was supposed
+    # to be a module, then we need to respect that and ignore imports.
+    # This is complicated by the fact that zope.deprecation puts DeprecationProxy
+    # objects into sys.modules, but they appear to handle that correctly
+    any_module = not isinstance(module, types.ModuleType)
+    for name, value in sorted(vars(module).items()):
+        if (callable(value)
+                and getattr(value, '__external_can_create__', False)
+                and (any_module or getattr(value, '__module__', _EMPTY_DICT) == mod_name)):
+            yield name, value
+            if not case_sensitive and name.lower() != name:
+                yield name.lower(), value
+
+def _register_factories_from_module(module):
     gsm = component.getGlobalSiteManager()
 
-    for name, value in sorted(mod_dict.items()):
-        if callable(value) and getattr(value, '__external_can_create__', False):
-            # Found one. Register it if not already registered.
-            # For legacy reasons, we also register the lower-case version.
-            __register_legacy_if_not(gsm, name, value)
-            if name.lower() != name:
-                __register_legacy_if_not(gsm, name.lower(), value)
+    for name, value in _find_factories_in_module(module):
+        __register_legacy_if_not(gsm, name, value)
 
 def _register_factories_from_search_set():
     search_modules = set(LEGACY_FACTORY_SEARCH_MODULES)
@@ -146,7 +160,7 @@ def _register_factories_from_search_set():
     # Sort them as best we can.
     modules.sort(key=lambda s: getattr(s, '__name__', ''))
     for module in modules:
-        _register_factories_from_module_dict(module.__dict__)
+        _register_factories_from_module(module)
 
 # Explicit for use of the warnings module.
 __warningregistry__ = {}

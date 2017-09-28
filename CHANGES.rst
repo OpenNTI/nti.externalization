@@ -18,3 +18,20 @@
 - Deprecate
   ``nti.externalization.internalization.register_legacy_search_module``.
   See https://github.com/NextThought/nti.externalization/issues/35
+- Stop ``ext:registerAutoPackageIO`` from registering the legacy
+  class-name based factories by default. If you need class-name based
+  factories, there are two options. The first is to explicitly
+  register ``IClassObjectFactory`` objects in ZCML (we could add a
+  scanning directive to make that more convenient for large numbers of
+  classes), and the second is to set ``register_legacy_search_module``
+  to a true value in the ZCML directive for
+  ``ext:registerAutoPackageIO``. Note that we expect the behaviour of
+  this attribute to change in the near future.
+  See https://github.com/NextThought/nti.externalization/issues/33
+- Make ``ext:registerAutoPackageIO`` perform legacy class
+  registrations when the configuration context executes, not when the
+  directive runs. This means that conflicts in legacy class names will be
+  detected at configuration time. It also means that legacy class names can
+  be registered locally with ``z3c.baseregistry`` (previously they
+  were always registered in the global site manager).
+  See https://github.com/NextThought/nti.externalization/issues/28
