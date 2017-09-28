@@ -6,7 +6,6 @@ from __future__ import division
 from __future__ import print_function
 
 # stdlib imports
-import sys
 import unittest
 
 import fudge
@@ -25,7 +24,9 @@ from ..interfaces import IMimeObjectFactory
 from hamcrest import assert_that
 from hamcrest import calling
 from hamcrest import contains
+from hamcrest import contains_string
 from hamcrest import equal_to
+from hamcrest import greater_than_or_equal_to
 from hamcrest import has_entry
 from hamcrest import has_length
 from hamcrest import has_property
@@ -102,17 +103,54 @@ class TestFunctions(CleanUp,
         assert_that(INT.find_factory_for_class_name(''), is_(none()))
 
     def test_search_for_factory_updates_search_set(self):
-        INT.register_legacy_search_module(__name__)
-        assert_that(INT.find_factory_for_class_name('testfunctions'), is_(none()))
+        from zope.deprecation import Suppressor
+        from zope.testing.loggingsupport import InstalledHandler
 
-        assert_that(sys.modules[__name__], is_in(INT.LEGACY_FACTORY_SEARCH_MODULES))
-        assert_that(__name__, is_not(is_in(INT.LEGACY_FACTORY_SEARCH_MODULES)))
+        with Suppressor():
+            INT.register_legacy_search_module(__name__)
+            # The cache is initialized lazily
+            assert_that(__name__, is_in(INT.LEGACY_FACTORY_SEARCH_MODULES))
 
-        TestFunctions.__external_can_create__ = True
-        try:
-            assert_that(INT.find_factory_for_class_name('testfunctions'), equal_to(TestFunctions))
-        finally:
-            del TestFunctions.__external_can_create__
+            assert_that(INT.find_factory_for_class_name('testfunctions'), is_(none()))
+
+            # And we have been examined and removed
+            assert_that(__name__, is_not(is_in(INT.LEGACY_FACTORY_SEARCH_MODULES)))
+            assert_that(INT.LEGACY_FACTORY_SEARCH_MODULES, is_(set()))
+
+            # Now we're going to fiddle with our public classes and try again.
+            # This will force re-registration to occur. Note we do this before
+            # we make ourself public, so that we can assert it's lazy
+            INT.register_legacy_search_module(__name__)
+
+            TestFunctions.__external_can_create__ = True
+            handler = InstalledHandler(INT.__name__)
+            try:
+                assert_that(INT.find_factory_for_class_name('testfunctions'),
+                            equal_to(TestFunctions))
+
+                # Now lets register ourself again, to trigger the logged warnings.
+                assert_that(__name__, is_not(is_in(INT.LEGACY_FACTORY_SEARCH_MODULES)))
+                assert_that(INT.LEGACY_FACTORY_SEARCH_MODULES, is_(set()))
+
+                # Now we're going to fiddle with our public classes and try again.
+                # This will force re-registration to occur. Note we do this before
+                # we make ourself public, so that we can assert it's lazy
+                INT.register_legacy_search_module(__name__)
+
+                assert_that(INT.find_factory_for_class_name('testfunctions'),
+                            equal_to(TestFunctions))
+                # case doesn't matter
+                assert_that(INT.find_factory_for_class_name('TeStfUnctIons'),
+                            equal_to(TestFunctions))
+
+                assert_that(str(handler),
+                            contains_string("Found duplicate registration for legacy search path."))
+
+                assert_that(INT.__warningregistry__, has_length(greater_than_or_equal_to(2)))
+
+            finally:
+                del TestFunctions.__external_can_create__
+                handler.uninstall()
 
 
 class TestDefaultExternalizedObjectFactory(CleanUp,
