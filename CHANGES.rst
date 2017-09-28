@@ -35,3 +35,6 @@
   be registered locally with ``z3c.baseregistry`` (previously they
   were always registered in the global site manager).
   See https://github.com/NextThought/nti.externalization/issues/28
+- Drop dependency on ``zope.preference``. It was not used by this
+  package, although our ``configure.zcml`` did include it. If you use
+  ``zope.preference``, please include it in your own ZCML file.
