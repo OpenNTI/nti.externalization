@@ -166,7 +166,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
             return
 
         ext_class_name = cls._ap_compute_external_class_name_from_concrete_class(implementation_class)
-
+        # XXX: Checking for duplicates
         setattr(namespace,
                 ext_class_name,
                 implementation_class)
@@ -245,11 +245,15 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         (See :class:`~.InterfaceObjectIO`.)
 
         Then, find all of the object factories and initialize them
-        using :func:`_ap_find_factories`. Finally, the namespace object that was
-        returned is registered using :func:`~.register_legacy_search_module`.
+        using :func:`_ap_find_factories`. A namespace object representing these
+        factories is returned.
 
-        .. note:: In the future, registering this namespace object will be optional
-           and disabled by default.
+        .. versionchanged:: 1.0
+            Registering the factories using :func:`~.register_legacy_search_module`
+            is no longer done by default. If you are using this class outside of ZCML,
+            you will need to subclass and override this method to make that call
+            yourself. If you are using ZCML, you will need to set the appropriate
+            attribute to True.
         """
         # Do nothing when this class itself is initted
         if cls.__name__ == 'AutoPackageSearchingScopedInterfaceObjectIO' \
@@ -271,8 +275,4 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
 
         # Now find the factories
         factories = cls._ap_find_factories(package_name)
-        # XXX: Return this instead of setting it now so that the ZCML
-        # directive has more control.
-        register_legacy_search_module(factories)
-
         return factories

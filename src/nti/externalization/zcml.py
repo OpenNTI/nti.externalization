@@ -11,14 +11,16 @@ from __future__ import division
 from __future__ import print_function
 
 from ZODB import loglevels
-
 from zope import interface
+from zope.deprecation import Suppressor
 from zope.component import zcml as component_zcml
 from zope.component.factory import Factory
+from zope.configuration.fields import Bool
 from zope.configuration.fields import GlobalInterface
 from zope.configuration.fields import GlobalObject
 from zope.configuration.fields import Tokens
 
+from nti.externalization import internalization
 from nti.externalization.autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 from nti.externalization.interfaces import IMimeObjectFactory
 
@@ -124,14 +126,16 @@ class IAutoPackageExternalizationDirective(interface.Interface):
         title=u"The root interfaces defined by the package.",
         value_type=GlobalInterface(),
         required=True)
+
     modules = Tokens(
         title=u"Module names that contain the implementations of the root_interfaces.",
         value_type=GlobalObject(),
         required=True)
 
     factory_modules = Tokens(
-        title=u"If given, module names that should be searched for internalization factories",
-        description=u"If not given, all modules will be examined.",
+        title=u"If given, module names that should be searched for internalization factories.",
+        description=(u"If not given, all *modules* will be examined. If given, "
+                     u"**only** these modules will be searched."),
         value_type=GlobalObject(),
         required=False)
 
@@ -140,11 +144,31 @@ class IAutoPackageExternalizationDirective(interface.Interface):
                u"You can customize aspects of externalization that way."),
         required=False)
 
+    register_legacy_search_module = Bool(
+        title=(u"Register found factories by their class name."),
+        description=(u"If true (*not* the default), then, in addition to registering "
+                     "factories by their mime type, also register them all by their class name. "
+                     "This is not recommended; currently no conflicts are caught and the order "
+                     "is ill-defined. "
+                     "See https://github.com/NextThought/nti.externalization/issues/33"),
+        default=False,
+        required=False,
+    )
+
 
 
 
 def autoPackageExternalization(_context, root_interfaces, modules,
-                               factory_modules=None, iobase=None):
+                               factory_modules=None, iobase=None,
+                               register_legacy_search_module=False):
+    """
+    Implement the :class:`IAutoPackageExternalizationDirective` directive.
+
+    .. versionchanged:: 1.0
+       Add the *register_legacy_search_module* keyword argument, defaulting to
+       False. Previously legacy search modules would always be registered, but
+       now you must explicitly ask for it.
+    """
 
     ext_module_name = root_interfaces[0].__module__
     package_name = ext_module_name.rsplit('.', 1)[0]
@@ -196,10 +220,16 @@ def autoPackageExternalization(_context, root_interfaces, modules,
     # _context.action( discriminator=('class_init', tuple(modules)),
     #                  callable=cls_iio.__class_init__,
     #                  args=() )
-    cls_iio.__class_init__()
+    legacy_factories = cls_iio.__class_init__()
 
     # Now that it's initted, register the factories
     for module in (factory_modules or modules):
         logger.log(loglevels.TRACE,
                    "Examining module %s for mime factories", module)
         registerMimeFactories(_context, module)
+
+    if register_legacy_search_module:
+        # XXX: Defer this, set up a series of actions so this happens
+        # at configuration execution time and we can detect conflicts.
+        with Suppressor():
+            internalization.register_legacy_search_module(legacy_factories)

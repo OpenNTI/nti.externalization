@@ -19,8 +19,10 @@ from nti.externalization.interfaces import IMimeObjectFactory
 from nti.testing.matchers import is_empty
 
 from hamcrest import assert_that
+from hamcrest import contains
 from hamcrest import is_not
 from hamcrest import has_length
+from hamcrest import has_property
 from hamcrest import none
 
 # disable: accessing protected members, too many methods
@@ -177,14 +179,22 @@ class TestAutoPackageZCML(PlacelessSetup,
         <configure xmlns:ext="http://nextthought.com/ntp/ext">
            <include package="nti.externalization" file="meta.zcml" />
            <ext:registerAutoPackageIO root_interfaces="%s.IExtRoot" modules="%s"
-              iobase="%s.IOBase" />
+              iobase="%s.IOBase"
+              register_legacy_search_module="yes" />
         </configure>
         """ % (__name__, __name__, __name__)
 
     def test_scan_package_empty(self):
+        from nti.externalization import internalization as INT
+        from zope.deprecation import Suppressor
         xmlconfig.string(self.SCAN_THIS_MODULE)
         gsm = component.getGlobalSiteManager()
         # The interfaces IExtRoot and IInternalObjectIO were registered
         assert_that(list(gsm.registeredUtilities()), has_length(2))
         # The root interface was registered
         assert_that(list(gsm.registeredAdapters()), has_length(1))
+
+        # The module was added to the legacy search list
+        with Suppressor():
+            assert_that(INT.LEGACY_FACTORY_SEARCH_MODULES,
+                        contains(has_property('__name__', 'nti.externalization.tests')))
