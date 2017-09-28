@@ -50,7 +50,9 @@ from nti.externalization.interfaces import StandardExternalFields
 
 logger = __import__('logging').getLogger(__name__)
 
-
+#: .. deprecated:: 1.0
+#: This is legacy functionality, please do not access directly.
+#: The public interface is through :func:`register_legacy_search_module`
 LEGACY_FACTORY_SEARCH_MODULES = set()
 
 try:
@@ -76,12 +78,15 @@ def register_legacy_search_module(module_name):
     :param module_name: Either the name of a module to look for
         at runtime in :data:`sys.modules`, or a module-like object
         having a ``__dict__``.
+
+    .. deprecated:: 1.0
+        Use explicit mime or class factories instead.
     """
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
 
 
-deprecated('register_legacy_search_module',
+deprecated(('register_legacy_search_module', 'LEGACY_FACTORY_SEARCH_MODULES'),
            "Legacy search modules are deprecated. Prefer to register "
            "explicit mime or class factories. See "
            "https://github.com/NextThought/nti.externalization/issues/35",

@@ -102,8 +102,9 @@ class TestFunctions(CleanUp,
         assert_that(INT.find_factory_for_class_name(''), is_(none()))
 
     def test_search_for_factory_updates_search_set(self):
-        INT.LEGACY_FACTORY_SEARCH_MODULES.add(__name__)
+        INT.register_legacy_search_module(__name__)
         assert_that(INT.find_factory_for_class_name('testfunctions'), is_(none()))
+
         assert_that(sys.modules[__name__], is_in(INT.LEGACY_FACTORY_SEARCH_MODULES))
         assert_that(__name__, is_not(is_in(INT.LEGACY_FACTORY_SEARCH_MODULES)))
 
