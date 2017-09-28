@@ -58,6 +58,15 @@ class TestAutoPackageIO(unittest.TestCase):
         assert_that(AutoPackage._ap_find_package_name(),
                     is_('nti.externalization'))
 
+    def test_find_factories_sets_name(self):
+        class AP(AutoPackage):
+            @classmethod
+            def _ap_enumerate_module_names(cls):
+                return ()
+
+        reg = AP._ap_find_factories('nti.externalization.tests')
+        assert_that(reg, has_property('__name__', 'nti.externalization.tests'))
+
     def test_find_interfaces(self):
         from nti.externalization import interfaces
         assert_that(AutoPackage._ap_find_package_interface_module(),

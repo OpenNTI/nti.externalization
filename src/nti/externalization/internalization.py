@@ -24,6 +24,7 @@ from six import reraise
 from six import iteritems
 from zope import component
 from zope import interface
+from zope.deprecation import deprecated
 from zope.dottedname.resolve import resolve
 from zope.event import notify as _zope_event_notify
 from zope.lifecycleevent import Attributes
@@ -45,11 +46,15 @@ from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import StandardExternalFields
 
 # pylint: disable=protected-access,ungrouped-imports,too-many-branches
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,inherit-non-class
 
 logger = __import__('logging').getLogger(__name__)
 
+_EMPTY_DICT = {}
 
+#: .. deprecated:: 1.0
+#: This is legacy functionality, please do not access directly.
+#: The public interface is through :func:`register_legacy_search_module`
 LEGACY_FACTORY_SEARCH_MODULES = set()
 
 try:
@@ -75,24 +80,76 @@ def register_legacy_search_module(module_name):
     :param module_name: Either the name of a module to look for
         at runtime in :data:`sys.modules`, or a module-like object
         having a ``__dict__``.
+
+    .. deprecated:: 1.0
+        Use explicit mime or class factories instead.
     """
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
 
 
-_EMPTY_DICT = {}
+deprecated(('register_legacy_search_module', 'LEGACY_FACTORY_SEARCH_MODULES'),
+           "Legacy search modules are deprecated. Prefer to register "
+           "explicit mime or class factories. See "
+           "https://github.com/NextThought/nti.externalization/issues/35",
+           cls=FutureWarning)
 
 
-def _find_class_in_dict(className, mod_dict):
-    clazz = mod_dict.get(className)
-    if not clazz and className.lower() == className:
-        # case-insensitive search of loaded modules if it was lower case.
-        for k in mod_dict:
-            if k.lower() == className:
-                clazz = mod_dict[k]
-                break
-    return clazz if getattr(clazz, '__external_can_create__', False) else None
+## Implementation of legacy search modules.
 
+# We go through the global component registry, using a local
+# interface. We treat the registry as a cache and we will only
+# look at any given module object one time. We can detect duplicates
+# in this fashion.
+
+class _ILegacySearchModuleFactory(interface.Interface):
+
+    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ
+        """
+        Create and return the object.
+        """
+
+def __register_legacy_if_not(gsm, name, factory):
+    registered = gsm.queryUtility(_ILegacySearchModuleFactory, name)
+    if registered is not None:
+        logger.info("Found duplicate registration for legacy search path."
+                    "Factory %r will be used for class name %r overriding %r",
+                    registered, name, factory)
+        return
+
+    gsm.registerUtility(factory, name=name, provided=_ILegacySearchModuleFactory)
+
+def _register_factories_from_module_dict(mod_dict):
+    gsm = component.getGlobalSiteManager()
+
+    for name, value in sorted(mod_dict.items()):
+        if callable(value) and getattr(value, '__external_can_create__', False):
+            # Found one. Register it if not already registered.
+            # For legacy reasons, we also register the lower-case version.
+            __register_legacy_if_not(gsm, name, value)
+            if name.lower() != name:
+                __register_legacy_if_not(gsm, name.lower(), value)
+
+def _register_factories_from_search_set():
+    search_modules = set(LEGACY_FACTORY_SEARCH_MODULES)
+    LEGACY_FACTORY_SEARCH_MODULES.clear()
+
+    # Make sure we have objects, not strs.
+    modules = []
+    for module in search_modules:
+        if not hasattr(module, '__dict__'):
+            # Let this throw ImportError, it's a programming bug
+            name = module
+            module = resolve(name)
+        modules.append(module)
+
+    # Sort them as best we can.
+    modules.sort(key=lambda s: getattr(s, '__name__', ''))
+    for module in modules:
+        _register_factories_from_module_dict(module.__dict__)
+
+# Explicit for use of the warnings module.
+__warningregistry__ = {}
 
 def _search_for_external_factory(typeName):
     """
@@ -105,31 +162,34 @@ def _search_for_external_factory(typeName):
     if not typeName:
         return None
 
-    search_set = LEGACY_FACTORY_SEARCH_MODULES
+    # First, register anything that needs to be registered still.
+    # Note that there are potential race conditions here.
+    if LEGACY_FACTORY_SEARCH_MODULES:
+        _register_factories_from_search_set()
+
+
+    # Now look for a factory, using both the given name and its
+    # lower case version.
     className = typeName[0:-1] if typeName.endswith('s') else typeName
-    result = None
 
-    updates = None
-    for module in search_set:
-        # Support registering both names and actual module objects
-        if not hasattr(module, '__dict__'):
-            # Let this throw ImportError, it's a programming bug
-            name = module
-            module = resolve(module)
-            if updates is None:
-                updates = []
-            updates.append((name, module))
+    gsm = component.getGlobalSiteManager()
+    factory = gsm.queryUtility(_ILegacySearchModuleFactory, name=className)
+    if factory is None and className.lower() != className:
+        factory = gsm.queryUtility(_ILegacySearchModuleFactory, name=className.lower())
 
-        result = _find_class_in_dict(className, module.__dict__)
-        if result is not None:
-            break
+    if factory is not None:
+        # This will produce a new warnings cache entry for each new
+        # class type we get (because the whole string is part of the
+        # key). Since this is external input, that could theoretically
+        # be used to DDOS us. We keep an eye on that and don't let the cache
+        # get too big, but that does mean we could ultimately produce
+        # duplicate warnings.
+        warnings.warn("Using legacy class finder for %r" % (typeName),
+                      FutureWarning)
+        if len(__warningregistry__) > 1024:
+            __warningregistry__.clear() # pragma: no cover
 
-    if updates:
-        for old_name, new_module in updates:
-            search_set.remove(old_name)
-            search_set.add(new_module)
-
-    return result
+    return factory
 
 
 @interface.implementer(IFactory)
