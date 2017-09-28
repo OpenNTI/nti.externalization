@@ -27,6 +27,12 @@ from hamcrest import same_instance
 class EC(Base):
     x = None
 
+    @classmethod
+    def wrapping(cls, implicit):
+        ec = cls()
+        ec.x = implicit
+        return ec.x
+
 class IM(Implicit):
     pass
 
@@ -38,7 +44,7 @@ def aq_proxied(im):
 
 class TestProxy(unittest.TestCase):
 
-    def test_removeAllProxies(self):
+    def test_removeAllProxies_simple(self):
 
         obj = IM()
 
@@ -47,10 +53,24 @@ class TestProxy(unittest.TestCase):
             wrapped = wrap(obj)
             assert_that(removeAllProxies(wrapped), is_(same_instance(obj)))
 
+
+    def test_removeAllProxies_doubled(self):
         # double wrapping in weird combos
+        obj = IM()
         for wrap in ProxyBase, ContainedProxy, aq_proxied:
             wrapped = wrap(obj)
             for wrap2 in ContainedProxy, ProxyBase:
                 __traceback_info__ = wrap, wrap2
                 wrapped = wrap2(wrapped)
                 assert_that(removeAllProxies(wrapped), is_(same_instance(obj)))
+
+    def test_removeAllProxies_multiple_wraps(self):
+        from itertools import permutations
+        wrappers = [ProxyBase, ContainedProxy, EC.wrapping]
+        obj = IM()
+        wrapped = obj
+        for permutation in permutations(wrappers):
+            for wrapper in permutation:
+                wrapped = wrapper(wrapped)
+
+        assert_that(removeAllProxies(wrapped), is_(same_instance(obj)))
