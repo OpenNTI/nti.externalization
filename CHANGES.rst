@@ -28,3 +28,10 @@
   ``ext:registerAutoPackageIO``. Note that we expect the behaviour of
   this attribute to change in the near future.
   See https://github.com/NextThought/nti.externalization/issues/33
+- Make ``ext:registerAutoPackageIO`` perform legacy class
+  registrations when the configuration context executes, not when the
+  directive runs. This means that conflicts in legacy class names will be
+  detected at configuration time. It also means that legacy class names can
+  be registered locally with ``z3c.baseregistry`` (previously they
+  were always registered in the global site manager).
+  See https://github.com/NextThought/nti.externalization/issues/28

@@ -12,7 +12,6 @@ from __future__ import print_function
 
 from ZODB import loglevels
 from zope import interface
-from zope.deprecation import Suppressor
 from zope.component import zcml as component_zcml
 from zope.component.factory import Factory
 from zope.configuration.fields import Bool
@@ -23,6 +22,7 @@ from zope.configuration.fields import Tokens
 from nti.externalization import internalization
 from nti.externalization.autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 from nti.externalization.interfaces import IMimeObjectFactory
+from nti.externalization.internalization import _find_factories_in_module
 
 __docformat__ = "restructuredtext en"
 
@@ -73,18 +73,8 @@ def registerMimeFactories(_context, module):
 
     :param module module: The module to inspect.
     """
-    # This is a pretty loose check. We can probably do better. For example,
-    # pass an interface parameter and only register things that provide
-    # that interface, or at least check to see if they are a ``type``
-    mod_name = module.__name__
-    for object_name, value in vars(module).items():
+    for object_name, value in _find_factories_in_module(module, case_sensitive=True):
         __traceback_info__ = object_name, value
-
-        try:
-            ext_create = value.__external_can_create__
-            v_mod_name = value.__module__
-        except AttributeError:
-            continue
 
         try:
             mime_type = value.mimeType
@@ -94,7 +84,7 @@ def registerMimeFactories(_context, module):
             except AttributeError:
                 continue
 
-        if mime_type and ext_create and mod_name == v_mod_name:
+        if mime_type:
             logger.log(loglevels.TRACE,
                        "Registered mime factory utility %s = %s (%s)",
                        object_name, value, mime_type)
@@ -213,13 +203,20 @@ def autoPackageExternalization(_context, root_interfaces, modules,
 
     # Now init the class so that it can add the things that internalization
     # needs.
-    # FIXME: We are doing this eagerly instead of when ZCML runs
-    # because it must be done before ``registerMimeFactories``
-    # is invoked in order to add the mimeType fields if they are missing.
-    # Rewrite so that this can be done as an ZCML action.
-    # _context.action( discriminator=('class_init', tuple(modules)),
-    #                  callable=cls_iio.__class_init__,
-    #                  args=() )
+
+    # Unfortunately, we are doing this eagerly instead of when the
+    # configuration executes its actions runs because it must be done
+    # before ``registerMimeFactories`` is invoked in order to add the
+    # mimeType fields if they are missing. If we deferred it, we would
+    # have to defer registerMimeFactories---and one action cannot
+    # invoke another action or add more actions to the list and still
+    # have any conflicts detected. Using the `order` parameter doesn't help us
+    # much with that, either.
+
+    # The plus side is that now that we are using component_zcml.utility()
+    # to register legacy class factories too, there's not much harm in
+    # initing the class early.
+
     legacy_factories = cls_iio.__class_init__()
 
     # Now that it's initted, register the factories
@@ -229,7 +226,8 @@ def autoPackageExternalization(_context, root_interfaces, modules,
         registerMimeFactories(_context, module)
 
     if register_legacy_search_module:
-        # XXX: Defer this, set up a series of actions so this happens
-        # at configuration execution time and we can detect conflicts.
-        with Suppressor():
-            internalization.register_legacy_search_module(legacy_factories)
+        for name, factory in _find_factories_in_module(legacy_factories):
+            component_zcml.utility(_context,
+                                   provides=internalization._ILegacySearchModuleFactory,
+                                   component=factory,
+                                   name=name)

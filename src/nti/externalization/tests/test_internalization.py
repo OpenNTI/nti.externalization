@@ -616,3 +616,15 @@ class TestValidateFieldValue(CleanUp,
 
         setter = INT.validate_named_field_value(self.Bag(), IFace, 'thing', 42)
         setter()
+
+class TestDeprecation(unittest.TestCase):
+
+    def test_module(self):
+        import types
+        from zope.deprecation.deprecation import DeprecationProxy
+
+        # It's both a module and a deprecated proxy. This
+        # check lets us know that _find_factories_in_module
+        # will do the right thing with deprecated modules.
+        assert_that(INT, is_(DeprecationProxy))
+        assert_that(INT, is_(types.ModuleType))
