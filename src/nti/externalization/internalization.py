@@ -24,6 +24,7 @@ from six import reraise
 from six import iteritems
 from zope import component
 from zope import interface
+from zope.deprecation import deprecated
 from zope.dottedname.resolve import resolve
 from zope.event import notify as _zope_event_notify
 from zope.lifecycleevent import Attributes
@@ -79,6 +80,12 @@ def register_legacy_search_module(module_name):
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
 
+
+deprecated('register_legacy_search_module',
+           "Legacy search modules are deprecated. Prefer to register "
+           "explicit mime or class factories. See "
+           "https://github.com/NextThought/nti.externalization/issues/35",
+           cls=FutureWarning)
 
 _EMPTY_DICT = {}
 

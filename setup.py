@@ -64,7 +64,7 @@ setup(
         'zope.configuration',
         'zope.container',
         'zope.deferredimport',
-        'zope.deprecation',
+        'zope.deprecation >= 4.3.0',
         'zope.dottedname',
         'zope.dublincore',
         'zope.event',

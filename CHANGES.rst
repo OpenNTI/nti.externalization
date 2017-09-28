@@ -15,3 +15,6 @@
   functions. Move the Pyramid integration there (and deprecate that).
   Also move the NTIID support there (but the old name works too).
   See https://github.com/NextThought/nti.externalization/issues/27
+- Deprecate
+  ``nti.externalization.internalization.register_legacy_search_module``.
+  See https://github.com/NextThought/nti.externalization/issues/35

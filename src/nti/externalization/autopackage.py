@@ -11,11 +11,13 @@ from __future__ import print_function
 
 from ZODB.loglevels import TRACE
 from zope import interface
+from zope.deprecation import Suppressor
 from zope.dottedname import resolve as dottedname
 from zope.mimetype.interfaces import IContentTypeAware
 
 from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
-from nti.externalization.internalization import register_legacy_search_module
+with Suppressor(): # XXX: Temporary
+    from nti.externalization.internalization import register_legacy_search_module
 
 logger = __import__('logging').getLogger(__name__)
 
