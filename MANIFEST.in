@@ -10,6 +10,7 @@ include nose2.cfg
 include tox.ini
 include .travis.yml
 include *.txt
+include .isort.cfg
 exclude .nti_cover_package
 recursive-include docs *.py
 recursive-include docs *.rst
