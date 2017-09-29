@@ -166,14 +166,17 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'https://docs.python.org/': None,
+    'http://docs.python.org/': None,
     #'https://ntiwref.readthedocs.io/en/latest': None,
-    'https://persistent.readthedocs.io/en/latest': None,
-    'https://zopecomponent.readthedocs.io/en/latest': None,
-    'https://zopedublincore.readthedocs.io/en/latest': None,
-    'https://zopehookable.readthedocs.io/en/latest': None,
-    'https://zodb.readthedocs.io/en/latest': None,
-    "https://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
+    'http://persistent.readthedocs.io/en/latest': None,
+    'http://zopecomponent.readthedocs.io/en/latest': None,
+    'http://zopedublincore.readthedocs.io/en/latest': None,
+    'http://zopehookable.readthedocs.io/en/latest': None,
+    'http://zopeproxy.readthedocs.io/en/latest': None,
+    'http://zopecontainer.readthedocs.io/en/latest': None,
+    'http://zodb.readthedocs.io/en/latest': None,
+    "http://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
+    'http://ntizodb.readthedocs.io/en/latest/': None,
 }
 
 extlinks = {
