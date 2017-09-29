@@ -10,6 +10,7 @@ from __future__ import print_function
 
 # stdlib imports
 import numbers
+from weakref import WeakSet
 
 import six
 from six import iteritems
@@ -283,6 +284,8 @@ class _InterfaceCache(object):
     ext_accept_external_id = None
     ext_primitive_out_ivars = None
 
+    _instances = WeakSet()
+
     @classmethod
     def cache_for(cls, externalizer, ext_self):
         # The Declaration objects maintain a _v_attrs that
@@ -300,12 +303,12 @@ class _InterfaceCache(object):
         else:
             cache = cls()
             attrs[key] = cache
+            cls._instances.add(cache)
         return cache
 
-    @staticmethod
-    def cleanUp():
-        import gc
-        for x in (y for y in gc.get_objects() if isinstance(y, _InterfaceCache)):
+    @classmethod
+    def cleanUp(cls):
+        for x in list(cls._instances):
             x.__dict__.clear()
 
 try:
