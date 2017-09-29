@@ -516,6 +516,9 @@ class TestToExternalObject(ExternalizationLayerTest):
         result = to_minimal_standard_external_dictionary(O(), mergeFrom={'abc': 42})
         assert_that(result, is_({'abc': 42, 'Class': 'O', 'MimeType': 'application/thing'}))
 
+        result = to_standard_external_dictionary(O(), mergeFrom={'abc': 42})
+        assert_that(result, is_({'abc': 42, 'Class': 'O', 'MimeType': 'application/thing'}))
+
     def test_name_falls_back_to_standard_name(self):
         toExternalObject(self, name='a name')
 
