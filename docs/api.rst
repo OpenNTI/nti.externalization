@@ -7,6 +7,11 @@ Interfaces
 
 .. automodule:: nti.externalization.interfaces
 
+Factories
+=========
+
+.. automodule:: nti.externalization.factory
+
 Utilities
 =========
 
