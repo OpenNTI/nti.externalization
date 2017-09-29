@@ -17,11 +17,15 @@ from zope.configuration.fields import Bool
 from zope.configuration.fields import GlobalInterface
 from zope.configuration.fields import GlobalObject
 from zope.configuration.fields import Tokens
+from zope.configuration.fields import MessageID
+from zope.configuration.fields import PythonIdentifier
 
 from . import internalization
 from .autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 from .factory import MimeObjectFactory
+from .factory import ClassObjectFactory
 from .interfaces import IMimeObjectFactory
+from .interfaces import IClassObjectFactory
 from .internalization import _find_factories_in_module
 
 __docformat__ = "restructuredtext en"
@@ -128,8 +132,6 @@ class IAutoPackageExternalizationDirective(interface.Interface):
     )
 
 
-
-
 def autoPackageExternalization(_context, root_interfaces, modules,
                                factory_modules=None, iobase=None,
                                register_legacy_search_module=False):
@@ -213,3 +215,53 @@ def autoPackageExternalization(_context, root_interfaces, modules,
                                    provides=internalization._ILegacySearchModuleFactory,
                                    component=factory,
                                    name=name)
+
+
+class IClassObjectFactoryDirective(interface.Interface):
+    """
+    This directive registers a single
+    :class:`nti.externalization.interfaces.IClassObjectFactory`.
+
+    The factory will be registered for a class object.
+    """
+
+    factory = GlobalObject(
+        title=u'The class object that will be created.',
+        required=True
+    )
+
+    name = PythonIdentifier(
+        title=u"The name for the factory.",
+        description=(u"If not given, the ``__external_class_name__`` of the class will be used. "
+                     u"If that's not available, the ``__name__`` will be used."),
+        required=False,
+    )
+
+    title = MessageID(
+        title=u"Title",
+        description=u"Provides a title for the object.",
+        required=False,
+    )
+
+    description = MessageID(
+        title=u"Description",
+        description=u"Provides a description for the object.",
+        required=False
+    )
+
+
+def classObjectFactoryDirective(_context, factory, name='', title='', description=''):
+
+    if not callable(factory):
+        raise TypeError("Object %r must be callable" % factory)
+
+    if not getattr(factory, '__external_can_create__', False):
+        raise TypeError("Object %r must set __external_can_create__ to true" % factory)
+
+    name = name or getattr(factory, '__external_class_name__', factory.__name__)
+
+    factory = ClassObjectFactory(factory, title, description)
+    component_zcml.utility(_context,
+                           provides=IClassObjectFactory,
+                           component=factory,
+                           name=name)

@@ -14,6 +14,13 @@
 			name="registerAutoPackageIO"
 			schema="nti.externalization.zcml.IAutoPackageExternalizationDirective"
 			handler="nti.externalization.zcml.autoPackageExternalization"/>
+
+		<meta:directive
+			name="classObjectFactory"
+			schema="nti.externalization.zcml.IClassObjectFactoryDirective"
+			handler="nti.externalization.zcml.classObjectFactoryDirective"
+			/>
+
  	</meta:directives>
 
 </configure>
