@@ -3,8 +3,8 @@
 =========
 
 
-1.0.0 (unreleased)
-==================
+1.0.0a1 (2017-09-29)
+====================
 
 - First PyPI release.
 - Add support for Python 3.

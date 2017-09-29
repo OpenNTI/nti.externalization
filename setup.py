@@ -19,7 +19,7 @@ def _read(fname):
 
 setup(
     name='nti.externalization',
-    version='1.0.0.dev0',
+    version='1.0.0a1',
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI Externalization",
