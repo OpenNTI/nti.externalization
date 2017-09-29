@@ -8,8 +8,6 @@
 	<include package="zope.component" />
 	<include package="zope.security" />
 
-	<include package="zope.annotation" />
-
 	<subscriber	provides=".interfaces.IExternalMappingDecorator"
 				for="zope.dublincore.interfaces.IDCExtended"
 				factory=".dublincore.DCExtendedExternalMappingDecorator" />

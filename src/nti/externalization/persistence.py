@@ -23,7 +23,7 @@ from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import IExternalObject
 from nti.externalization.oids import toExternalOID
 from nti.externalization.proxy import removeAllProxies
-from nti.zodb.persistentproperty import PersistentPropertyHolder
+
 
 # disable: accessing protected members
 # pylint: disable=W0212
@@ -99,13 +99,18 @@ def _weakRef_toExternalOID(self):
 PWeakRef.toExternalOID = _weakRef_toExternalOID
 
 
-class PersistentExternalizableDictionary(PersistentPropertyHolder,
-                                         PersistentMapping,
+class PersistentExternalizableDictionary(PersistentMapping,
                                          ExternalizableDictionaryMixin):
     """
-    Dictionary mixin that provides :meth:`toExternalDictionary` to return a new dictionary
-    with each value in the dict having been externalized with
-    :func:`toExternalObject`.
+    Dictionary mixin that provides :meth:`toExternalDictionary` to
+    return a new dictionary with each value in the dict having been
+    externalized with :func:`~.toExternalObject`.
+
+    .. versionchanged:: 1.0
+        No longer extends :class:`nti.zodb.persistentproperty.PersistentPropertyHolder`.
+        If you have subclasses that use writable properties and which should
+        bypass the normal attribute setter implementation, please
+        mixin this superclass (first) yourself.
     """
 
     def toExternalDictionary(self, *args, **kwargs):
@@ -115,16 +120,19 @@ class PersistentExternalizableDictionary(PersistentPropertyHolder,
         return result
 
 
-class PersistentExternalizableList(PersistentPropertyHolder, PersistentList):
+class PersistentExternalizableList(PersistentList):
     """
     List mixin that provides :meth:`toExternalList` to return a new list
     with each element in the sequence having been externalized with
-    :func:`toExternalObject`.
-    """
+    :func:`~.toExternalObject`.
 
-    def __init__(self, initlist=None):
-        # Must use new-style super call to get right behaviour
-        super(PersistentExternalizableList, self).__init__(initlist)
+
+    .. versionchanged:: 1.0
+        No longer extends :class:`nti.zodb.persistentproperty.PersistentPropertyHolder`.
+        If you have subclasses that use writable properties and which should
+        bypass the normal attribute setter implementation, please
+        mixin this superclass (first) yourself.
+    """
 
     def toExternalList(self):
         result = [toExternalObject(x) for x in self if x is not None]
@@ -141,11 +149,18 @@ class PersistentExternalizableList(PersistentPropertyHolder, PersistentList):
 
 class PersistentExternalizableWeakList(PersistentExternalizableList):
     """
-    Stores :class:`persistent.Persistent` objects as weak references, invisibly to the user.
-    Any weak references added to the list will be treated the same.
+    Stores :class:`persistent.Persistent` objects as weak references,
+    invisibly to the user. Any weak references added to the list will
+    be treated the same.
 
-    Weak references are resolved on access; if the referrant has been deleted, then that
-    access will return ``None``.
+    Weak references are resolved on access; if the referrant has been
+    deleted, then that access will return ``None``.
+
+    .. versionchanged:: 1.0
+        No longer extends :class:`nti.zodb.persistentproperty.PersistentPropertyHolder`.
+        If you have subclasses that use writable properties and which should
+        bypass the normal attribute setter implementation, please
+        mixin this superclass (first) yourself.
     """
 
     def __init__(self, initlist=None):

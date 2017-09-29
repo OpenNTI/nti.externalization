@@ -35,10 +35,18 @@
   be registered locally with ``z3c.baseregistry`` (previously they
   were always registered in the global site manager).
   See https://github.com/NextThought/nti.externalization/issues/28
-- Drop dependency on ``zope.preference``. It was not used by this
-  package, although our ``configure.zcml`` did include it. If you use
-  ``zope.preference``, please include it in your own ZCML file.
+- Drop dependency on ``zope.preference`` and ``zope.annotation``. They
+  were not used by this package, although our ``configure.zcml`` did
+  include them. If you use ``zope.preference`` or ``zope.annotation``,
+  please include them in your own ZCML file.
 - Drop hard dependency on Acquisition. It is still used if available
   and is used in test mode.
 - Add public implementations of ``IMimeObjectFactory`` and
   ``IClassObjectFactory`` in ``nti.externalization.factory``.
+- Drop dependency on ``nti.zodb`` and its
+  ``PersistentPropertyHolder``. The datastructures in
+  ``nti.externalization.persistence`` no longer extend that class; if
+  you have further subclasses that add
+  ``nti.zodb.peristentproperty.PropertyHoldingPersistent`` properties,
+  you'll need to be sure to mixin this class now.
+  See https://github.com/NextThought/nti.externalization/issues/43
