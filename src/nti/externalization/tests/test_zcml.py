@@ -15,6 +15,7 @@ from zope import interface
 from zope.component.testing import PlacelessSetup
 from zope.configuration import xmlconfig
 
+from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IMimeObjectFactory
 from nti.testing.matchers import is_empty
 
@@ -212,3 +213,69 @@ class TestAutoPackageZCML(PlacelessSetup,
 
         factory = gsm.getUtility(INT._ILegacySearchModuleFactory, 'O')
         assert_that(factory, is_(same_instance(O)))
+
+class TestClassObjectFactory(PlacelessSetup,
+                             RegistrationMixin,
+                             unittest.TestCase):
+
+    SCAN_THIS_MODULE = """
+        <configure xmlns:ext="http://nextthought.com/ntp/ext"
+                   xmlns:i18n="http://namespaces.zope.org/i18n"
+                   i18n_domain="zope">
+           <include package="nti.externalization" file="meta.zcml" />
+           <ext:classObjectFactory
+              factory="%s.Factory"
+              PLACEHOLDER
+              />
+        </configure>
+    """ % (__name__,)
+
+    def test_scan_no_create(self):
+        class O(object):
+            pass
+
+        self._addFactory(O)
+        with self.assertRaisesRegexp(xmlconfig.ZopeXMLConfigurationError,
+                                     "must set __external_can_create__ to true"):
+            xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
+
+    def test_scan_not_callable(self):
+        class O(object):
+            __external_can_create__ = True
+
+        self._addFactory(O())
+
+        with self.assertRaisesRegexp(xmlconfig.ZopeXMLConfigurationError,
+                                     "must be callable"):
+            xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
+
+    def test_scan_no_name(self):
+        class O(object):
+            __external_can_create__ = True
+
+        self._addFactory(O)
+        xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
+        factory = component.getUtility(IClassObjectFactory, 'O')
+        assert_that(factory, has_property('_callable', equal_to(O)))
+
+    def test_scan_name_in_xml(self):
+        class O(object):
+            __external_class_name__ = "Ignored"
+            __external_can_create__ = True
+
+        self._addFactory(O)
+        xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER',
+                                                       'name="AName" title="A title"'))
+        factory = component.getUtility(IClassObjectFactory, 'AName')
+        assert_that(factory, has_property('_callable', equal_to(O)))
+        assert_that(factory, has_property('title', equal_to("A title")))
+
+    def test_scan_name_in_class(self):
+        class O(object):
+            __external_class_name__ = "FromClass"
+            __external_can_create__ = True
+
+        self._addFactory(O)
+        xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
+        factory = component.getUtility(IClassObjectFactory, 'FromClass')
+        assert_that(factory, has_property('_callable', equal_to(O)))

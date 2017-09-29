@@ -50,3 +50,5 @@
   ``nti.zodb.peristentproperty.PropertyHoldingPersistent`` properties,
   you'll need to be sure to mixin this class now.
   See https://github.com/NextThought/nti.externalization/issues/43
+- Add the ``<ext:classObjectFactory>`` directive for registering
+  ``Class`` based factories. (Note: MIME factories are preferred.)
