@@ -13,16 +13,16 @@ from __future__ import print_function
 from ZODB import loglevels
 from zope import interface
 from zope.component import zcml as component_zcml
-from zope.component.factory import Factory
 from zope.configuration.fields import Bool
 from zope.configuration.fields import GlobalInterface
 from zope.configuration.fields import GlobalObject
 from zope.configuration.fields import Tokens
 
-from nti.externalization import internalization
-from nti.externalization.autopackage import AutoPackageSearchingScopedInterfaceObjectIO
-from nti.externalization.interfaces import IMimeObjectFactory
-from nti.externalization.internalization import _find_factories_in_module
+from . import internalization
+from .autopackage import AutoPackageSearchingScopedInterfaceObjectIO
+from .factory import MimeObjectFactory
+from .interfaces import IMimeObjectFactory
+from .internalization import _find_factories_in_module
 
 __docformat__ = "restructuredtext en"
 
@@ -30,24 +30,6 @@ logger = __import__('logging').getLogger(__name__)
 
 # pylint: disable=protected-access,inherit-non-class
 
-@interface.implementer(IMimeObjectFactory)
-class _MimeObjectFactory(Factory):
-    """
-    A factory meant to be registered as a named utility.
-    The callable object SHOULD be a type/class object, because
-    that's the only thing we base equality off of (class identity).
-    """
-
-    def __eq__(self, other):
-        # Implementing equality is needed to prevent multiple inclusions
-        # of the same module from different places from conflicting.
-        try:
-            return self._callable is other._callable
-        except AttributeError: # pragma: no cover
-            return NotImplemented
-
-    def __hash__(self):
-        return hash(self._callable)
 
 
 class IRegisterInternalizationMimeFactoriesDirective(interface.Interface):
@@ -88,9 +70,9 @@ def registerMimeFactories(_context, module):
             logger.log(loglevels.TRACE,
                        "Registered mime factory utility %s = %s (%s)",
                        object_name, value, mime_type)
-            factory = _MimeObjectFactory(value,
-                                         title=object_name,
-                                         interfaces=list(interface.implementedBy(value)))
+            factory = MimeObjectFactory(value,
+                                        title=object_name,
+                                        interfaces=list(interface.implementedBy(value)))
             component_zcml.utility(_context,
                                    provides=IMimeObjectFactory,
                                    component=factory,

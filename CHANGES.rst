@@ -40,3 +40,5 @@
   ``zope.preference``, please include it in your own ZCML file.
 - Drop hard dependency on Acquisition. It is still used if available
   and is used in test mode.
+- Add public implementations of ``IMimeObjectFactory`` and
+  ``IClassObjectFactory`` in ``nti.externalization.factory``.
