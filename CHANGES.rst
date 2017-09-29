@@ -38,3 +38,5 @@
 - Drop dependency on ``zope.preference``. It was not used by this
   package, although our ``configure.zcml`` did include it. If you use
   ``zope.preference``, please include it in your own ZCML file.
+- Drop hard dependency on Acquisition. It is still used if available
+  and is used in test mode.
