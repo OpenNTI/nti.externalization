@@ -87,6 +87,9 @@ setup(
             'repoze.sphinx.autointerface',
             'sphinx_rtd_theme',
         ],
+        'benchmarks': [
+            'perf',
+        ],
 
     },
     entry_points=entry_points,

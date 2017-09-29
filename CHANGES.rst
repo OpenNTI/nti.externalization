@@ -52,3 +52,7 @@
   See https://github.com/NextThought/nti.externalization/issues/43
 - Add the ``<ext:classObjectFactory>`` directive for registering
   ``Class`` based factories. (Note: MIME factories are preferred.)
+- Callers of ``to_standard_external_dictionary`` (which includes
+  AutoPackageScopedInterfaceIO) will now automatically get a
+  ``MimeType`` value if one can be found. Previously only callers of
+  ``to_minimal_standard_external_dictionary`` would.

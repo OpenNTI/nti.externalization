@@ -525,13 +525,7 @@ def to_standard_external_dictionary(self, mergeFrom=None,
         be added to the dictionary created by this method. The keys and
         values in ``mergeFrom`` should already be external.
     """
-    result = LocatedExternalDict()
-
-    if mergeFrom:
-        result.update(mergeFrom)
-
-    if request is _NotGiven:
-        request = get_current_request()
+    result = to_minimal_standard_external_dictionary(self, mergeFrom)
 
     set_external_identifiers(self, result)
 
@@ -543,14 +537,15 @@ def to_standard_external_dictionary(self, mergeFrom=None,
     to_standard_external_last_modified_time(self, _write_into=result)
     to_standard_external_created_time(self, _write_into=result)
 
-    _ext_class_if_needed(self, result)
-
     containerId = _choose_field(result, self, StandardExternalFields_CONTAINER_ID,
                                 fields=(StandardInternalFields_CONTAINER_ID,))
     if containerId:  # alias per mobile client request 20150625
         result[StandardInternalFields_CONTAINER_ID] = containerId
 
     if decorate:
+        if request is _NotGiven:
+            request = get_current_request()
+
         decorate_external_mapping(self, result, registry=registry,
                                   request=request)
     elif callable(decorate_callback):
@@ -587,7 +582,7 @@ def to_minimal_standard_external_dictionary(self, mergeFrom=None, **unused_kwarg
         result.update(mergeFrom)
     _ext_class_if_needed(self, result)
 
-    mime_type = getattr(self, 'mime_type', None)
+    mime_type = getattr(self, 'mimeType', None) or getattr(self, 'mime_type', None)
     if mime_type:
         result[StandardExternalFields_MIMETYPE] = mime_type
     return result

@@ -2,6 +2,7 @@
 source = nti.externalization
 omit =
     */flycheck_*py
+    */benchmarks/*py
 
 [report]
 exclude_lines =
