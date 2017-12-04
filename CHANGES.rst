@@ -6,7 +6,9 @@
 1.0.0a2 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Remove support for ``object_hook`` in
+  ``update_from_external_object``. See
+  https://github.com/NextThought/nti.externalization/issues/29.
 
 
 1.0.0a1 (2017-09-29)
