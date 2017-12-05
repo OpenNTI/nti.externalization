@@ -332,13 +332,9 @@ def _pre_hook(k, x):
 pre_hook = _pre_hook
 
 
-def _object_hook(k, v, x):
-    return v
-
 
 def _recall(k, obj, ext_obj, kwargs):
     obj = update_from_external_object(obj, ext_obj, **kwargs)
-    obj = kwargs['object_hook'](k, obj, ext_obj)
     if IPersistent.providedBy(obj): # pragma: no cover
         obj._v_updated_from_external_source = ext_obj
     return obj
@@ -389,7 +385,6 @@ def update_from_external_object(containedObject, externalObject,
                                 registry=component, context=None,
                                 require_updater=False,
                                 notify=True,
-                                object_hook=_object_hook,
                                 pre_hook=_pre_hook):
     """
     Central method for updating objects from external values.
@@ -416,37 +411,27 @@ def update_from_external_object(containedObject, externalObject,
         attribute; if this is the case and we can also find an
         interface declaring the attribute, then the ``IAttributes``
         will have the right value for ``interface`` as well).
-    :keyword callable object_hook: If given, called with the results of
-        every nested object as it has been updated. The return
-        value will be used instead of the nested object. Signature
-        ``f(k,v,x)`` where ``k`` is either the key name, or None
-        in the case of a sequence, ``v`` is the newly-updated
-        value, and ``x`` is the external object used to update
-        ``v``. Deprecated.
     :keyword callable pre_hook: If given, called with the before
         update_from_external_object is called for every nested object.
         Signature ``f(k,x)`` where ``k`` is either the key name, or
         None in the case of a sequence and ``x`` is the external
         object. Deprecated.
     :return: `containedObject` after updates from `externalObject`
+
+    .. versionchanged:: 1.0.0a2
+       Remove the ``object_hook`` parameter.
     """
 
     if pre_hook is not None and pre_hook is not _pre_hook: # pragma: no cover
         for i in range(3):
             warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
 
-    if object_hook is not None and object_hook is not _object_hook: # pragma: no cover
-        for i in range(3):
-            warnings.warn('object_hook is deprecated', FutureWarning, stacklevel=i)
-
     pre_hook = _pre_hook if pre_hook is None else pre_hook
-    object_hook = _object_hook if object_hook is None else object_hook
 
     kwargs = dict(notify=notify,
                   context=context,
                   registry=registry,
                   pre_hook=pre_hook,
-                  object_hook=object_hook,
                   require_updater=require_updater)
 
     # Parse any contained objects
