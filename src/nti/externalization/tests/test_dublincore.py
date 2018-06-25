@@ -10,11 +10,12 @@ from __future__ import print_function
 # stdlib imports
 import unittest
 
+from nti.externalization.singleton import Singleton
 from . import ExternalizationLayerTest
 
 from hamcrest import assert_that
 from hamcrest import is_
-from hamcrest import same_instance
+
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -34,7 +35,9 @@ class AbstractDCDecoratorTest(object):
         x = self._makeOne()
         y = self._makeOne()
 
-        assert_that(x, is_(same_instance(y)))
+        assert_that(x, is_(y))
+        assert_that(hash(x), is_(hash(y)))
+        assert_that(x, is_(Singleton))
 
 
 class TestDCextendedExternalMappingDecorator(AbstractDCDecoratorTest,
