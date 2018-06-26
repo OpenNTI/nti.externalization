@@ -1,4 +1,9 @@
 *.py[cod]
+*.so
+*.c
+
+__pycache__/*
+benchmark_results/
 
 /.project
 /.pydevproject

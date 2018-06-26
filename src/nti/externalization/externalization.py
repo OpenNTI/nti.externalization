@@ -14,6 +14,7 @@ from calendar import timegm as _calendar_gmtime
 import collections
 from collections import defaultdict
 import numbers
+import warnings
 
 import BTrees.OOBTree
 from ZODB.POSException import POSKeyError
@@ -23,10 +24,8 @@ from six import text_type
 
 
 from zope import component
-from zope import deprecation
 from zope import interface
 
-import zope.deferredimport
 from zope.dublincore.interfaces import IDCTimes
 from zope.interface.common.sequence import IFiniteSequence
 from zope.security.interfaces import IPrincipal
@@ -567,9 +566,11 @@ def decorate_external_mapping(self, result, registry=component, request=_NotGive
 
     return result
 
-toExternalDictionary = to_standard_external_dictionary
-deprecation.deprecated('toExternalDictionary',
-                       'Prefer to_standard_external_dictionary')
+#: This is a deprecated alias
+def toExternalDictionary(*args, **kwargs): # pragma: no cover
+    warnings.warn("Use to_standard_external_dictionary", FutureWarning)
+    return to_standard_external_dictionary(*args, **kwargs)
+
 
 
 def to_minimal_standard_external_dictionary(self, mergeFrom=None, **unused_kwargs):
@@ -626,29 +627,10 @@ def removed_unserializable(ext):
     _clean(ext)
     return ext
 
-# Things that have moved
-
-zope.deferredimport.initialize()
-zope.deferredimport.deprecatedFrom(
-    "Import from .persistence",
-    "nti.externalization.persistence",
-    "NoPickle")
 
 #: Constant requesting JSON format data
 EXT_FORMAT_JSON = 'json'
 
 
-zope.deferredimport.deprecatedFrom(
-    "Import from .representation",
-    "nti.externalization.representation",
-    "to_external_representation",
-    "to_json_representation",
-    "to_json_representation_externalized",
-    "make_repr",
-    "WithRepr")
-
-zope.deferredimport.initialize()
-zope.deferredimport.deprecatedFrom(
-    "Import from .nti.ntiids.oids",
-    "nti.ntiids.oids",
-    "to_external_ntiid_oid")
+from nti.externalization._compat import import_c_accel
+import_c_accel(globals(), 'nti.externalization._externalization')

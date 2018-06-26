@@ -11,7 +11,7 @@ import json
 from numbers import Number
 import unittest
 
-import fudge
+
 from ZODB.broken import Broken
 import persistent
 from zope import component
@@ -240,14 +240,18 @@ class TestFunctions(ExternalizationLayerTest):
                                  fields=('a', 'b')),
                     is_(none()))
 
-    @fudge.patch('nti.externalization.externalization.is_system_user')
-    def test_choose_field_system_user(self, is_system_user):
+    def test_choose_field_system_user(self):
         from nti.externalization.externalization import SYSTEM_USER_NAME
-        system_user = object()
+        from zope.security.interfaces import IPrincipal
+        from zope.security.management import system_user
 
-        is_system_user.expects_call().returns(True)
+        @interface.implementer(IPrincipal)
+        class MySystemUser(object):
+            id = system_user.id
+
+
         class WithSystemUser(object):
-            user = system_user
+            user = MySystemUser()
 
         result = {}
         choose_field(result, WithSystemUser,

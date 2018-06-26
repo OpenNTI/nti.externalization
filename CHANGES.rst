@@ -10,6 +10,12 @@
   ``update_from_external_object``. See
   https://github.com/NextThought/nti.externalization/issues/29.
 
+- A number of deprecated aliases for moved functions have been
+  removed.
+
+- On CPython, some of the modules are compiled as extension modules
+  using Cython for a 10-30% increase in speed. Set the ``PURE_PYTHON``
+  environment variable to disable this at runtime.
 
 1.0.0a1 (2017-09-29)
 ====================

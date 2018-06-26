@@ -5,6 +5,12 @@ python:
   - 3.6
   - pypy
   - pypy3
+matrix:
+  include:
+    - python: 2.7
+      env: PURE_PYTHON=1
+    - python: 3.6
+      env: PURE_PYTHON=1
 script:
   - coverage run -m zope.testrunner --test-path=src
 after_success:

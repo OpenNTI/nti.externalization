@@ -16,7 +16,6 @@ import six
 from six import iteritems
 from zope import interface
 from zope import schema
-import zope.deferredimport
 from zope.schema.interfaces import SchemaNotProvided
 
 from nti.schema.interfaces import find_most_derived_interface
@@ -541,13 +540,5 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
                 if x.__module__ == self._ext_search_module.__name__
                 and not x.queryTaggedValue('_ext_is_marker_interface'))
 
-# Things that have moved
-zope.deferredimport.initialize()
-zope.deferredimport.deprecatedFrom(
-    "Moved to nti.externalization.interfaces",
-    "nti.externalization.interfaces",
-    "IExternalObject",
-    "LocatedExternalDict",
-    "LocatedExternalList",
-    "ILocatedExternalMapping",
-    "ILocatedExternalSequence")
+from nti.externalization._compat import import_c_accel
+import_c_accel(globals(), 'nti.externalization._datastructures')

@@ -397,3 +397,11 @@ class IList(IIterable):
     Marker interface for lists
     """
 interface.classImplements(list, IList)
+
+
+class _ILegacySearchModuleFactory(interface.Interface):
+
+    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ
+        """
+        Create and return the object.
+        """

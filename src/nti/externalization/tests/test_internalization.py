@@ -103,10 +103,10 @@ class TestFunctions(CleanUp,
         assert_that(INT.find_factory_for_class_name(''), is_(none()))
 
     def test_search_for_factory_updates_search_set(self):
-        from zope.deprecation import Suppressor
+        import warnings
         from zope.testing.loggingsupport import InstalledHandler
 
-        with Suppressor():
+        with warnings.catch_warnings():
             INT.register_legacy_search_module(__name__)
             # The cache is initialized lazily
             assert_that(__name__, is_in(INT.LEGACY_FACTORY_SEARCH_MODULES))
@@ -146,7 +146,7 @@ class TestFunctions(CleanUp,
                 assert_that(str(handler),
                             contains_string("Found duplicate registration for legacy search path."))
 
-                assert_that(INT.__warningregistry__, has_length(greater_than_or_equal_to(2)))
+                assert_that(INT._ext_factory_warnings, has_length(greater_than_or_equal_to(2)))
 
             finally:
                 del TestFunctions.__external_can_create__
@@ -616,15 +616,3 @@ class TestValidateFieldValue(CleanUp,
 
         setter = INT.validate_named_field_value(self.Bag(), IFace, 'thing', 42)
         setter()
-
-class TestDeprecation(unittest.TestCase):
-
-    def test_module(self):
-        import types
-        from zope.deprecation.deprecation import DeprecationProxy
-
-        # It's both a module and a deprecated proxy. This
-        # check lets us know that _find_factories_in_module
-        # will do the right thing with deprecated modules.
-        assert_that(INT, is_(DeprecationProxy))
-        assert_that(INT, is_(types.ModuleType))

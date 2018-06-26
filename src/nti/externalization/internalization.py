@@ -25,7 +25,6 @@ from six import reraise
 from six import iteritems
 from zope import component
 from zope import interface
-from zope.deprecation import deprecated
 from zope.dottedname.resolve import resolve
 from zope.event import notify as _zope_event_notify
 from zope.lifecycleevent import Attributes
@@ -84,16 +83,11 @@ def register_legacy_search_module(module_name):
 
     .. deprecated:: 1.0
         Use explicit mime or class factories instead.
+        See https://github.com/NextThought/nti.externalization/issues/35
     """
+    warnings.warn("This function is deprecated", FutureWarning)
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
-
-
-deprecated(('register_legacy_search_module', 'LEGACY_FACTORY_SEARCH_MODULES'),
-           "Legacy search modules are deprecated. Prefer to register "
-           "explicit mime or class factories. See "
-           "https://github.com/NextThought/nti.externalization/issues/35",
-           cls=FutureWarning)
 
 
 ## Implementation of legacy search modules.
@@ -101,14 +95,8 @@ deprecated(('register_legacy_search_module', 'LEGACY_FACTORY_SEARCH_MODULES'),
 # We go through the global component registry, using a local
 # interface. We treat the registry as a cache and we will only
 # look at any given module object one time. We can detect duplicates
-# in this fashion.
-
-class _ILegacySearchModuleFactory(interface.Interface):
-
-    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ
-        """
-        Create and return the object.
-        """
+# in this fashion. (For cython compilation, this lives in interfaces.)
+from nti.externalization.interfaces import _ILegacySearchModuleFactory
 
 def __register_legacy_if_not(gsm, name, factory):
     registered = gsm.queryUtility(_ILegacySearchModuleFactory, name)
@@ -162,8 +150,8 @@ def _register_factories_from_search_set():
     for module in modules:
         _register_factories_from_module(module)
 
-# Explicit for use of the warnings module.
-__warningregistry__ = {}
+
+_ext_factory_warnings = set()
 
 def _search_for_external_factory(typeName):
     """
@@ -191,17 +179,24 @@ def _search_for_external_factory(typeName):
     if factory is None and className.lower() != className:
         factory = gsm.queryUtility(_ILegacySearchModuleFactory, name=className.lower())
 
-    if factory is not None:
-        # This will produce a new warnings cache entry for each new
-        # class type we get (because the whole string is part of the
-        # key). Since this is external input, that could theoretically
-        # be used to DDOS us. We keep an eye on that and don't let the cache
-        # get too big, but that does mean we could ultimately produce
-        # duplicate warnings.
-        warnings.warn("Using legacy class finder for %r" % (typeName),
-                      FutureWarning)
-        if len(__warningregistry__) > 1024:
-            __warningregistry__.clear() # pragma: no cover
+    if factory is not None and typeName not in _ext_factory_warnings:
+        # Previously we used the `warnings` module to produce a
+        # FutureWarning for each distinct typeName. This had the
+        # problem that it would result in an ever growing
+        # __warningregistry__ in this module. We worked around that by
+        # periodically clearing it (which could sometimes result in
+        # duplicate warnings).
+
+        # However, if we're compiled into an extension module, it won't be
+        # this module that gets the __warningregistry__, it will be whatever
+        # the last Python caller was, which is unpredictable.
+
+        # Therefore, to control this, we instead switch to logging a warning
+        # and managing our own cache.
+        _ext_factory_warnings.add(typeName)
+        logger.debug("Deprecated: Using legacy class finder for %r", typeName)
+        if len(_ext_factory_warnings) > 1024:
+            _ext_factory_warnings.clear() # pragma: no cover
 
     return factory
 
@@ -502,15 +497,22 @@ def update_from_external_object(containedObject, externalObject,
         # The signature may vary.
         # XXX: This is slow and cumbersome and needs to go.
         # See https://github.com/NextThought/nti.externalization/issues/30
-        argspec = inspect.getargspec(updater.updateFromExternalObject)
-        if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
-            updated = updater.updateFromExternalObject(externalObject,
-                                                       context=context)
-        elif argspec.keywords or 'dataserver' in argspec.args:
-            updated = updater.updateFromExternalObject(externalObject,
-                                                       dataserver=context)
+        try:
+            argspec = inspect.getargspec(updater.updateFromExternalObject)
+        except TypeError: # pragma: no cover (This is hard to catch in pure-python coverage mode)
+            # Cython functions and other extension types are "not a Python function"
+            # and don't work with this. We assume they use the standard form accepting
+            # 'context' as kwarg
+            updated = updater.updateFromExternalObject(externalObject, context=context)
         else:
-            updated = updater.updateFromExternalObject(externalObject)
+            if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
+                updated = updater.updateFromExternalObject(externalObject,
+                                                           context=context)
+            elif argspec.keywords or 'dataserver' in argspec.args:
+                updated = updater.updateFromExternalObject(externalObject,
+                                                           dataserver=context)
+            else:
+                updated = updater.updateFromExternalObject(externalObject)
 
         # Broadcast a modified event if the object seems to have changed.
         if notify and (updated is None or updated):
@@ -681,3 +683,7 @@ def validate_named_field_value(self, iface, field_name, value):
     if IField.providedBy(field):
         return validate_field_value(self, field_name, field, value)
     return lambda: setattr(self, field_name, value)
+
+
+from nti.externalization._compat import import_c_accel
+import_c_accel(globals(), 'nti.externalization._internalization')

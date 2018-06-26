@@ -79,3 +79,7 @@ Singleton = SingletonMetaclass(
         "Can be more convenient than a metaclass for Python2/Python3 compatibility."
     }
 )
+
+
+from nti.externalization._compat import import_c_accel
+import_c_accel(globals(), 'nti.externalization._singleton')
