@@ -45,7 +45,11 @@ except ImportError:
         return extensions
 
 def cythonize1(ext):
-    new_ext = cythonize([ext])[0]
+    new_ext = cythonize(
+        [ext],
+        annotate=True,
+        #compiler_directives={'linetrace': True}
+    )[0]
     return new_ext
 
 ext_modules = []
@@ -60,7 +64,10 @@ ext_modules = []
 # This list is derived from the profile of bm_simple_iface
 # https://github.com/NextThought/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
 if not PYPY:
+    # Cython cannot properly handle double leading underscores, so
+    # our implementation modules can't start with an underscore.
     for mod_name in (
+            'base_interfaces', # private
             'datastructures',
             'externalization',
             'internalization',
@@ -71,7 +78,9 @@ if not PYPY:
                 Extension(
                     'nti.externalization._' + mod_name,
                     sources=["src/nti/externalization/" + mod_name + '.py'],
-                    depends=["src/nti/externalization/_" + mod_name + '.pxd'])))
+                    depends=["src/nti/externalization/_" + mod_name + '.pxd'],
+                    #define_macros=[('CYTHON_TRACE', '1')],
+                )))
 
 setup(
     name='nti.externalization',

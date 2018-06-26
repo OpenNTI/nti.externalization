@@ -1,6 +1,9 @@
 *.py[cod]
 *.so
+# artifacts from cythonize
 *.c
+src/nti/externalization/*.html
+
 
 __pycache__/*
 benchmark_results/

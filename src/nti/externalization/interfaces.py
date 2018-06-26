@@ -22,6 +22,8 @@ from zope.location import ILocation
 
 # pylint:disable=inherit-non-class,no-method-argument,no-self-argument
 
+from ._base_interfaces import LocatedExternalDict
+
 
 class StandardExternalFields(object):
     """
@@ -185,22 +187,7 @@ class ILocatedExternalSequence(IExternalizedObject, ILocation, ISequence):
     """
 
 
-@interface.implementer(ILocatedExternalMapping)
-class LocatedExternalDict(dict):
-    """
-    A dictionary that implements
-    :class:`~nti.externalization.interfaces.ILocatedExternalMapping`.
-    Returned by
-    :func:`~nti.externalization.externalization.to_standard_external_dictionary`.
-
-    This class is not :class:`.IContentTypeAware`, and it indicates so explicitly by declaring a
-    `mime_type` value of None.
-    """
-
-    __name__ = u''
-    __parent__ = None
-    __acl__ = ()
-    mimeType = None
+interface.classImplements(LocatedExternalDict, ILocatedExternalMapping)
 
 
 @interface.implementer(ILocatedExternalSequence)

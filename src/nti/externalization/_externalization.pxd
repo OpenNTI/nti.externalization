@@ -1,6 +1,9 @@
 # definitions for externalization.pxd
 import cython
 
+from nti.externalization._base_interfaces cimport LocatedExternalDict
+
+
 # Imports
 cdef numbers
 cdef warnings
@@ -24,16 +27,25 @@ cdef IExternalObjectDecorator
 cdef ILocatedExternalSequence
 cdef INonExternalizableReplacement
 cdef INonExternalizableReplacer
-cdef LocatedExternalDict
 cdef StandardExternalFields
 cdef StandardInternalFields
+cdef NotGiven
+
 
 # Constants
-# Despite the name, NotGiven is
-# used from representation.py
-# TODO: cython compile representation.py and then make this
-# a cdef
-#cpdef _NotGiven
+cdef StandardExternalFields_CLASS
+cdef StandardExternalFields_CREATOR
+cdef StandardExternalFields_MIMETYPE
+cdef StandardExternalFields_CONTAINER_ID
+cdef StandardExternalFields_CREATED_TIME
+cdef StandardExternalFields_LAST_MODIFIED
+
+cdef StandardInternalFields_CREATOR
+cdef StandardInternalFields_CONTAINER_ID
+cdef StandardInternalFields_CREATED_TIME
+cdef StandardInternalFields_LAST_MODIFIED
+cdef StandardInternalFields_LAST_MODIFIEDU
+
 
 @cython.internal
 @cython.final
@@ -121,16 +133,16 @@ cdef void _ext_class_if_needed(self, result) except *
 # TODO: If we bring LocatedExternalDict into cython, we could typo
 # some args and results below and in choose_field and to_standard_external_*. Does that have any
 # improvement?
-cpdef to_standard_external_dictionary(self, mergeFrom=*,
-                                      registry=*,
-                                      decorate=*,
-                                      request=*,
-                                      decorate_callback=*,
-                                      name=*,
-                                      useCache=*)
+cpdef LocatedExternalDict to_standard_external_dictionary(self, mergeFrom=*,
+                                                          registry=*,
+                                                          decorate=*,
+                                                          request=*,
+                                                          decorate_callback=*,
+                                                          name=*,
+                                                          useCache=*)
 
 
 cpdef decorate_external_mapping(self, result, registry=*, request=*)
 
 
-cpdef to_minimal_standard_external_dictionary(self, mergeFrom=*)
+cpdef LocatedExternalDict to_minimal_standard_external_dictionary(self, mergeFrom=*)

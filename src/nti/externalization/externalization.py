@@ -2,8 +2,15 @@
 """
 Functions related to actually externalizing objects.
 
-.. $Id$
+
 """
+# There are a *lot* of fixme (XXX and the like) in this file.
+# Turn those off in general so we can see through the noise.
+# pylint:disable=fixme
+
+# Our request hook function always returns None, and pylint
+# flags that as useless (good for it)
+# pylint:disable=assignment-from-none
 
 from __future__ import absolute_import
 from __future__ import division
@@ -41,25 +48,22 @@ from nti.externalization.interfaces import IExternalObjectDecorator
 from nti.externalization.interfaces import ILocatedExternalSequence
 from nti.externalization.interfaces import INonExternalizableReplacement
 from nti.externalization.interfaces import INonExternalizableReplacer
-from nti.externalization.interfaces import LocatedExternalDict
+from nti.externalization._base_interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import StandardInternalFields
+from nti.externalization._base_interfaces import NotGiven
 
 
 logger = __import__('logging').getLogger(__name__)
 
-# Local for speed
-StandardExternalFields_ID = StandardExternalFields.ID
-StandardExternalFields_OID = StandardExternalFields.OID
+# Local for speed (remember these are declared in .pxd)
 StandardExternalFields_CLASS = StandardExternalFields.CLASS
-StandardExternalFields_NTIID = StandardExternalFields.NTIID
 StandardExternalFields_CREATOR = StandardExternalFields.CREATOR
 StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
 StandardExternalFields_CONTAINER_ID = StandardExternalFields.CONTAINER_ID
 StandardExternalFields_CREATED_TIME = StandardExternalFields.CREATED_TIME
 StandardExternalFields_LAST_MODIFIED = StandardExternalFields.LAST_MODIFIED
 
-StandardInternalFields_ID = StandardInternalFields.ID
 StandardInternalFields_CREATOR = StandardInternalFields.CREATOR
 StandardInternalFields_CONTAINER_ID = StandardInternalFields.CONTAINER_ID
 StandardInternalFields_CREATED_TIME = StandardInternalFields.CREATED_TIME
@@ -72,7 +76,6 @@ SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 def is_system_user(obj):
     return IPrincipal.providedBy(obj) and obj.id == system_user.id
 
-_NotGiven = object()
 
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
@@ -80,12 +83,13 @@ _NotGiven = object()
 # the name that was established at the top level.
 
 class _ThreadLocalData(object):
+    __slots__ = ('name', 'memos')
 
     def __init__(self, name, memos):
         self.name = name
         self.memos = memos
 
-_manager = ThreadLocalManager(default=lambda: _ThreadLocalData(_NotGiven, None))
+_manager = ThreadLocalManager(default=lambda: _ThreadLocalData(NotGiven, None))
 _manager_get = _manager.get
 _manager_pop = _manager.pop
 _manager_push = _manager.push
@@ -179,7 +183,10 @@ _marker = object()
 
 
 def _to_external_object_state(obj, state, top_level=False, decorate=True,
-                              useCache=True, decorate_callback=_NotGiven):
+                              useCache=True, decorate_callback=NotGiven):
+    # This function is way to long and ugly. Given cython's 0 function call overhead,
+    # we can probably refactor.
+    # pylint:disable=too-many-branches
     __traceback_info__ = obj
 
     orig_obj = obj
@@ -287,7 +294,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
 
         # Request specific decorating, if given, is more specific than plain object
         # decorating, so it gets to go last.
-        if decorate and state.request is not None and state.request is not _NotGiven:
+        if decorate and state.request is not None and state.request is not NotGiven:
             for decorator in state.registry.subscribers((orig_obj, state.request),
                                                         IExternalObjectDecorator):
                 decorator.decorateExternalObject(orig_obj, result)
@@ -313,16 +320,16 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
 
 
 def toExternalObject(obj,
-                     name=_NotGiven,
+                     name=NotGiven,
                      registry=component,
                      catch_components=(),
                      catch_component_action=None,
-                     request=_NotGiven,
+                     request=NotGiven,
                      decorate=True,
                      useCache=True,
                      # XXX: Why do we have this? It's only used when decotare is False,
                      # which doesn't make much sense.
-                     decorate_callback=_NotGiven,
+                     decorate_callback=NotGiven,
                      default_non_externalizable_replacer=DefaultNonExternalizableReplacer):
     """
     Translates the object into a form suitable for
@@ -342,7 +349,8 @@ def toExternalObject(obj,
         a different object (already externalized) or re-raise the exception. There is no default,
         but :func:`catch_replace_action` is a good choice.
     :param callable default_non_externalizable_replacer: If we are asked to externalize an object
-        and cannot, and there is no :class:`~nti.externalization.interfaces.INonExternalizableReplacer` registered for it,
+        and cannot, and there is no
+        :class:`~nti.externalization.interfaces.INonExternalizableReplacer` registered for it,
         then call this object and use the results.
     :param request: If given, the request that the object is being externalized on behalf
         of. If given, then the object decorators will also look for subscribers
@@ -356,11 +364,11 @@ def toExternalObject(obj,
         return obj
 
     manager_top = _manager_get()
-    if name is _NotGiven:
+    if name is NotGiven:
         name = manager_top.name
-    if name is _NotGiven:
+    if name is NotGiven:
         name = ''
-    if request is _NotGiven:
+    if request is NotGiven:
         request = get_current_request()
 
     memos = manager_top.memos
@@ -458,6 +466,9 @@ def choose_field(result, self, ext_name,
                                 converter=sup_converter,
                                 fields=sup_fields)
 
+    # Falling off the end: return None
+    return None
+
 
 def to_standard_external_last_modified_time(context, default=None, _write_into=None):
     """
@@ -506,7 +517,9 @@ def to_standard_external_created_time(context, default=None, _write_into=None):
 _ext_class_ignored_modules = frozenset(('nti.externalization',
                                         'nti.externalization.datastructures',
                                         'nti.externalization.persistence',
-                                        'nti.externalization.interfaces'))
+                                        'nti.externalization.interfaces',
+                                        'nti.externalization._base_interfaces',
+                                        'nti.externalization.__base_interfaces'))
 
 def _ext_class_if_needed(self, result):
     if StandardExternalFields_CLASS not in result:
@@ -527,28 +540,30 @@ def to_standard_external_dictionary(
         mergeFrom=None,
         registry=component,
         decorate=True,
-        request=_NotGiven,
-        decorate_callback=_NotGiven,
+        request=NotGiven,
+        decorate_callback=NotGiven,
         # These are ignored, present for BWC
-        name=_NotGiven,
-        useCache=_NotGiven,
+        name=NotGiven,
+        useCache=NotGiven,
 ):
 
     """
     Returns a dictionary representing the standard externalization of
     the object. This impl takes care of the standard attributes
-    including OID (from :attr:`~persistent.interfaces.IPersistent._p_oid`) and ID (from ``self.id`` if defined)
-    and Creator (from ``self.creator``).
+    including OID (from
+    :attr:`~persistent.interfaces.IPersistent._p_oid`) and ID (from
+    ``self.id`` if defined) and Creator (from ``self.creator``).
 
     If the object has any
     :class:`~nti.externalization.interfaces.IExternalMappingDecorator`
     subscribers registered for it, they will be called to decorate the
-    result of this method before it returns ( *unless* `decorate` is set to
-    False; only do this if you know what you are doing! )
+    result of this method before it returns ( *unless* `decorate` is
+    set to False; only do this if you know what you are doing! )
 
-    :param dict mergeFrom: For convenience, if ``mergeFrom`` is not None, then those values will
-        be added to the dictionary created by this method. The keys and
-        values in ``mergeFrom`` should already be external.
+    :param dict mergeFrom: For convenience, if ``mergeFrom`` is not
+        None, then those values will be added to the dictionary
+        created by this method. The keys and values in ``mergeFrom``
+        should already be external.
     """
     result = to_minimal_standard_external_dictionary(self, mergeFrom)
 
@@ -568,7 +583,7 @@ def to_standard_external_dictionary(
         result[StandardInternalFields_CONTAINER_ID] = containerId
 
     if decorate:
-        if request is _NotGiven:
+        if request is NotGiven:
             request = get_current_request()
 
         decorate_external_mapping(self, result, registry=registry,
@@ -579,11 +594,11 @@ def to_standard_external_dictionary(
     return result
 
 
-def decorate_external_mapping(self, result, registry=component, request=_NotGiven):
+def decorate_external_mapping(self, result, registry=component, request=NotGiven):
     for decorator in registry.subscribers((self,), IExternalMappingDecorator):
         decorator.decorateExternalMapping(self, result)
 
-    if request is _NotGiven:
+    if request is NotGiven:
         request = get_current_request()
 
     if request is not None:
@@ -605,23 +620,26 @@ def to_minimal_standard_external_dictionary(self, mergeFrom=None):
     """
 
     result = LocatedExternalDict()
-    if mergeFrom:
+    if mergeFrom is not None:
         result.update(mergeFrom)
     _ext_class_if_needed(self, result)
 
     mime_type = getattr(self, 'mimeType', None) or getattr(self, 'mime_type', None)
-    if mime_type:
+    if mime_type is not None and mime_type:
         result[StandardExternalFields_MIMETYPE] = mime_type
     return result
 
 
 def is_nonstr_iter(v):
+    warnings.warn("'is_nonstr_iter' will be deleted.", FutureWarning)
     return hasattr(v, '__iter__')
 
 
 def removed_unserializable(ext):
+    # pylint:disable=too-many-branches
     # XXX: Why is this here? We don't use it anymore.
     # Can it be removed?
+    warnings.warn("'removed_unserializable' will be deleted.", FutureWarning)
     def _is_sequence(m):
         return not isinstance(m, collections.Mapping) and is_nonstr_iter(m)
 
@@ -658,5 +676,5 @@ def removed_unserializable(ext):
 EXT_FORMAT_JSON = 'json'
 
 
-from nti.externalization._compat import import_c_accel
+from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
 import_c_accel(globals(), 'nti.externalization._externalization')

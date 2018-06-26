@@ -15,7 +15,7 @@ import yaml
 from zope import component
 from zope import interface
 
-from .externalization import _NotGiven
+from ._base_interfaces import NotGiven as _NotGiven
 from .externalization import toExternalObject
 from .interfaces import EXT_REPR_JSON
 from .interfaces import EXT_REPR_YAML
