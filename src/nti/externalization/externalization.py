@@ -287,9 +287,13 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
         # NOTE: we cannot try to to-string the object, it may try to call back to us
         # NOTE2: In case we encounter a proxy (zope.container.contained.ContainedProxy)
         # the type(o) is not reliable. Only the __class__ is.
+        # NOTE3: On Cython 0.28.3 on Python 3, this actually fails.
+        # We expect to see this bug fixed before we release.
+        # https://github.com/cython/cython/issues/2425
         logger.exception("Exception externalizing component object %s/%s",
                          type(obj), obj.__class__)
         return state.catch_component_action(obj, t)
+
 
 
 def toExternalObject(obj,

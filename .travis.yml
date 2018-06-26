@@ -32,7 +32,11 @@ install:
   - pip install -U coveralls coverage
   - pip install -U -e ".[test]"
 
-cache: pip
+
+cache:
+  pip: true
+  directories:
+    - $HOME/.ccache
 
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
