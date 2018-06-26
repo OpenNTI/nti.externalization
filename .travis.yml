@@ -11,6 +11,14 @@ matrix:
       env: PURE_PYTHON=1
     - python: 3.6
       env: PURE_PYTHON=1
+env:
+    global:
+        - CC="ccache gcc"
+        - CCACHE_SLOPPINESS=file_macro,time_macros,include_file_ctime,include_file_mtime
+        - CCACHE_NOHASHDIR=true
+        - CFLAGS="-Ofast -pipe -fomit-frame-pointer -march=native"
+        - PYTHONHASHSEED=random
+        - PIP_UPGRADE_STRATEGY=eager
 script:
   - coverage run -m zope.testrunner --test-path=src
 after_success:
@@ -20,7 +28,7 @@ notifications:
 
 install:
   - pip install -U pip
-  - pip install -U setuptools
+  - pip install -U setuptools cython
   - pip install -U coveralls coverage
   - pip install -U -e ".[test]"
 
