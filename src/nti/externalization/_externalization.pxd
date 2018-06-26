@@ -7,6 +7,7 @@ cdef warnings
 cdef collections
 cdef component
 cdef interface
+cdef defaultdict
 
 cdef IDCTimes
 cdef IFiniteSequence
@@ -33,7 +34,15 @@ cdef StandardInternalFields
 # TODO: cython compile representation.py and then make this
 # a cdef
 #cpdef _NotGiven
-cdef _manager
+
+@cython.internal
+@cython.final
+@cython.freelist(1000)
+cdef class _ThreadLocalData(object):
+    cdef name
+    cdef memos
+
+cdef _manager, _manager_get, _manager_pop, _manager_push
 cdef tuple _primitives
 cdef _marker
 
@@ -50,7 +59,15 @@ cpdef DefaultNonExternalizableReplacer(obj)
 @cython.internal
 @cython.freelist(1000)
 cdef class _ExternalizationState(object):
-    cdef dict __dict__
+    cdef dict memo
+
+    cdef name
+    cdef registry
+    cdef catch_components
+    cdef catch_component_action
+    cdef request
+    cdef default_non_externalizable_replacer
+
 
 # can't use freelist on subclass
 @cython.final
@@ -59,14 +76,17 @@ cdef class _RecursiveCallState(dict):
     pass
 
 
+@cython.locals(
+    manager_top=_ThreadLocalData,
+)
 cpdef toExternalObject(obj,
                        name=*,
                        registry=*,
                        catch_components=*,
                        catch_component_action=*,
                        request=*,
-                       decorate=*,
-                       useCache=*,
+                       bint decorate=*,
+                       bint useCache=*,
                        decorate_callback=*,
                        default_non_externalizable_replacer=*)
 

@@ -78,7 +78,17 @@ _NotGiven = object()
 # we must keep thread-local. We call into objects without any context,
 # and they call back into us, and otherwise we would lose
 # the name that was established at the top level.
-_manager = ThreadLocalManager(default=lambda: {'name': _NotGiven, 'memos': None})
+
+class _ThreadLocalData(object):
+
+    def __init__(self, name, memos):
+        self.name = name
+        self.memos = memos
+
+_manager = ThreadLocalManager(default=lambda: _ThreadLocalData(_NotGiven, None))
+_manager_get = _manager.get
+_manager_pop = _manager.pop
+_manager_push = _manager.push
 
 # Things that can be directly externalized
 _primitives = six.string_types + (numbers.Number, bool)
@@ -142,19 +152,24 @@ MAPPING_TYPES = (persistent.mapping.PersistentMapping,
 
 class _ExternalizationState(object):
 
-    name = u''
-    request = None
-    registry = None
-    # We take a similar approach to pickle.Pickler
-    # for memoizing objects we've seen:
-    # we map the id of an object to a two tuple: (obj, external-value)
-    # the original object is kept in the tuple to keep transient objects alive
-    # and thus ensure no overlapping ids
-    memo = None
-
-    def __init__(self, memos, kwargs):
-        self.__dict__.update(kwargs)
+    # XXX: Which of these do we actually use?
+    def __init__(self, memos,
+                 name, registry, catch_components, catch_component_action,
+                 request,
+                 default_non_externalizable_replacer):
+        self.name = name
+        # We take a similar approach to pickle.Pickler
+        # for memoizing objects we've seen:
+        # we map the id of an object to a two tuple: (obj, external-value)
+        # the original object is kept in the tuple to keep transient objects alive
+        # and thus ensure no overlapping ids
         self.memo = memos[self.name]
+
+        self.registry = registry
+        self.catch_components = catch_components
+        self.catch_component_action = catch_component_action
+        self.request = request
+        self.default_non_externalizable_replacer = default_non_externalizable_replacer
 
 class _RecursiveCallState(dict):
     pass
@@ -340,30 +355,31 @@ def toExternalObject(obj,
     if isinstance(obj, _primitives):
         return obj
 
+    manager_top = _manager_get()
     if name is _NotGiven:
-        name = _manager.get()['name']
+        name = manager_top.name
     if name is _NotGiven:
         name = ''
     if request is _NotGiven:
         request = get_current_request()
 
-    memos = _manager.get()['memos']
+    memos = manager_top.memos
     if memos is None:
+        # Don't live beyond this dynamic function call
         memos = defaultdict(dict)
 
-    v = dict(locals())
-    v.pop('obj')
-    v.pop("memos")
-    state = _ExternalizationState(memos, v)
+    state = _ExternalizationState(memos, name, registry, catch_components, catch_component_action,
+                                  request,
+                                  default_non_externalizable_replacer)
 
-    _manager.push({'name': name, 'memos': memos})
+    _manager_push(_ThreadLocalData(name, memos))
 
     try:
         return _to_external_object_state(obj, state, top_level=True,
                                          decorate=decorate, useCache=useCache,
                                          decorate_callback=decorate_callback)
     finally:
-        _manager.pop()
+        _manager_pop()
 to_external_object = toExternalObject
 
 
