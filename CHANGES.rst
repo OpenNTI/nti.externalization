@@ -10,6 +10,10 @@
   ``update_from_external_object``. See
   https://github.com/NextThought/nti.externalization/issues/29.
 
+- THe ``SingletonMetaclass`` no longer actually enforces the singleton
+  property. It turns out to be faster to run the usual constructors.
+  See https://github.com/NextThought/nti.externalization/issues/48
+
 
 1.0.0a1 (2017-09-29)
 ====================

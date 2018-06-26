@@ -34,38 +34,28 @@ class SingletonMetaclass(type):
 
     **Implementation Notes**
 
-    The class is instantiated immediately at the point where it is
-    defined by calling ``cls.__new__(cls)``. This instance is cached and
-    ``cls.__new__`` is rebound to return it directly.
+    Performance tests show that the approach used to create singletons
+    (constructing an instance when the class was created and rebinding ``__new__`` to
+    return it) is actually slower than letting the interpreter do its thing. Since
+    these are small objects that are typically short lived, allowing them to be allocated
+    on demand may reduce cache pressure as well. So this class no longer actually guarantees
+    the true singleton property.
 
-    The original constructor is also cached to allow subclasses to access it
-    and have their own instance.
+    .. versionchanged:: 1.0a2
+       No longer actually enforce the singleton property.
+    .. versionchanged:: 1.0a2
+       This metaclass always provides definitions for ``__eq__`` and ``__ne__``
+       and ``__hash__``.
     """
 
     def __new__(mcs, name, bases, cls_dict):
-        cls_dict[str('__slots__')] = ()  # no ivars
+        cls_dict['__slots__'] = ()  # no ivars
+        cls_dict['__init__'] = lambda self, context=None, request=None: None
+        cls_dict['__eq__'] = lambda self, other: type(self) is type(other)
+        cls_dict['__hash__'] = lambda self: hash(type(self))
+        cls_dict['__ne__'] = lambda self, other: type(self) is not type(other)
 
         cls = type.__new__(mcs, name, bases, cls_dict)
-
-        ancestor = object
-        for ancestor in cls.mro():
-            if '__new__' in ancestor.__dict__:
-                break
-        if isinstance(ancestor, SingletonMetaclass) and ancestor is not cls:
-            ctor = ancestor._new_instance
-        else:
-            ctor = cls.__new__
-        cls._new_instance = staticmethod(ctor)
-
-        the_instance = ctor(cls)
-
-        def __new__(cls, unused_context=None, unused_request=None):
-            return the_instance
-        cls.__new__ = staticmethod(__new__)
-
-        def __init__(self, context=None, request=None):
-            pass
-        cls.__init__ = __init__
 
         return cls
 
