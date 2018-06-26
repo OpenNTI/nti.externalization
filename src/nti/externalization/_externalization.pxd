@@ -47,13 +47,6 @@ cdef StandardInternalFields_LAST_MODIFIED
 cdef StandardInternalFields_LAST_MODIFIEDU
 
 
-@cython.internal
-@cython.final
-@cython.freelist(1000)
-cdef class _ThreadLocalData(object):
-    cdef name
-    cdef memos
-
 cdef _manager, _manager_get, _manager_pop, _manager_push
 cdef tuple _primitives
 cdef _marker
@@ -88,9 +81,8 @@ cdef class _RecursiveCallState(dict):
     pass
 
 
-@cython.locals(
-    manager_top=_ThreadLocalData,
-)
+#@cython.locals(
+#)
 cpdef toExternalObject(obj,
                        name=*,
                        registry=*,

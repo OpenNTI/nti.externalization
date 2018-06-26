@@ -82,14 +82,8 @@ def is_system_user(obj):
 # and they call back into us, and otherwise we would lose
 # the name that was established at the top level.
 
-class _ThreadLocalData(object):
-    __slots__ = ('name', 'memos')
-
-    def __init__(self, name, memos):
-        self.name = name
-        self.memos = memos
-
-_manager = ThreadLocalManager(default=lambda: _ThreadLocalData(NotGiven, None))
+# Stores tuples (name, memos)
+_manager = ThreadLocalManager(default=lambda: (NotGiven, None))
 _manager_get = _manager.get
 _manager_pop = _manager.pop
 _manager_push = _manager.push
@@ -365,13 +359,13 @@ def toExternalObject(obj,
 
     manager_top = _manager_get()
     if name is NotGiven:
-        name = manager_top.name
+        name = manager_top[0]
     if name is NotGiven:
         name = ''
     if request is NotGiven:
         request = get_current_request()
 
-    memos = manager_top.memos
+    memos = manager_top[1]
     if memos is None:
         # Don't live beyond this dynamic function call
         memos = defaultdict(dict)
@@ -380,7 +374,7 @@ def toExternalObject(obj,
                                   request,
                                   default_non_externalizable_replacer)
 
-    _manager_push(_ThreadLocalData(name, memos))
+    _manager_push((name, memos))
 
     try:
         return _to_external_object_state(obj, state, top_level=True,
