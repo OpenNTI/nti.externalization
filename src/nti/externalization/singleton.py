@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# cython: auto_pickle=False,embedsignature=True,always_allow_keywords=False
 # -*- coding: utf-8 -*-
 """
 Support for singleton objects that are used as external object decorators.
@@ -9,7 +9,6 @@ from __future__ import division
 from __future__ import print_function
 
 # This was originally based on code from sympy.core.singleton
-
 
 class SingletonMetaclass(type):
     """
@@ -43,7 +42,8 @@ class SingletonMetaclass(type):
     """
 
     def __new__(mcs, name, bases, cls_dict):
-        cls_dict[str('__slots__')] = ()  # no ivars
+        cls_dict['__slots__'] = ()  # no ivars
+        cls_dict['__init__'] = lambda *args: None
 
         cls = type.__new__(mcs, name, bases, cls_dict)
 
@@ -59,13 +59,7 @@ class SingletonMetaclass(type):
 
         the_instance = ctor(cls)
 
-        def __new__(cls, unused_context=None, unused_request=None):
-            return the_instance
-        cls.__new__ = staticmethod(__new__)
-
-        def __init__(self, context=None, request=None):
-            pass
-        cls.__init__ = __init__
+        cls.__new__ = staticmethod(lambda *args: the_instance)
 
         return cls
 
