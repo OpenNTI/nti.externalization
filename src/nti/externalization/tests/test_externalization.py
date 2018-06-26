@@ -35,7 +35,7 @@ from ..externalization import catch_replace_action
 from ..externalization import choose_field
 from ..externalization import isSyntheticKey
 from ..externalization import removed_unserializable
-from ..externalization import set_external_identifiers
+from ..extension_points import set_external_identifiers
 from ..externalization import to_standard_external_dictionary
 from ..externalization import toExternalObject
 from ..interfaces import EXT_REPR_JSON

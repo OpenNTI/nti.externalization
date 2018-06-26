@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# cython: auto_pickle=False,embedsignature=True,always_allow_keywords=False
 """
 Functions related to actually externalizing objects.
 
@@ -179,8 +179,8 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
         elif obj is not None:
             logger.warn("Recursive call to object %s.", obj)
             result = to_standard_external_dictionary(obj,
-                                                     decorate=False,
-                                                     useCache=False)
+                                                     decorate=False)
+
             return _RecursiveCallState(result)
 
     try:
@@ -221,11 +221,10 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
             result = obj.toExternalList()
         elif isinstance(obj, MAPPING_TYPES):
             # XXX: This winds up calling decorate_callback at least twice.
-            result = to_standard_external_dictionary(obj, name=state.name,
+            result = to_standard_external_dictionary(obj,
                                                      registry=state.registry,
                                                      request=state.request,
                                                      decorate=decorate,
-                                                     useCache=useCache,
                                                      decorate_callback=decorate_callback)
             if obj.__class__ is dict:
                 result.pop('Class', None)
@@ -235,6 +234,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
             for key, value in obj.items():
                 if not isinstance(value, _primitives):
                     ext_obj = _to_external_object_state(value, state,
+                                                        top_level=False,
                                                         decorate=decorate,
                                                         useCache=useCache,
                                                         decorate_callback=decorate_callback)
@@ -247,6 +247,7 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
             for value in obj:
                 if not isinstance(value, _primitives):
                     ext_obj = _to_external_object_state(value, state,
+                                                        top_level=False,
                                                         decorate=decorate,
                                                         useCache=useCache,
                                                         decorate_callback=decorate_callback)
@@ -437,10 +438,9 @@ def choose_field(result, self, ext_name,
     if sup_iface is not None and sup_fields:
         self = sup_iface(self, None)
         if self is not None:
-            return _choose_field(result, self, ext_name,
-                                 converter=sup_converter,
-                                 fields=sup_fields)
-_choose_field = choose_field
+            return choose_field(result, self, ext_name,
+                                converter=sup_converter,
+                                fields=sup_fields)
 
 
 def to_standard_external_last_modified_time(context, default=None, _write_into=None):
@@ -457,11 +457,11 @@ def to_standard_external_last_modified_time(context, default=None, _write_into=N
     # to_standard_external_dictionary
     holder = _write_into if _write_into is not None else dict()
 
-    _choose_field(holder, context, StandardExternalFields_LAST_MODIFIED,
-                  fields=(StandardInternalFields_LAST_MODIFIED,
-                          StandardInternalFields_LAST_MODIFIEDU),
-                  sup_iface=IDCTimes, sup_fields=('modified',),
-                  sup_converter=_datetime_to_epoch)
+    choose_field(holder, context, StandardExternalFields_LAST_MODIFIED,
+                 fields=(StandardInternalFields_LAST_MODIFIED,
+                         StandardInternalFields_LAST_MODIFIEDU),
+                 sup_iface=IDCTimes, sup_fields=('modified',),
+                 sup_converter=_datetime_to_epoch)
     return holder.get(StandardExternalFields_LAST_MODIFIED, default)
 
 
@@ -479,10 +479,10 @@ def to_standard_external_created_time(context, default=None, _write_into=None):
     # to_standard_external_dictionary
     holder = _write_into if _write_into is not None else dict()
 
-    _choose_field(holder, context, StandardExternalFields_CREATED_TIME,
-                  fields=(StandardInternalFields_CREATED_TIME,),
-                  sup_iface=IDCTimes, sup_fields=('created',),
-                  sup_converter=_datetime_to_epoch)
+    choose_field(holder, context, StandardExternalFields_CREATED_TIME,
+                 fields=(StandardInternalFields_CREATED_TIME,),
+                 sup_iface=IDCTimes, sup_fields=('created',),
+                 sup_converter=_datetime_to_epoch)
 
     return holder.get(StandardExternalFields_CREATED_TIME, default)
 
@@ -506,12 +506,18 @@ def _ext_class_if_needed(self, result):
 def _should_never_convert(x):
     raise AssertionError("We should not be converting")
 
-def to_standard_external_dictionary(self, mergeFrom=None,
-                                    registry=component,
-                                    decorate=True,
-                                    request=_NotGiven,
-                                    decorate_callback=_NotGiven,
-                                    *unused_args, **unused_kwargs):
+def to_standard_external_dictionary(
+        self,
+        mergeFrom=None,
+        registry=component,
+        decorate=True,
+        request=_NotGiven,
+        decorate_callback=_NotGiven,
+        # These are ignored, present for BWC
+        name=_NotGiven,
+        useCache=_NotGiven,
+):
+
     """
     Returns a dictionary representing the standard externalization of
     the object. This impl takes care of the standard attributes
@@ -532,16 +538,16 @@ def to_standard_external_dictionary(self, mergeFrom=None,
 
     set_external_identifiers(self, result)
 
-    _choose_field(result, self, StandardExternalFields_CREATOR,
-                  fields=(StandardInternalFields_CREATOR,
-                          StandardExternalFields_CREATOR),
-                  converter=_should_never_convert)
+    choose_field(result, self, StandardExternalFields_CREATOR,
+                 fields=(StandardInternalFields_CREATOR,
+                         StandardExternalFields_CREATOR),
+                 converter=_should_never_convert)
 
     to_standard_external_last_modified_time(self, _write_into=result)
     to_standard_external_created_time(self, _write_into=result)
 
-    containerId = _choose_field(result, self, StandardExternalFields_CONTAINER_ID,
-                                fields=(StandardInternalFields_CONTAINER_ID,))
+    containerId = choose_field(result, self, StandardExternalFields_CONTAINER_ID,
+                               fields=(StandardInternalFields_CONTAINER_ID,))
     if containerId:  # alias per mobile client request 20150625
         result[StandardInternalFields_CONTAINER_ID] = containerId
 
@@ -577,7 +583,7 @@ def toExternalDictionary(*args, **kwargs): # pragma: no cover
 
 
 
-def to_minimal_standard_external_dictionary(self, mergeFrom=None, **unused_kwargs):
+def to_minimal_standard_external_dictionary(self, mergeFrom=None):
     """
     Does no decoration. Useful for non-'object' types. `self` should have a `mime_type` field.
     """

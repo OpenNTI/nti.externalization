@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# cython: auto_pickle=False,embedsignature=True,always_allow_keywords=False
 # -*- coding: utf-8 -*
 """
 Datastructures to help externalization.
@@ -20,18 +20,16 @@ from zope.schema.interfaces import SchemaNotProvided
 
 from nti.schema.interfaces import find_most_derived_interface
 
-from .externalization import _isMagicKey
-from .externalization import stripSyntheticKeysFromExternalDictionary
 from .externalization import to_minimal_standard_external_dictionary
 from .externalization import to_standard_external_dictionary
-from .externalization import toExternalObject
+# Must rename this so it doesn't conflict with method defs;
+# that breaks cython
+from .externalization import toExternalObject as _toExternalObject
 from .interfaces import IInternalObjectIO
 from .interfaces import StandardExternalFields
 from .interfaces import StandardInternalFields
 from .internalization import validate_named_field_value
 from .representation import make_repr
-
-isSyntheticKey = _isMagicKey
 
 
 class ExternalizableDictionaryMixin(object):
@@ -52,8 +50,8 @@ class ExternalizableDictionaryMixin(object):
     def _ext_standard_external_dictionary(self, replacement, mergeFrom=None, **kwargs):
         if self.__external_use_minimal_base__:
             return to_minimal_standard_external_dictionary(replacement,
-                                                           mergeFrom=mergeFrom,
-                                                           **kwargs)
+                                                           mergeFrom=mergeFrom)
+
         return to_standard_external_dictionary(replacement,
                                                mergeFrom=mergeFrom,
                                                **kwargs)
@@ -63,11 +61,13 @@ class ExternalizableDictionaryMixin(object):
                                                       mergeFrom=mergeFrom,
                                                       **kwargs)
 
-    # XXX: Why is this here as an instance method?
-    stripSyntheticKeysFromExternalDictionary = staticmethod(stripSyntheticKeysFromExternalDictionary)
+    # # XXX: Why is this here as an instance method?
+    # @staticmethod
+    # def stripSyntheticKeysFromExternalDictionary(*args):
+    #     return stripSyntheticKeysFromExternalDictionary(*args)
 
 
-@interface.implementer(IInternalObjectIO)
+
 class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     """
     Base class for objects that externalize based on dynamic information.
@@ -154,7 +154,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
             ext_val = attr_val = self._ext_getattr(ext_self, k)
             __traceback_info__ = k, attr_val
             if k not in primitive_ext_keys:
-                ext_val = toExternalObject(attr_val, **kwargs)
+                ext_val = _toExternalObject(attr_val, **kwargs)
 
             result[k] = ext_val
 
@@ -241,8 +241,9 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         return updated
 
+interface.classImplements(AbstractDynamicObjectIO, IInternalObjectIO)
 
-@interface.implementer(IInternalObjectIO)
+
 class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     """
     Externalizes to a dictionary containing the members of ``__dict__``
@@ -273,52 +274,57 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     __repr__ = make_repr()
 
 
+
 _primitives = six.string_types + (numbers.Number, bool)
 
 
 class _InterfaceCache(object):
+    __slots__ = ('iface', 'ext_all_possible_keys',
+                 'ext_accept_external_id',
+                 'ext_primitive_out_ivars',
+                 '__weakref__')
 
-    iface = None
-    ext_all_possible_keys = None
-    ext_accept_external_id = None
-    ext_primitive_out_ivars = None
+    def __init__(self):
+        self.iface = None
+        self.ext_all_possible_keys = None
+        self.ext_accept_external_id = None
+        self.ext_primitive_out_ivars = None
 
-    _instances = WeakSet()
+_cache_instances = WeakSet()
 
-    @classmethod
-    def cache_for(cls, externalizer, ext_self):
-        # The Declaration objects maintain a _v_attrs that
-        # gets blown away on changes to themselves or their
-        # dependents, including adding interfaces dynamically to an instance
-        # (In that case, the provided object actually gets reset)
-        cache_place = interface.providedBy(ext_self)
-        try:
-            attrs = cache_place._v_attrs
-        except AttributeError:
-            attrs = cache_place._v_attrs = {}
-        key = type(externalizer)
-        if key in attrs:
-            cache = attrs[key]
-        else:
-            cache = cls()
-            attrs[key] = cache
-            cls._instances.add(cache)
-        return cache
+def _cache_for(externalizer, ext_self):
+    # The Declaration objects maintain a _v_attrs that
+    # gets blown away on changes to themselves or their
+    # dependents, including adding interfaces dynamically to an instance
+    # (In that case, the provided object actually gets reset)
+    cache_place = interface.providedBy(ext_self)
+    try:
+        attrs = cache_place._v_attrs
+    except AttributeError:
+        attrs = cache_place._v_attrs = {}
+    key = type(externalizer)
+    if key in attrs:
+        cache = attrs[key]
+    else:
+        cache = _InterfaceCache()
+        attrs[key] = cache
+        _cache_instances.add(cache)
+    return cache
 
-    @classmethod
-    def cleanUp(cls):
-        for x in list(cls._instances):
-            x.__dict__.clear()
+
+def _cache_cleanUp():
+    for x in list(_cache_instances):
+        x.__init__()
 
 try:
     from zope.testing import cleanup
 except ImportError: # pragma: no cover
     pass
 else:
-    cleanup.addCleanUp(_InterfaceCache.cleanUp)
+    cleanup.addCleanUp(_cache_cleanUp)
 
 
-@interface.implementer(IInternalObjectIO)
+
 class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
     Externalizes to a dictionary based on getting the attributes of an
@@ -342,7 +348,6 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
 
     _ext_iface_upper_bound = None
-    validate_after_update = True
 
     def __init__(self, ext_self, iface_upper_bound=None, validate_after_update=True):
         """
@@ -360,7 +365,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         self._ext_self = ext_self
         # Cache all of this data that we use. It's required often and, if not quite a bottleneck,
         # does show up in the profiling data
-        cache = _InterfaceCache.cache_for(self, ext_self)
+        cache = _cache_for(self, ext_self)
         if not cache.iface:
             cache.iface = self._ext_find_schema(ext_self,
                                                 iface_upper_bound or self._ext_iface_upper_bound)
@@ -406,7 +411,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         return self._ext_self
 
     def _ext_all_possible_keys(self):
-        cache = _InterfaceCache.cache_for(self, self._ext_self)
+        cache = _cache_for(self, self._ext_self)
         if cache.ext_all_possible_keys is None:
             cache.ext_all_possible_keys = frozenset((
                 n for n in self._iface.names(all=True)
@@ -428,7 +433,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         this will return that value; otherwise, returns false.
         """
         __traceback_info__ = ext_self, parsed,
-        cache = _InterfaceCache.cache_for(self, ext_self)
+        cache = _cache_for(self, ext_self)
         if cache.ext_accept_external_id is None:
             try:
                 field = cache.iface['id']

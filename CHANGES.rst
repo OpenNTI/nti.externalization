@@ -17,6 +17,15 @@
   using Cython for a 10-30% increase in speed. Set the ``PURE_PYTHON``
   environment variable to disable this at runtime.
 
+- The unused, undocumented method
+  ``stripSyntheticKeysFromExternalDictionary`` was removed from
+  instances of ``ExternalizableDictionaryMixin``. Use the import instead.
+
+- ``to_standard_external_dictionary`` no longer accepts arbitrary
+  arguments and keyword arguments it doesn't use. Likewise,
+  ``to_minimal_standard_external_dictionary`` no longer accepts
+  arbitrary unused keywords.
+
 1.0.0a1 (2017-09-29)
 ====================
 

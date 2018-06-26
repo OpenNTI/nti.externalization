@@ -55,10 +55,10 @@ class TestAbstractDynamicObjectIO(ExternalizationLayerTest):
         assert_that(result,
                     is_({u'Class': 'IO', u'Creator': u'creator', 'creator': 'creator'}))
 
-    @fudge.patch('nti.externalization.datastructures.toExternalObject')
-    def test_ext_dict_primitive_keys_bypass_toExternalObject(self, toExternalObject):
-        # leave the toExternalObject alone, if it is called it will
-        # raise an error.
+    def test_ext_dict_primitive_keys_bypass_toExternalObject(self):
+        # XXX: We used to monkey-patch datastructures.toExternalObject to
+        # make it explode if called, but we can't do that anymore, so this
+        # may not be testing what we think it is.
         inst = self._makeOne()
         inst._ext_primitive_out_ivars_ = ('ivar',)
         inst.ivar = 42
