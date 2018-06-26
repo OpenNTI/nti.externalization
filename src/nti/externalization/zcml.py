@@ -123,10 +123,10 @@ class IAutoPackageExternalizationDirective(interface.Interface):
     register_legacy_search_module = Bool(
         title=(u"Register found factories by their class name."),
         description=(u"If true (*not* the default), then, in addition to registering "
-                     "factories by their mime type, also register them all by their class name. "
-                     "This is not recommended; currently no conflicts are caught and the order "
-                     "is ill-defined. "
-                     "See https://github.com/NextThought/nti.externalization/issues/33"),
+                     u"factories by their mime type, also register them all by their class name. "
+                     u"This is not recommended; currently no conflicts are caught and the order "
+                     u"is ill-defined. "
+                     u"See https://github.com/NextThought/nti.externalization/issues/33"),
         default=False,
         required=False,
     )
