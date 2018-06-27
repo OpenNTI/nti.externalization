@@ -68,5 +68,92 @@ def make_external_dict():
     # a type, and then it correctly infers that type for the variable.
     return LocatedExternalDict()
 
+
+class StandardExternalFields(object):
+    """
+    Namespace object defining constants whose values are the
+    keys used in external mappings.
+
+    These are text (unicode).
+    """
+    __slots__ = (
+        'ID',
+        'OID',
+        'HREF',
+        'INTID',
+        'NTIID',
+        'CREATOR',
+        'CONTAINER_ID',
+        'CREATED_TIME',
+        'LAST_MODIFIED',
+        'CLASS',
+        'LINKS',
+        'MIMETYPE',
+        'ITEMS',
+        'TOTAL',
+        'ITEM_COUNT',
+        'ALL'
+    )
+
+    def __init__(self):
+        self.ID = u'ID'
+        self.OID = u'OID'
+        self.HREF = u'href'
+        self.INTID = u'INTID'
+        self.NTIID = u'NTIID'
+        self.CREATOR = u'Creator'
+        self.CONTAINER_ID = u'ContainerId'
+        self.CREATED_TIME = u'CreatedTime'
+        self.LAST_MODIFIED = u'Last Modified'
+        self.CLASS = u'Class'
+        self.LINKS = u'Links'
+        self.MIMETYPE = u'MimeType'
+        self.ITEMS = u'Items'
+        self.TOTAL = u'Total'
+        self.ITEM_COUNT = u'ItemCount'
+        self.ALL = frozenset(StandardExternalFields.__slots__) - {'ALL'}
+
+
+_standard_external_fields = StandardExternalFields()
+
+def get_standard_external_fields():
+    return _standard_external_fields
+
+
+
+class StandardInternalFields(object):
+    """
+    Namespace object defining constants whose values are the
+    property/attribute names looked for on internal objects.
+
+    These must be native strings.
+    """
+
+    __slots__ = (
+        'ID',
+        'NTIID',
+        'CREATOR',
+        'CREATED_TIME',
+        'CONTAINER_ID',
+        'LAST_MODIFIED',
+        'LAST_MODIFIEDU',
+    )
+
+    def __init__(self):
+        self.ID = 'id'
+        self.NTIID = 'ntiid'
+        self.CREATOR = 'creator'
+        self.CREATED_TIME = 'createdTime'
+        self.CONTAINER_ID = 'containerId'
+        self.LAST_MODIFIED = 'lastModified'
+        self.LAST_MODIFIEDU = 'LastModified'
+
+
+_standard_internal_fields = StandardInternalFields()
+
+def get_standard_internal_fields():
+    return _standard_internal_fields
+
+
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
 import_c_accel(globals(), 'nti.externalization.__base_interfaces')

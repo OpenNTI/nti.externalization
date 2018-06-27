@@ -8,6 +8,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# There are a *lot* of fixme (XXX and the like) in this file.
+# Turn those off in general so we can see through the noise.
+# pylint:disable=fixme
+
+
 # stdlib imports
 import numbers
 from weakref import WeakSet
@@ -26,11 +31,15 @@ from .externalization import to_standard_external_dictionary
 # that breaks cython
 from .externalization import toExternalObject as _toExternalObject
 from .interfaces import IInternalObjectIO
-from .interfaces import StandardExternalFields
 from .interfaces import StandardInternalFields
 from .internalization import validate_named_field_value
 from .representation import make_repr
 
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
+
+StandardExternalFields = get_standard_external_fields()
+StandardInternalFields = get_standard_internal_fields()
 
 class ExternalizableDictionaryMixin(object):
     """

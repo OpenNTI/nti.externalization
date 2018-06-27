@@ -52,8 +52,14 @@ from .interfaces import IExternalObjectDecorator
 from .interfaces import ILocatedExternalSequence
 from .interfaces import INonExternalizableReplacement
 from .interfaces import INonExternalizableReplacer
-from .interfaces import StandardExternalFields
-from .interfaces import StandardInternalFields
+
+
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
+
+StandardExternalFields = get_standard_external_fields()
+StandardInternalFields = get_standard_internal_fields()
+
 
 
 
@@ -68,19 +74,6 @@ logger = __import__('logging').getLogger(__name__)
 # which are much faster. Check the annotated .c file for details.
 ###
 
-# Local for speed (remember these are declared in .pxd)
-StandardExternalFields_CLASS = StandardExternalFields.CLASS
-StandardExternalFields_CREATOR = StandardExternalFields.CREATOR
-StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
-StandardExternalFields_CONTAINER_ID = StandardExternalFields.CONTAINER_ID
-StandardExternalFields_CREATED_TIME = StandardExternalFields.CREATED_TIME
-StandardExternalFields_LAST_MODIFIED = StandardExternalFields.LAST_MODIFIED
-
-StandardInternalFields_CREATOR = StandardInternalFields.CREATOR
-StandardInternalFields_CONTAINER_ID = StandardInternalFields.CONTAINER_ID
-StandardInternalFields_CREATED_TIME = StandardInternalFields.CREATED_TIME
-StandardInternalFields_LAST_MODIFIED = StandardInternalFields.LAST_MODIFIED
-StandardInternalFields_LAST_MODIFIEDU = StandardInternalFields.LAST_MODIFIEDU
 
 SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 
@@ -450,7 +443,7 @@ def choose_field(result, self, ext_name,
         if value is not None:
             # If the creator is the system user, catch it here
             # XXX: Document this behaviour.
-            if ext_name == StandardExternalFields_CREATOR:
+            if ext_name == StandardExternalFields.CREATOR:
                 if is_system_user(value):
                     value = SYSTEM_USER_NAME
                 else:
@@ -490,12 +483,12 @@ def to_standard_external_last_modified_time(context, default=None, _write_into=N
     # to_standard_external_dictionary
     holder = _write_into if _write_into is not None else dict()
 
-    choose_field(holder, context, StandardExternalFields_LAST_MODIFIED,
-                 fields=(StandardInternalFields_LAST_MODIFIED,
-                         StandardInternalFields_LAST_MODIFIEDU),
+    choose_field(holder, context, StandardExternalFields.LAST_MODIFIED,
+                 fields=(StandardInternalFields.LAST_MODIFIED,
+                         StandardInternalFields.LAST_MODIFIEDU),
                  sup_iface=IDCTimes, sup_fields=('modified',),
                  sup_converter=_datetime_to_epoch)
-    return holder.get(StandardExternalFields_LAST_MODIFIED, default)
+    return holder.get(StandardExternalFields.LAST_MODIFIED, default)
 
 
 def to_standard_external_created_time(context, default=None, _write_into=None):
@@ -512,12 +505,12 @@ def to_standard_external_created_time(context, default=None, _write_into=None):
     # to_standard_external_dictionary
     holder = _write_into if _write_into is not None else dict()
 
-    choose_field(holder, context, StandardExternalFields_CREATED_TIME,
-                 fields=(StandardInternalFields_CREATED_TIME,),
+    choose_field(holder, context, StandardExternalFields.CREATED_TIME,
+                 fields=(StandardInternalFields.CREATED_TIME,),
                  sup_iface=IDCTimes, sup_fields=('created',),
                  sup_converter=_datetime_to_epoch)
 
-    return holder.get(StandardExternalFields_CREATED_TIME, default)
+    return holder.get(StandardExternalFields.CREATED_TIME, default)
 
 
 _ext_class_ignored_modules = frozenset(('nti.externalization',
@@ -528,36 +521,36 @@ _ext_class_ignored_modules = frozenset(('nti.externalization',
                                         'nti.externalization.__base_interfaces'))
 
 def _ext_class_if_needed(self, result):
-    if StandardExternalFields_CLASS not in result:
+    if StandardExternalFields.CLASS not in result:
         cls = getattr(self, '__external_class_name__', None)
         if cls:
-            result[StandardExternalFields_CLASS] = cls
+            result[StandardExternalFields.CLASS] = cls
         elif (not self.__class__.__name__.startswith('_')
               and self.__class__.__module__ not in _ext_class_ignored_modules):
-            result[StandardExternalFields_CLASS] = self.__class__.__name__
+            result[StandardExternalFields.CLASS] = self.__class__.__name__
 
 
 
 def _should_never_convert(x):
     raise AssertionError("We should not be converting")
 
-_CREATOR_FIELDS = (StandardInternalFields_CREATOR,
-                   StandardExternalFields_CREATOR)
+_CREATOR_FIELDS = (StandardInternalFields.CREATOR,
+                   StandardExternalFields.CREATOR)
 
 def _fill_creator(result, self):
-    choose_field(result, self, StandardExternalFields_CREATOR,
+    choose_field(result, self, StandardExternalFields.CREATOR,
                  _should_never_convert,
                  _CREATOR_FIELDS)
 
-_CONTAINER_FIELDS = (StandardInternalFields_CONTAINER_ID,)
+_CONTAINER_FIELDS = (StandardInternalFields.CONTAINER_ID,)
 
 def _fill_container(result, self):
-    containerId = choose_field(result, self, StandardExternalFields_CONTAINER_ID,
+    containerId = choose_field(result, self, StandardExternalFields.CONTAINER_ID,
                                identity,
                                _CONTAINER_FIELDS)
     if containerId is not None:
         # alias per mobile client request 20150625
-        result[StandardInternalFields_CONTAINER_ID] = containerId
+        result[StandardInternalFields.CONTAINER_ID] = containerId
 
 
 def to_standard_external_dictionary(
@@ -645,7 +638,7 @@ def to_minimal_standard_external_dictionary(self, mergeFrom=None):
 
     mime_type = getattr(self, 'mimeType', None) or getattr(self, 'mime_type', None)
     if mime_type is not None and mime_type:
-        result[StandardExternalFields_MIMETYPE] = mime_type
+        result[StandardExternalFields.MIMETYPE] = mime_type
     return result
 
 
@@ -695,5 +688,5 @@ def removed_unserializable(ext):
 EXT_FORMAT_JSON = 'json'
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
+from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
 import_c_accel(globals(), 'nti.externalization._externalization')

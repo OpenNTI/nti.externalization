@@ -8,11 +8,14 @@ from nti.externalization._externalization cimport _isMagicKey
 from nti.externalization._externalization cimport to_minimal_standard_external_dictionary
 from nti.externalization._externalization cimport to_standard_external_dictionary
 
-
+from nti.externalization.__base_interfaces cimport get_standard_external_fields
+from nti.externalization.__base_interfaces cimport StandardExternalFields as SEF
+from nti.externalization.__base_interfaces cimport get_standard_internal_fields
+from nti.externalization.__base_interfaces cimport StandardInternalFields as SIF
 
 cdef IInternalObjectIO
-cdef StandardExternalFields
-cdef StandardInternalFields
+cdef SEF StandardExternalFields
+cdef SIF StandardInternalFields
 cdef validate_named_field_value
 cdef make_repr
 cdef isSyntheticKey

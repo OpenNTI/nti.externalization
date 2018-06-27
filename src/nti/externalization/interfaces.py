@@ -23,53 +23,12 @@ from zope.location import ILocation
 # pylint:disable=inherit-non-class,no-method-argument,no-self-argument
 
 from ._base_interfaces import LocatedExternalDict
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
 
+StandardExternalFields = get_standard_external_fields()
 
-class StandardExternalFields(object):
-    """
-    Namespace object defining constants whose values are the
-    keys used in external mappings.
-
-    These are text (unicode).
-    """
-    ID = u'ID'
-    OID = u'OID'
-    HREF = u'href'
-    INTID = u'INTID'
-    NTIID = u'NTIID'
-    CREATOR = u'Creator'
-    CONTAINER_ID = u'ContainerId'
-    CREATED_TIME = u'CreatedTime'
-    LAST_MODIFIED = u'Last Modified'
-    CLASS = u'Class'
-    LINKS = u'Links'
-    MIMETYPE = u'MimeType'
-    ITEMS = u'Items'
-    TOTAL = u'Total'
-    ITEM_COUNT = u'ItemCount'
-
-
-StandardExternalFields.ALL = (lambda: [v for k, v in StandardExternalFields.__dict__.items()
-                                       if not k.startswith('_')])()
-
-
-class StandardInternalFields(object):
-    """
-    Namespace object defining constants whose values are the
-    property/attribute names looked for on internal objects.
-
-    These must be native strings.
-    """
-
-    ID = 'id'
-    NTIID = 'ntiid'
-
-    CREATOR = 'creator'
-    CREATED_TIME = 'createdTime'
-    CONTAINER_ID = 'containerId'
-    LAST_MODIFIED = 'lastModified'
-    LAST_MODIFIEDU = 'LastModified'
-
+StandardInternalFields = get_standard_internal_fields()
 
 class IInternalObjectExternalizer(interface.Interface):
     """

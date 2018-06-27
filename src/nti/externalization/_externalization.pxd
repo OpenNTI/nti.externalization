@@ -3,6 +3,15 @@ import cython
 
 from .__base_interfaces cimport make_external_dict
 
+from nti.externalization.__base_interfaces cimport get_standard_external_fields
+from nti.externalization.__base_interfaces cimport StandardExternalFields as SEF
+from nti.externalization.__base_interfaces cimport get_standard_internal_fields
+from nti.externalization.__base_interfaces cimport StandardInternalFields as SIF
+
+
+cdef SEF StandardExternalFields
+cdef SIF StandardInternalFields
+
 
 # Imports
 cdef numbers
@@ -33,18 +42,6 @@ cdef NotGiven
 
 
 # Constants
-cdef unicode StandardExternalFields_CLASS
-cdef unicode StandardExternalFields_CREATOR
-cdef unicode StandardExternalFields_MIMETYPE
-cdef unicode StandardExternalFields_CONTAINER_ID
-cdef unicode StandardExternalFields_CREATED_TIME
-cdef unicode StandardExternalFields_LAST_MODIFIED
-
-cdef str StandardInternalFields_CREATOR
-cdef str StandardInternalFields_CONTAINER_ID
-cdef str StandardInternalFields_CREATED_TIME
-cdef str StandardInternalFields_LAST_MODIFIED
-cdef str StandardInternalFields_LAST_MODIFIEDU
 
 
 cdef _manager, _manager_get, _manager_pop, _manager_push
