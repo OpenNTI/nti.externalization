@@ -1,7 +1,7 @@
 # definitions for externalization.pxd
 import cython
 
-from ._base_interfaces cimport make_external_dict
+from .__base_interfaces cimport make_external_dict
 
 
 # Imports

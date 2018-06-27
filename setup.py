@@ -57,11 +57,9 @@ ext_modules = []
 # This list is derived from the profile of bm_simple_iface
 # https://github.com/NextThought/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
 if not PYPY:
-    # Cython cannot properly handle double leading underscores, so
-    # our implementation modules can't start with an underscore.
     for mod_name in (
             'externalization',
-            'base_interfaces', # private
+            '_base_interfaces',
             'datastructures',
             'internalization',
             'singleton',

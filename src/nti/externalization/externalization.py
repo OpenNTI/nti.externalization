@@ -38,8 +38,8 @@ from zope.interface.common.sequence import IFiniteSequence
 from zope.security.interfaces import IPrincipal
 from zope.security.management import system_user
 
-from .base_interfaces import make_external_dict
-from .base_interfaces import NotGiven
+from ._base_interfaces import make_external_dict
+from ._base_interfaces import NotGiven
 
 
 from ._compat import identity

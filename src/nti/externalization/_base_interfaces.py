@@ -69,4 +69,4 @@ def make_external_dict():
     return LocatedExternalDict()
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
-import_c_accel(globals(), 'nti.externalization._base_interfaces')
+import_c_accel(globals(), 'nti.externalization.__base_interfaces')
