@@ -64,7 +64,8 @@ class LocatedExternalDict(dict):
 def make_external_dict():
     # This layer of indirection is for cython; it can't cimport
     # types when the extension name doesn't match the
-    # pxd name.
+    # pxd name. But it can cimport functions that are cpdef to return
+    # a type, and then it correctly infers that type for the variable.
     return LocatedExternalDict()
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
