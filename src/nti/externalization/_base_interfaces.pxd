@@ -13,3 +13,5 @@ cdef class LocatedExternalDict(dict):
     cdef public __parent__
     cdef public __acl__
     cdef readonly mimeType
+
+cpdef LocatedExternalDict make_external_dict()

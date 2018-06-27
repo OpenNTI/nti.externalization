@@ -1,7 +1,7 @@
 # definitions for externalization.pxd
 import cython
 
-from nti.externalization._base_interfaces cimport LocatedExternalDict
+from ._base_interfaces cimport make_external_dict
 
 
 # Imports
@@ -33,18 +33,18 @@ cdef NotGiven
 
 
 # Constants
-cdef StandardExternalFields_CLASS
-cdef StandardExternalFields_CREATOR
-cdef StandardExternalFields_MIMETYPE
-cdef StandardExternalFields_CONTAINER_ID
-cdef StandardExternalFields_CREATED_TIME
-cdef StandardExternalFields_LAST_MODIFIED
+cdef unicode StandardExternalFields_CLASS
+cdef unicode StandardExternalFields_CREATOR
+cdef unicode StandardExternalFields_MIMETYPE
+cdef unicode StandardExternalFields_CONTAINER_ID
+cdef unicode StandardExternalFields_CREATED_TIME
+cdef unicode StandardExternalFields_LAST_MODIFIED
 
-cdef StandardInternalFields_CREATOR
-cdef StandardInternalFields_CONTAINER_ID
-cdef StandardInternalFields_CREATED_TIME
-cdef StandardInternalFields_LAST_MODIFIED
-cdef StandardInternalFields_LAST_MODIFIEDU
+cdef str StandardInternalFields_CREATOR
+cdef str StandardInternalFields_CONTAINER_ID
+cdef str StandardInternalFields_CREATED_TIME
+cdef str StandardInternalFields_LAST_MODIFIED
+cdef str StandardInternalFields_LAST_MODIFIEDU
 
 
 cdef _manager, _manager_get, _manager_pop, _manager_push
@@ -60,13 +60,15 @@ cdef tuple MAPPING_TYPES
 
 cpdef DefaultNonExternalizableReplacer(obj)
 
+cdef bint is_system_user(obj)
+
 @cython.final
 @cython.internal
 @cython.freelist(1000)
 cdef class _ExternalizationState(object):
     cdef dict memo
 
-    cdef name
+    cdef basestring name
     cdef registry
     cdef catch_components
     cdef catch_component_action
@@ -108,7 +110,8 @@ cdef frozenset _syntheticKeys()
 cpdef bint _isMagicKey(str key)
 #cpdef bint isSyntheticKey(str key)
 
-cpdef choose_field(result, self, ext_name,
+cpdef choose_field(result, self,
+                   unicode ext_name,
                    converter=*,
                    tuple fields=*,
                    sup_iface=*,
@@ -120,21 +123,28 @@ cpdef to_standard_external_created_time(context, default=*, _write_into=*)
 
 cdef frozenset _ext_class_ignored_modules
 
+
 cdef void _ext_class_if_needed(self, result) except *
 
-# TODO: If we bring LocatedExternalDict into cython, we could typo
-# some args and results below and in choose_field and to_standard_external_*. Does that have any
-# improvement?
-cpdef LocatedExternalDict to_standard_external_dictionary(self, mergeFrom=*,
-                                                          registry=*,
-                                                          decorate=*,
-                                                          request=*,
-                                                          decorate_callback=*,
-                                                          name=*,
-                                                          useCache=*)
+cdef tuple _CREATOR_FIELDS
+cdef void _fill_creator(result, self) except *
+
+cdef tuple _CONTAINER_FIELDS
+cdef void _fill_container(result, self) except *
+
+cpdef void _should_never_convert(x) except *
+
+
+cpdef to_standard_external_dictionary(self, mergeFrom=*,
+                                      registry=*,
+                                      bint decorate=*,
+                                      request=*,
+                                      decorate_callback=*,
+                                      name=*,
+                                      useCache=*)
 
 
 cpdef decorate_external_mapping(self, result, registry=*, request=*)
 
 
-cpdef LocatedExternalDict to_minimal_standard_external_dictionary(self, mergeFrom=*)
+cpdef to_minimal_standard_external_dictionary(self, mergeFrom=*)

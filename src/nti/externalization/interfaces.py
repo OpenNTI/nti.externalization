@@ -29,6 +29,8 @@ class StandardExternalFields(object):
     """
     Namespace object defining constants whose values are the
     keys used in external mappings.
+
+    These are text (unicode).
     """
     ID = u'ID'
     OID = u'OID'
@@ -55,6 +57,8 @@ class StandardInternalFields(object):
     """
     Namespace object defining constants whose values are the
     property/attribute names looked for on internal objects.
+
+    These must be native strings.
     """
 
     ID = 'id'

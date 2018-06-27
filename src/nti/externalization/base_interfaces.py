@@ -61,6 +61,11 @@ class LocatedExternalDict(dict):
         self.__acl__ = ()
         self.mimeType = None
 
+def make_external_dict():
+    # This layer of indirection is for cython; it can't cimport
+    # types when the extension name doesn't match the
+    # pxd name.
+    return LocatedExternalDict()
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
 import_c_accel(globals(), 'nti.externalization._base_interfaces')

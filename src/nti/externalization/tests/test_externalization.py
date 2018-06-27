@@ -247,7 +247,7 @@ class TestFunctions(ExternalizationLayerTest):
             def __getattr__(self, name):
                 raise POSKeyError(name)
 
-        assert_that(choose_field({}, Raises(), 'ext_name',
+        assert_that(choose_field({}, Raises(), u'ext_name',
                                  fields=('a', 'b')),
                     is_(none()))
 

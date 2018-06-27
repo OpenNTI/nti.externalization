@@ -38,23 +38,35 @@ from zope.interface.common.sequence import IFiniteSequence
 from zope.security.interfaces import IPrincipal
 from zope.security.management import system_user
 
-from nti.externalization._compat import identity
-from nti.externalization._threadlocal import ThreadLocalManager
-from nti.externalization.extension_points import get_current_request
-from nti.externalization.extension_points import set_external_identifiers
-from nti.externalization.interfaces import IExternalMappingDecorator
-from nti.externalization.interfaces import IExternalObject
-from nti.externalization.interfaces import IExternalObjectDecorator
-from nti.externalization.interfaces import ILocatedExternalSequence
-from nti.externalization.interfaces import INonExternalizableReplacement
-from nti.externalization.interfaces import INonExternalizableReplacer
-from nti.externalization._base_interfaces import LocatedExternalDict
-from nti.externalization.interfaces import StandardExternalFields
-from nti.externalization.interfaces import StandardInternalFields
-from nti.externalization._base_interfaces import NotGiven
+from .base_interfaces import make_external_dict
+from .base_interfaces import NotGiven
+
+
+from ._compat import identity
+from ._threadlocal import ThreadLocalManager
+from .extension_points import get_current_request
+from .extension_points import set_external_identifiers
+from .interfaces import IExternalMappingDecorator
+from .interfaces import IExternalObject
+from .interfaces import IExternalObjectDecorator
+from .interfaces import ILocatedExternalSequence
+from .interfaces import INonExternalizableReplacement
+from .interfaces import INonExternalizableReplacer
+from .interfaces import StandardExternalFields
+from .interfaces import StandardInternalFields
+
 
 
 logger = __import__('logging').getLogger(__name__)
+
+###
+# Important: For those performance critical functions
+# in this file that call each other, avoid using keyword
+# or variable arguments. Supply the arguments directly in
+# positional fashion (you may use the names if you will be supplying them
+# all in order). This allows Cython to make C function calls,
+# which are much faster. Check the annotated .c file for details.
+###
 
 # Local for speed (remember these are declared in .pxd)
 StandardExternalFields_CLASS = StandardExternalFields.CLASS
@@ -529,6 +541,25 @@ def _ext_class_if_needed(self, result):
 def _should_never_convert(x):
     raise AssertionError("We should not be converting")
 
+_CREATOR_FIELDS = (StandardInternalFields_CREATOR,
+                   StandardExternalFields_CREATOR)
+
+def _fill_creator(result, self):
+    choose_field(result, self, StandardExternalFields_CREATOR,
+                 _should_never_convert,
+                 _CREATOR_FIELDS)
+
+_CONTAINER_FIELDS = (StandardInternalFields_CONTAINER_ID,)
+
+def _fill_container(result, self):
+    containerId = choose_field(result, self, StandardExternalFields_CONTAINER_ID,
+                               identity,
+                               _CONTAINER_FIELDS)
+    if containerId is not None:
+        # alias per mobile client request 20150625
+        result[StandardInternalFields_CONTAINER_ID] = containerId
+
+
 def to_standard_external_dictionary(
         self,
         mergeFrom=None,
@@ -563,18 +594,12 @@ def to_standard_external_dictionary(
 
     set_external_identifiers(self, result)
 
-    choose_field(result, self, StandardExternalFields_CREATOR,
-                 fields=(StandardInternalFields_CREATOR,
-                         StandardExternalFields_CREATOR),
-                 converter=_should_never_convert)
+    _fill_creator(result, self)
 
-    to_standard_external_last_modified_time(self, _write_into=result)
-    to_standard_external_created_time(self, _write_into=result)
+    to_standard_external_last_modified_time(self, None, result)
+    to_standard_external_created_time(self, None, result)
 
-    containerId = choose_field(result, self, StandardExternalFields_CONTAINER_ID,
-                               fields=(StandardInternalFields_CONTAINER_ID,))
-    if containerId:  # alias per mobile client request 20150625
-        result[StandardInternalFields_CONTAINER_ID] = containerId
+    _fill_container(result, self)
 
     if decorate:
         if request is NotGiven:
@@ -613,7 +638,7 @@ def to_minimal_standard_external_dictionary(self, mergeFrom=None):
     Does no decoration. Useful for non-'object' types. `self` should have a `mime_type` field.
     """
 
-    result = LocatedExternalDict()
+    result = make_external_dict()
     if mergeFrom is not None:
         result.update(mergeFrom)
     _ext_class_if_needed(self, result)
