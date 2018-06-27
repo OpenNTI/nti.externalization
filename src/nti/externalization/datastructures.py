@@ -66,8 +66,6 @@ class ExternalizableDictionaryMixin(object):
     # def stripSyntheticKeysFromExternalDictionary(*args):
     #     return stripSyntheticKeysFromExternalDictionary(*args)
 
-
-
 class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     """
     Base class for objects that externalize based on dynamic information.
@@ -83,30 +81,39 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     # probably a meta class.
 
     # Avoid things super handles
-    _excluded_out_ivars_ = {StandardInternalFields.ID,
-                            StandardExternalFields.ID,
-                            StandardInternalFields.CREATOR,
-                            StandardExternalFields.CREATOR,
-                            StandardInternalFields.CONTAINER_ID,
-                            'lastModified',
-                            StandardInternalFields.LAST_MODIFIEDU,
-                            StandardInternalFields.CREATED_TIME,
-                            'links'}
-    _excluded_in_ivars_ = {StandardInternalFields.ID,
-                           StandardExternalFields.ID,
-                           StandardExternalFields.OID,
-                           StandardInternalFields.CREATOR,
-                           StandardExternalFields.CREATOR,
-                           StandardInternalFields.LAST_MODIFIED,
-                           StandardInternalFields.LAST_MODIFIEDU,
-                           # Also the IDCTimes created/modified values
-                           'created', 'modified',
-                           StandardExternalFields.CLASS,
-                           StandardInternalFields.CONTAINER_ID}
-    _ext_primitive_out_ivars_ = set()
+    # These all *should* be frozenset() and immutable
+    _excluded_out_ivars_ = frozenset({
+        StandardInternalFields.ID,
+        StandardExternalFields.ID,
+        StandardInternalFields.CREATOR,
+        StandardExternalFields.CREATOR,
+        StandardInternalFields.CONTAINER_ID,
+        'lastModified',
+        StandardInternalFields.LAST_MODIFIEDU,
+        StandardInternalFields.CREATED_TIME,
+        'links'
+    })
+    _excluded_in_ivars_ = frozenset({
+        StandardInternalFields.ID,
+        StandardExternalFields.ID,
+        StandardExternalFields.OID,
+        StandardInternalFields.CREATOR,
+        StandardExternalFields.CREATOR,
+        StandardInternalFields.LAST_MODIFIED,
+        StandardInternalFields.LAST_MODIFIEDU,
+        # Also the IDCTimes created/modified values
+        'created', 'modified',
+        StandardExternalFields.CLASS,
+        StandardInternalFields.CONTAINER_ID
+    })
+    _ext_primitive_out_ivars_ = frozenset()
     _prefer_oid_ = False
 
+
     def _ext_all_possible_keys(self):
+        """
+        This method must return a frozenset of native strings.
+        """
         raise NotImplementedError()
 
     def _ext_setattr(self, ext_self, k, value):
@@ -127,10 +134,16 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         See :meth:`_ext_all_possible_keys`. This implementation then filters out
         *private* attributes (those beginning with an underscore),
         and those listed in ``_excluded_in_ivars_``.
+
+        This method must return a set of native strings.
         """
-        # ext_self = self._ext_replacement()
+        # Sadly, we cannot yet enforce what type _excluded_out_ivars_ is.
+        # Mostly it is a set or frozen set (depending on how it was
+        # combined with the declaration in this class) but some overrides
+        # in the wild have it as a tuple. We need a metaclass to fix that.
+        excluded = self._excluded_out_ivars_
         return [k for k in self._ext_all_possible_keys()
-                if (k not in self._excluded_out_ivars_  # specifically excluded
+                if (k not in excluded  # specifically excluded
                     and not k.startswith('_'))]  # private
         # and not callable(getattr(ext_self,k)))]    # avoid functions
 
@@ -138,6 +151,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         """
         Return a container of string keys whose values are known to be primitive.
         This is an optimization for writing.
+
+        This method must return a frozenset.
         """
         return self._ext_primitive_out_ivars_
 
@@ -260,11 +275,13 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     _update_accepts_type_attrs = False
 
     def _ext_all_possible_keys(self):
-        return self._ext_replacement().__dict__.keys()
+        return frozenset(self._ext_replacement().__dict__.keys())
 
-    _ext_setattr = staticmethod(setattr)
+    def _ext_getattr(self, ext_self, k):
+        return getattr(ext_self, k)
 
-    _ext_getattr = staticmethod(getattr)
+    def _ext_setattr(self, ext_self, k, v):
+        setattr(ext_self, k, v)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
         sup = super(ExternalizableInstanceDict, self)
@@ -366,9 +383,11 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         # Cache all of this data that we use. It's required often and, if not quite a bottleneck,
         # does show up in the profiling data
         cache = _cache_for(self, ext_self)
-        if not cache.iface:
-            cache.iface = self._ext_find_schema(ext_self,
-                                                iface_upper_bound or self._ext_iface_upper_bound)
+        if cache.iface is None:
+            cache.iface = self._ext_find_schema(
+                ext_self,
+                iface_upper_bound if iface_upper_bound is not None else self._ext_iface_upper_bound
+            )
         self._iface = cache.iface
 
         if not cache.ext_primitive_out_ivars:
@@ -395,9 +414,9 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         for n in self._ext_all_possible_keys():
             field = self._iface[n]
             field_type = getattr(field, '_type', None)
-            if field_type:
+            if field_type is not None:
                 if isinstance(field_type, tuple):
-                    if all((issubclass(x, _primitives) for x in field_type)):
+                    if all([issubclass(x, _primitives) for x in field_type]):
                         result.add(n)
                 elif issubclass(field_type, _primitives):
                     result.add(n)
@@ -413,15 +432,18 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     def _ext_all_possible_keys(self):
         cache = _cache_for(self, self._ext_self)
         if cache.ext_all_possible_keys is None:
-            cache.ext_all_possible_keys = frozenset((
-                n for n in self._iface.names(all=True)
-                if (not interface.interfaces.IMethod.providedBy(self._iface[n])
-                    and not self._iface[n].queryTaggedValue('_ext_excluded_out', False))
-            ))
+            iface = self._iface
+            is_method = interface.interfaces.IMethod.providedBy
+            cache.ext_all_possible_keys = frozenset([
+                n for n in iface.names(all=True)
+                if (not is_method(iface[n])
+                    and not iface[n].queryTaggedValue('_ext_excluded_out', False))
+            ])
         return cache.ext_all_possible_keys
 
-    # TODO: Should this be directed through IField.get?
-    _ext_getattr = staticmethod(getattr)
+    def _ext_getattr(self, ext_self, k):
+        # TODO: Should this be directed through IField.get?
+        return getattr(ext_self, k)
 
     def _ext_setattr(self, ext_self, k, value):
         validate_named_field_value(ext_self, self._iface, k, value)()
@@ -541,9 +563,10 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         return most_derived
 
     def _ext_schemas_to_consider(self, ext_self):
-        return (x for x in interface.providedBy(ext_self)
-                if x.__module__ == self._ext_search_module.__name__
-                and not x.queryTaggedValue('_ext_is_marker_interface'))
+        search_module_name = self._ext_search_module.__name__
+        return [x for x in interface.providedBy(ext_self)
+                if x.__module__ == search_module_name
+                and not x.queryTaggedValue('_ext_is_marker_interface')]
 
 from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization._datastructures')

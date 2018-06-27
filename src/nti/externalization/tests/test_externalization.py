@@ -187,27 +187,39 @@ class TestFunctions(ExternalizationLayerTest):
                     has_items(has_entry("Class", "NonExternalizableObject")))
 
     def test_catching_component(self):
+        class MyCustomException(Exception):
+            pass
+
         class Raises(object):
             def toExternalObject(self, **unused_kwargs):
-                assert False
+                raise MyCustomException
 
-        if PY3 and not PURE_PYTHON:
+        expect_exception = PY3 and not PURE_PYTHON
+        if expect_exception:
             # Cython 0.28.3 has a bug on Python 3.
             # https://github.com/cython/cython/issues/2425
-            assert_that(calling(toExternalObject).with_args(
-                [Raises()],
-                catch_components=(AssertionError,),
-                catch_component_action=catch_replace_action),
-                        raises(AssertionError))
-        else:
+            # Depending on how we factor the code, it may or may
+            # not be triggered.
+            try:
+                assert_that(calling(toExternalObject).with_args(
+                    [Raises()],
+                    catch_components=(MyCustomException,),
+                    catch_component_action=catch_replace_action),
+                            raises(MyCustomException))
+            except AssertionError:
+                # Hmm, it wasn't raised. OK, then we have a fixed
+                # version of Python, or we refactored the code.
+                expect_exception = False
+
+        if not expect_exception:
             assert_that(toExternalObject([Raises()],
-                                         catch_components=(AssertionError,),
+                                         catch_components=(MyCustomException,),
                                          catch_component_action=catch_replace_action),
                         is_([catch_replace_action(None, None)]))
 
         # Default doesn't catch
         assert_that(calling(toExternalObject).with_args([Raises()]),
-                    raises(AssertionError))
+                    raises(MyCustomException))
 
 
     def test_removed_unserializable(self):

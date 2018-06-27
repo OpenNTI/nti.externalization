@@ -69,13 +69,16 @@ if not PYPY:
                 'nti.externalization._' + mod_name,
                 sources=["src/nti/externalization/" + mod_name + '.py'],
                 depends=["src/nti/externalization/_" + mod_name + '.pxd'],
-                #define_macros=[('CYTHON_TRACE', '1')],
+                define_macros=[('CYTHON_TRACE', '1')],
             ))
 
     ext_modules = cythonize(
         ext_modules,
-        #annotate=True,
-        #compiler_directives={'linetrace': True},
+        annotate=True,
+        compiler_directives={
+            'linetrace': True,
+            'infer_types': True,
+        },
     )
 
 setup(
