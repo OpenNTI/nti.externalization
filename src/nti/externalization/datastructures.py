@@ -25,13 +25,15 @@ from zope.schema.interfaces import SchemaNotProvided
 
 from nti.schema.interfaces import find_most_derived_interface
 
+from .interfaces import IInternalObjectIO
+from .interfaces import StandardInternalFields
+
+# Things imported from cython with matching cimport
 from .externalization import to_minimal_standard_external_dictionary
 from .externalization import to_standard_external_dictionary
 # Must rename this so it doesn't conflict with method defs;
 # that breaks cython
 from .externalization import toExternalObject as _toExternalObject
-from .interfaces import IInternalObjectIO
-from .interfaces import StandardInternalFields
 from .internalization import validate_named_field_value
 from .representation import make_repr
 

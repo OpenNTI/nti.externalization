@@ -13,6 +13,8 @@ from nti.externalization.__base_interfaces cimport StandardExternalFields as SEF
 from nti.externalization.__base_interfaces cimport get_standard_internal_fields
 from nti.externalization.__base_interfaces cimport StandardInternalFields as SIF
 
+from nti.externalization._internalization cimport validate_named_field_value
+
 cdef IInternalObjectIO
 cdef SEF StandardExternalFields
 cdef SIF StandardInternalFields

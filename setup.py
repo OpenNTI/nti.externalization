@@ -57,19 +57,36 @@ ext_modules = []
 # This list is derived from the profile of bm_simple_iface
 # https://github.com/NextThought/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
 if not PYPY:
-    for mod_name in (
-            'externalization',
-            '_base_interfaces',
-            'datastructures',
-            'internalization',
-            'singleton',
+    def _source(m, ext):
+        return 'src/nti/externalization/' + m + '.' + ext
+    def _py_source(m):
+        return _source(m, 'py')
+    def _pxd(m):
+        return _source(m, 'pxd')
+    def _c(m):
+        return _source(m, 'c')
+    # Each module should list the python name of the
+    # modules it cimports from as deps. We'll generate the rest.
+    # (Not that this actually appears to do anything right now.)
+
+    for mod_name, deps in (
+            ('singleton', ()),
+            ('_base_interfaces', ()),
+            ('internalization', ()),
+            ('externalization', ('_base_interfaces',)),
+            ('datastructures', ('_base_interfaces', 'externalization',
+                                'internalization')),
     ):
+        deps = ([_py_source(mod) for mod in deps]
+                + [_pxd(mod) for mod in deps]
+                + [_c(mod) for mod in deps])
+
         ext_modules.append(
             Extension(
                 'nti.externalization._' + mod_name,
-                sources=["src/nti/externalization/" + mod_name + '.py'],
-                depends=["src/nti/externalization/_" + mod_name + '.pxd'],
-                #define_macros=[('CYTHON_TRACE', '1')],
+                sources=[_py_source(mod_name)],
+                depends=deps,
+                define_macros=[('CYTHON_TRACE', '1')],
             ))
 
     ext_modules = cythonize(
