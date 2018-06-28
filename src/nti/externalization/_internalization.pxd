@@ -73,6 +73,8 @@ cdef class _DefaultExternalizedObjectFactoryFinder(object):
     cpdef find_factory(self, externalized_object)
 
 cdef _search_for_external_factory(class_name)
+cdef _search_for_class_factory(externalized_object, class_name)
+cdef _search_for_mime_factory(externalized_object, mime_type)
 cpdef find_factory_for_class_name(class_name)
 cdef _find_factory_for_mime_or_class(externalized_object)
 

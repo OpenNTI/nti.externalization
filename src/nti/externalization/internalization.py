@@ -113,7 +113,7 @@ def register_legacy_search_module(module_name):
 # interface. We treat the registry as a cache and we will only
 # look at any given module object one time. We can detect duplicates
 # in this fashion. (For cython compilation, this lives in interfaces.)
-from nti.externalization.interfaces import _ILegacySearchModuleFactory # pylint:disable=wrong-import-position
+from nti.externalization.interfaces import _ILegacySearchModuleFactory # pylint:disable=wrong-import-position,wrong-import-order
 
 def __register_legacy_if_not(gsm, name, factory):
     registered = gsm.queryUtility(_ILegacySearchModuleFactory, name)
@@ -217,6 +217,42 @@ def _search_for_external_factory(typeName):
 
     return factory
 
+def _search_for_mime_factory(externalized_object, mime_type):
+    if not mime_type:
+        return None
+
+    factory = component_queryAdapter(externalized_object,
+                                     IMimeObjectFactory,
+                                     mime_type)
+    if factory is not None:
+        return factory
+
+    # What about a named utility?
+    factory = component_queryUtility(IMimeObjectFactory,
+                                     mime_type)
+
+    if factory is not None:
+        return factory
+
+    # Is there a default?
+    factory = component_queryAdapter(externalized_object,
+                                     IMimeObjectFactory)
+
+    return factory
+
+def _search_for_class_factory(externalized_object, class_name):
+    if not class_name:
+        return None
+
+    factory = component_queryAdapter(externalized_object,
+                                     IClassObjectFactory,
+                                     class_name)
+
+    if factory is not None:
+        return factory
+
+    return find_factory_for_class_name(class_name)
+
 def _find_factory_for_mime_or_class(externalized_object):
     # We use specialized interfaces instead of plain IFactory to make it clear
     # that these are being created from external data
@@ -231,26 +267,9 @@ def _find_factory_for_mime_or_class(externalized_object):
         # sad trombone. Not present.
         pass
     else:
-        if mime_type:
-            factory = component_queryAdapter(externalized_object,
-                                             IMimeObjectFactory,
-                                             mime_type)
-            if factory is not None:
-                return factory
-
-            # What about a named utility?
-            factory = component_queryUtility(IMimeObjectFactory,
-                                             mime_type)
-
-            if factory is not None:
-                return factory
-
-            # Is there a default?
-            factory = component_queryAdapter(externalized_object,
-                                             IMimeObjectFactory)
-
-            if factory is not None:
-                return factory
+        factory = _search_for_mime_factory(externalized_object, mime_type)
+        if factory is not None:
+            return factory
 
     # Fallback to class
     try:
@@ -259,14 +278,7 @@ def _find_factory_for_mime_or_class(externalized_object):
         # very sad trombone
         return None
 
-    if class_name:
-        factory = component_queryAdapter(externalized_object,
-                                         IClassObjectFactory,
-                                         class_name)
-        if factory is not None:
-            return factory
-
-        return find_factory_for_class_name(class_name)
+    return _search_for_class_factory(externalized_object, class_name)
 
 
 class _DefaultExternalizedObjectFactoryFinder(object):
@@ -408,7 +420,7 @@ def _notifyModified(containedObject, externalObject, updater=None, external_keys
     # try to provide external keys
     if kwargs is None:
         kwargs = {}
-    if external_keys is None or not external_keys:
+    if external_keys is None:
         external_keys = [k for k in externalObject.keys()]
 
     # TODO: We need to try to find the actual interfaces and fields to allow correct
