@@ -6,7 +6,7 @@ from nti.externalization._externalization cimport toExternalObject as _toExterna
 from nti.externalization._externalization cimport stripSyntheticKeysFromExternalDictionary
 from nti.externalization._externalization cimport _isMagicKey
 from nti.externalization._externalization cimport to_minimal_standard_external_dictionary
-from nti.externalization._externalization cimport to_standard_external_dictionary
+from nti.externalization._externalization cimport internal_to_standard_external_dictionary
 
 from nti.externalization.__base_interfaces cimport get_standard_external_fields
 from nti.externalization.__base_interfaces cimport StandardExternalFields as SEF
@@ -22,6 +22,7 @@ cdef validate_named_field_value
 cdef make_repr
 cdef isSyntheticKey
 cdef find_most_derived_interface
+cdef NotGiven
 
 cdef class ExternalizableDictionaryMixin(object):
     # This is a mixin used with other C base classes (E.g., persistent)

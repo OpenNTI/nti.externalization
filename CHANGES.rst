@@ -21,10 +21,9 @@
   ``stripSyntheticKeysFromExternalDictionary`` was removed from
   instances of ``ExternalizableDictionaryMixin``. Use the import instead.
 
-- ``to_standard_external_dictionary`` no longer accepts arbitrary
-  arguments and keyword arguments it doesn't use. Likewise,
-  ``to_minimal_standard_external_dictionary`` no longer accepts
-  arbitrary unused keywords.
+- Unused keyword arguments for ``to_standard_external_dictionary``
+  and ``to_minimal_standard_external_dictionary`` now produce a warning.
+  In the future, extra keyword arguments will be an error.
 
 - ``notifyModified`` no longer accepts the ``eventFactory`` argument.
 

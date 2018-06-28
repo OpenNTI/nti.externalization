@@ -132,13 +132,12 @@ cdef void _fill_container(result, self) except *
 cpdef void _should_never_convert(x) except *
 
 
-cpdef to_standard_external_dictionary(self, mergeFrom=*,
-                                      registry=*,
-                                      bint decorate=*,
-                                      request=*,
-                                      decorate_callback=*,
-                                      name=*,
-                                      useCache=*)
+cpdef internal_to_standard_external_dictionary(self,
+                                               mergeFrom=*,
+                                               registry=*,
+                                               bint decorate=*,
+                                               request=*,
+                                               decorate_callback=*)
 
 
 cpdef decorate_external_mapping(self, result, registry=*, request=*)

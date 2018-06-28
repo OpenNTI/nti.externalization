@@ -30,7 +30,7 @@ from .interfaces import StandardInternalFields
 
 # Things imported from cython with matching cimport
 from .externalization import to_minimal_standard_external_dictionary
-from .externalization import to_standard_external_dictionary
+from .externalization import internal_to_standard_external_dictionary
 # Must rename this so it doesn't conflict with method defs;
 # that breaks cython
 from .externalization import toExternalObject as _toExternalObject
@@ -39,6 +39,7 @@ from .representation import make_repr
 
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
+from ._base_interfaces import NotGiven
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
@@ -63,9 +64,12 @@ class ExternalizableDictionaryMixin(object):
             return to_minimal_standard_external_dictionary(replacement,
                                                            mergeFrom=mergeFrom)
 
-        return to_standard_external_dictionary(replacement,
-                                               mergeFrom=mergeFrom,
-                                               **kwargs)
+        return internal_to_standard_external_dictionary(
+            replacement,
+            mergeFrom=mergeFrom,
+            decorate=kwargs.get('decorate', True),
+            request=kwargs.get('request', NotGiven),
+            decorate_callback=kwargs.get('decorate_callback', NotGiven))
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
         return self._ext_standard_external_dictionary(self._ext_replacement(),
