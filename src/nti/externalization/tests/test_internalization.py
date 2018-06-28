@@ -146,7 +146,8 @@ class TestFunctions(CleanUp,
                 assert_that(str(handler),
                             contains_string("Found duplicate registration for legacy search path."))
 
-                assert_that(INT._ext_factory_warnings, has_length(greater_than_or_equal_to(2)))
+                assert_that(INT.legacy_factories.count_legacy_classes_found(),
+                            greater_than_or_equal_to)
 
             finally:
                 del TestFunctions.__external_can_create__
@@ -259,7 +260,7 @@ class TestResolveExternals(CleanUp,
                            unittest.TestCase):
 
     def test_both_attrs_optional(self):
-        INT._resolve_externals(None, None, None)
+        INT.externals.resolve_externals(None, None, None)
 
     def test_resolvers_classmethod(self):
         class IO(object):
@@ -282,7 +283,7 @@ class TestResolveExternals(CleanUp,
 
         ext_obj = {'a': 1, 'b': 2}
 
-        INT._resolve_externals(IO(), None, ext_obj)
+        INT.externals.resolve_externals(IO(), None, ext_obj)
         assert_that(ext_obj, is_({'a': 'a', 'b': 'b'}))
 
     def test_resolvers_instancemethod(self):
@@ -298,7 +299,7 @@ class TestResolveExternals(CleanUp,
 
         ext_obj = {'a': 1, 'b': 2}
 
-        INT._resolve_externals(IO(), None, ext_obj)
+        INT.externals.resolve_externals(IO(), None, ext_obj)
         assert_that(ext_obj, is_({'a': 'a', 'b': 2}))
 
     def test_oids_nothing_registered(self):
@@ -306,7 +307,7 @@ class TestResolveExternals(CleanUp,
             __external_oids__ = ('a', 'b')
 
         ext_value = {'a': None}
-        INT._resolve_externals(IO(), None, ext_value)
+        INT.externals.resolve_externals(IO(), None, ext_value)
         assert_that(ext_value, is_({'a': None}))
 
     def test_oids_registered(self):
@@ -330,18 +331,18 @@ class TestResolveExternals(CleanUp,
                                  adapts=(object, object))
 
         ext_value = {'a': 1}
-        INT._resolve_externals(IO(), self, ext_value)
+        INT.externals.resolve_externals(IO(), self, ext_value)
         assert_that(ext_value, is_({'a': 'a'}))
 
         ext_value = {'a': [1]}
-        INT._resolve_externals(IO(), self, ext_value)
+        INT.externals.resolve_externals(IO(), self, ext_value)
         assert_that(ext_value, is_({'a': ['a']}))
 
         # tuples get wrapped too, which is weird and probably wrong
         # in general. it works because json produces plain lists on reading
 
         ext_value = {'a': (1,)}
-        INT._resolve_externals(IO(), self, ext_value)
+        INT.externals.resolve_externals(IO(), self, ext_value)
         assert_that(ext_value, is_({'a': 'b'}))
 
 
