@@ -64,6 +64,7 @@ StandardInternalFields = get_standard_internal_fields()
 # pylint: disable=redefined-outer-name,inherit-non-class
 
 interface_implementedBy = interface.implementedBy
+IPersistent_providedBy = IPersistent.providedBy
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -338,20 +339,47 @@ def _resolve_externals(object_io, updating_object, externalObject,
 # Things we don't bother trying to internalize
 _primitives = string_types + (numbers.Number, bool)
 
+class _RecallArgs(object):
+    __slots__ = (
+        'registry',
+        'context',
+        'require_updater',
+        'notify',
+        'pre_hook',
+    )
+
+    def __init__(self, registry,
+                 context,
+                 require_updater,
+                 notify,
+                 pre_hook):
+        self.registry = registry
+        self.context = context
+        self.require_updater = require_updater
+        self.notify = notify
+        self.pre_hook = pre_hook
+
 
 def _recall(k, obj, ext_obj, kwargs):
-    obj = update_from_external_object(obj, ext_obj, **kwargs)
-    if IPersistent.providedBy(obj): # pragma: no cover
+    # We must manually pass all the args to get the optimized
+    # cython call
+    obj = update_from_external_object(obj, ext_obj,
+                                      registry=kwargs.registry,
+                                      context=kwargs.context,
+                                      require_updater=kwargs.require_updater,
+                                      notify=kwargs.notify,
+                                      pre_hook=kwargs.pre_hook)
+    if IPersistent_providedBy(obj): # pragma: no cover
         obj._v_updated_from_external_source = ext_obj
     return obj
 
 
-def _notifyModified(containedObject, externalObject, updater=None, external_keys=(),
+def _notifyModified(containedObject, externalObject, updater=None, external_keys=None,
                     eventFactory=ObjectModifiedFromExternalEvent, kwargs=None):
     # try to provide external keys
     if kwargs is None:
         kwargs = {}
-    if not external_keys:
+    if external_keys is None or not external_keys:
         external_keys = [k for k in externalObject.keys()]
 
     # TODO: We need to try to find the actual interfaces and fields to allow correct
@@ -441,11 +469,14 @@ def update_from_external_object(containedObject, externalObject,
         for i in range(3):
             warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
 
-    kwargs = dict(notify=notify,
-                  context=context,
-                  registry=registry,
-                  pre_hook=pre_hook,
-                  require_updater=require_updater)
+    kwargs = _RecallArgs(
+        registry,
+        context,
+        require_updater,
+        notify,
+        pre_hook
+    )
+
 
     # Parse any contained objects
     # TODO: We're (deliberately?) not actually updating any contained

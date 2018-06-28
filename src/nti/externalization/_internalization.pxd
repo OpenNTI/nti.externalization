@@ -18,7 +18,7 @@ cdef SchemaNotProvided
 cdef ValidationError
 cdef reraise
 cdef WrongType
-cdef interface_implementedBy
+
 cdef warnings
 cdef collections
 cdef component
@@ -28,6 +28,13 @@ cdef inspect
 cdef Attributes
 cdef ObjectModifiedFromExternalEvent
 cdef _zope_event_notify
+cdef text_type
+cdef IFromUnicode
+
+# optimizations
+
+cdef IPersistent_providedBy
+cdef interface_implementedBy
 
 # constants
 cdef tuple _primitives
@@ -56,7 +63,18 @@ cdef class _FieldSet(object):
 cdef _notifyModified(containedObject, externalObject, updater=*, external_keys=*,
                      eventFactory=*, dict kwargs=*)
 
-cdef _recall(k, obj, ext_obj, dict kwargs)
+@cython.internal
+@cython.final
+@cython.freelist(1000)
+cdef class _RecallArgs(object):
+    cdef registry
+    cdef context
+    cdef require_updater
+    cdef notify
+    cdef pre_hook
+
+
+cdef _recall(k, obj, ext_obj, _RecallArgs kwargs)
 # XXX: This is only public for testing
 cpdef _resolve_externals(object_io, updating_object, externalObject,
                          registry=*, context=*)
@@ -66,3 +84,11 @@ cpdef find_factory_for(externalized_object, registry=*)
 
 cpdef validate_field_value(self, field_name, field, value)
 cpdef validate_named_field_value(self, iface, field_name, value)
+
+cpdef update_from_external_object(containedObject,
+                                  externalObject,
+                                  registry=*,
+                                  context=*,
+                                  require_updater=*,
+                                  notify=*,
+                                  pre_hook=*)
