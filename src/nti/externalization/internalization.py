@@ -433,6 +433,7 @@ interface.classImplements(_Attributes,
                           IAttributes)
 
 def _make_modified_attributes(containedObject, external_keys):
+    # TODO: Share the interface cache from datastructures.
     # {iface -> _Attributes(iface)}
     attributes = {}
     provides = interface_providedBy(containedObject)
