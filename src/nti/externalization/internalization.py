@@ -65,6 +65,8 @@ StandardInternalFields = get_standard_internal_fields()
 
 interface_implementedBy = interface.implementedBy
 IPersistent_providedBy = IPersistent.providedBy
+component_queryAdapter = component.queryAdapter
+component_queryUtility = component.queryUtility
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -81,9 +83,6 @@ except ImportError: # pragma: no cover
     pass
 else:
     addCleanUp(LEGACY_FACTORY_SEARCH_MODULES.clear)
-
-StandardExternalFields_CLASS = StandardExternalFields.CLASS
-StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
 
 
 def register_legacy_search_module(module_name):
@@ -218,47 +217,74 @@ def _search_for_external_factory(typeName):
 
     return factory
 
-
-@interface.implementer(IFactory)
-def default_externalized_object_factory_finder(externalized_object):
-    mime_type = factory = None
+def _find_factory_for_mime_or_class(externalized_object):
     # We use specialized interfaces instead of plain IFactory to make it clear
     # that these are being created from external data
+
     try:
-        if StandardExternalFields.MIMETYPE in externalized_object:
-            mime_type = externalized_object[StandardExternalFields.MIMETYPE]
-
+        mime_type = externalized_object[StandardExternalFields.MIMETYPE]
+    except TypeError:
+        # Not subscriptable. We won't be able to work for
+        # this object
+        return None
+    except KeyError:
+        # sad trombone. Not present.
+        pass
+    else:
         if mime_type:
-            factory = component.queryAdapter(externalized_object, IMimeObjectFactory,
-                                             name=mime_type)
-            if factory is None:
-                # What about a named utility?
-                factory = component.queryUtility(IMimeObjectFactory,
-                                                 name=mime_type)
+            factory = component_queryAdapter(externalized_object,
+                                             IMimeObjectFactory,
+                                             mime_type)
+            if factory is not None:
+                return factory
 
-            if factory is None:
-                # Is there a default?
-                factory = component.queryAdapter(externalized_object,
-                                                 IMimeObjectFactory)
+            # What about a named utility?
+            factory = component_queryUtility(IMimeObjectFactory,
+                                             mime_type)
 
-        if factory is None and StandardExternalFields.CLASS in externalized_object:
-            class_name = externalized_object[StandardExternalFields.CLASS]
-            if class_name:
-                factory = component.queryAdapter(externalized_object,
-                                                 IClassObjectFactory,
-                                                 name=class_name)
-                if factory is None:
-                    factory = find_factory_for_class_name(class_name)
-    except (TypeError, KeyError):
-        # XXX: These catches are too broad. If there is a programming error
-        # in the adapter (eg, it doesn't have the correct __init__), we
-        # want that to propagate.
+            if factory is not None:
+                return factory
+
+            # Is there a default?
+            factory = component_queryAdapter(externalized_object,
+                                             IMimeObjectFactory)
+
+            if factory is not None:
+                return factory
+
+    # Fallback to class
+    try:
+        class_name = externalized_object[StandardExternalFields.CLASS]
+    except KeyError:
+        # very sad trombone
         return None
 
-    return factory
-# XXX: This is ugly and introduces a cycle. Fix this by converting to
-# a class?
-default_externalized_object_factory_finder.find_factory = default_externalized_object_factory_finder
+    if class_name:
+        factory = component_queryAdapter(externalized_object,
+                                         IClassObjectFactory,
+                                         class_name)
+        if factory is not None:
+            return factory
+
+        return find_factory_for_class_name(class_name)
+
+
+class _DefaultExternalizedObjectFactoryFinder(object):
+    # This is an IFactory, declared below.
+    # (Cython cdef classes cannot have decorators)
+    __slots__ = ()
+
+    def find_factory(self, externalized_object):
+        return _find_factory_for_mime_or_class(externalized_object)
+
+    # We are callable for BWC and because that's what an IFactory is
+    def __call__(self, externalized_object):
+        return _find_factory_for_mime_or_class(externalized_object)
+
+interface.classImplements(_DefaultExternalizedObjectFactoryFinder,
+                          IFactory)
+
+default_externalized_object_factory_finder = _DefaultExternalizedObjectFactoryFinder()
 
 
 @interface.implementer(IExternalizedObjectFactoryFinder)
@@ -267,7 +293,7 @@ def default_externalized_object_factory_finder_factory(unused_externalized_objec
 
 
 def find_factory_for_class_name(class_name):
-    factory = component.queryUtility(IClassObjectFactory, name=class_name)
+    factory = component_queryUtility(IClassObjectFactory, class_name)
     if factory is None:
         factory = _search_for_external_factory(class_name)
     # Did we chop off an extra 's'?
@@ -283,9 +309,12 @@ def find_factory_for(externalized_object, registry=component):
     """
     factory_finder = registry.queryAdapter(
         externalized_object,
-        IExternalizedObjectFactoryFinder,
-        default=default_externalized_object_factory_finder)
-    return factory_finder.find_factory(externalized_object)
+        IExternalizedObjectFactoryFinder)
+    if factory_finder is not None:
+        return factory_finder.find_factory(externalized_object)
+
+
+    return _find_factory_for_mime_or_class(externalized_object)
 
 
 def _resolve_externals(object_io, updating_object, externalObject,

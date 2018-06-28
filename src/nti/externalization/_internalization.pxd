@@ -30,11 +30,16 @@ cdef ObjectModifiedFromExternalEvent
 cdef _zope_event_notify
 cdef text_type
 cdef IFromUnicode
+cdef IMimeObjectFactory
+cdef IClassObjectFactory
+cdef IExternalizedObjectFactoryFinder
 
 # optimizations
 
 cdef IPersistent_providedBy
 cdef interface_implementedBy
+cdef component_queryUtility
+cdef component_queryAdapter
 
 # constants
 cdef tuple _primitives
@@ -57,11 +62,19 @@ cdef class _FieldSet(object):
     cdef field
     cdef value
 
-@cython.locals(
-    l=list
-)
+
 cdef _notifyModified(containedObject, externalObject, updater=*, external_keys=*,
                      eventFactory=*, dict kwargs=*)
+
+@cython.final
+@cython.internal
+cdef class _DefaultExternalizedObjectFactoryFinder(object):
+
+    cpdef find_factory(self, externalized_object)
+
+cdef _search_for_external_factory(class_name)
+cpdef find_factory_for_class_name(class_name)
+cdef _find_factory_for_mime_or_class(externalized_object)
 
 @cython.internal
 @cython.final
