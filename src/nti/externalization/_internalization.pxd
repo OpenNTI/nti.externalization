@@ -33,6 +33,7 @@ cdef IFromUnicode
 cdef IMimeObjectFactory
 cdef IClassObjectFactory
 cdef IExternalizedObjectFactoryFinder
+cdef identity
 
 # optimizations
 

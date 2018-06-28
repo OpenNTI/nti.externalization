@@ -18,7 +18,8 @@ from __future__ import print_function
 
 
 # stdlib imports
-import collections
+from collections import MutableSequence
+from collections import MutableMapping
 import inspect
 import numbers
 import sys
@@ -343,7 +344,7 @@ def _resolve_externals(object_io, updating_object, externalObject,
             continue
         externalObjectOid = externalObject[keyPath]
         unwrap = False
-        if not isinstance(externalObjectOid, collections.MutableSequence):
+        if not isinstance(externalObjectOid, MutableSequence):
             externalObjectOid = [externalObjectOid, ]
             unwrap = True
 
@@ -557,7 +558,7 @@ def update_from_external_object(containedObject, externalObject,
 
     # Sequences do not represent python types, they represent collections of
     # python types
-    if isinstance(externalObject, collections.MutableSequence):
+    if isinstance(externalObject, MutableSequence):
         tmp = []
         for value in externalObject:
             if pre_hook is not None:
@@ -568,7 +569,7 @@ def update_from_external_object(containedObject, externalObject,
         # in-place?
         return tmp
 
-    assert isinstance(externalObject, collections.MutableMapping)
+    assert isinstance(externalObject, MutableMapping)
 
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
@@ -581,7 +582,7 @@ def update_from_external_object(containedObject, externalObject,
         if pre_hook is not None:
             pre_hook(k, v)
 
-        if isinstance(v, collections.MutableSequence):
+        if isinstance(v, MutableSequence):
             # Update the sequence in-place
             # XXX: This is not actually updating it.
             # We need to slice externalObject[k[:]]
