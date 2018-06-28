@@ -293,7 +293,7 @@ class _DefaultExternalizedObjectFactoryFinder(object):
 
     # We are callable for BWC and because that's what an IFactory is
     def __call__(self, externalized_object):
-        return _find_factory_for_mime_or_class(externalized_object)
+        return self.find_factory(externalized_object)
 
 interface.classImplements(_DefaultExternalizedObjectFactoryFinder,
                           IFactory)
@@ -488,7 +488,7 @@ def _notifyModified(containedObject, externalObject, updater, external_keys,
     _zope_event_notify(event)
     return event
 
-def notifyModified(containedObject, externalObject, updater=None, external_keys=(),
+def notifyModified(containedObject, externalObject, updater=None, external_keys=None,
                    **kwargs):
     return _notifyModified(containedObject, externalObject, updater, external_keys,
                            kwargs)
@@ -535,7 +535,7 @@ def update_from_external_object(containedObject, externalObject,
        Remove the ``object_hook`` parameter.
     """
 
-    if pre_hook is not None:
+    if pre_hook is not None: # pragma: no cover
         for i in range(3):
             warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
 
@@ -561,7 +561,7 @@ def update_from_external_object(containedObject, externalObject,
     if isinstance(externalObject, MutableSequence):
         tmp = []
         for value in externalObject:
-            if pre_hook is not None:
+            if pre_hook is not None: # pragma: no cover
                 pre_hook(None, value)
             factory = find_factory_for(value, registry=registry)
             tmp.append(_recall(None, factory(), value, kwargs) if factory is not None else value)
@@ -579,7 +579,7 @@ def update_from_external_object(containedObject, externalObject,
         if isinstance(v, _primitives):
             continue
 
-        if pre_hook is not None:
+        if pre_hook is not None: # pragma: no cover
             pre_hook(k, v)
 
         if isinstance(v, MutableSequence):

@@ -239,6 +239,22 @@ class TestFindFactoryFor(TestDefaultExternalizedObjectFactory):
         from ..internalization import find_factory_for
         return find_factory_for(ext_obj)
 
+    def test_externalized_object_factory_finder(self):
+        from ..interfaces import IExternalizedObjectFactoryFinder
+
+        class Foo(TestDefaultExternalizedObjectFactory.TrivialFactory):
+
+            def find_factory(self, e):
+                return self
+
+        component.provideAdapter(Foo,
+                                 provides=IExternalizedObjectFactoryFinder,
+                                 adapts=(dict,))
+
+        result = self._callFUT({})
+        assert_that(result, is_(Foo))
+
+
 class TestResolveExternals(CleanUp,
                            unittest.TestCase):
 

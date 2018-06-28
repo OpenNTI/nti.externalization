@@ -195,7 +195,7 @@ class TestFunctions(ExternalizationLayerTest):
                 raise MyCustomException
 
         expect_exception = PY3 and not PURE_PYTHON
-        if expect_exception:
+        if expect_exception: # pragma: no cover
             # Cython 0.28.3 has a bug on Python 3.
             # https://github.com/cython/cython/issues/2425
             # Depending on how we factor the code, it may or may

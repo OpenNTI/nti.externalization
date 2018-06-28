@@ -28,7 +28,7 @@ class _NotGiven(object):
     """
     __slots__ = ()
 
-    def __repr__(self):
+    def __repr__(self): # pragma: no cover
         return '<default value>'
 
 NotGiven = _NotGiven()
