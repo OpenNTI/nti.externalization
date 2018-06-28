@@ -130,18 +130,14 @@ def default_externalized_object_factory_finder_factory(unused_externalized_objec
 
 
 def find_factory_for_class_name(class_name):
-    try:
-        factory = component_queryUtility(IClassObjectFactory, class_name)
-        if factory is None:
-            factory = search_for_external_factory(class_name)
-        # Did we chop off an extra 's'?
-        if factory is None and class_name and class_name.endswith('s'):
-            factory = search_for_external_factory(class_name + 's')
-        return factory
-    except:
-        import traceback
-        traceback.print_exc()
-        raise
+    factory = component_queryUtility(IClassObjectFactory, class_name)
+    if factory is None:
+        factory = search_for_external_factory(class_name)
+    # Did we chop off an extra 's'?
+    if factory is None and class_name and class_name.endswith('s'):
+        factory = search_for_external_factory(class_name + 's')
+    return factory
+
 
 def find_factory_for(externalized_object, registry=component):
     """
