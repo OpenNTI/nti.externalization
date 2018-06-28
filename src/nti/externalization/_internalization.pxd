@@ -38,11 +38,13 @@ cdef IExternalizedObjectFactoryFinder
 
 cdef IPersistent_providedBy
 cdef interface_implementedBy
+cdef interface_providedBy
 cdef component_queryUtility
 cdef component_queryAdapter
 
 # constants
 cdef tuple _primitives
+cdef dict _EMPTY_DICT
 
 cdef _noop()
 
@@ -62,9 +64,22 @@ cdef class _FieldSet(object):
     cdef field
     cdef value
 
+@cython.final
+@cython.internal
+cdef class _Attributes(object):
+    cdef public interface
+    cdef public set attributes
 
-cdef _notifyModified(containedObject, externalObject, updater=*, external_keys=*,
-                     eventFactory=*, dict kwargs=*)
+@cython.locals(
+    attrs=_Attributes,
+)
+cdef _make_modified_attributes(containedObject, external_keys)
+
+cdef _make_modified_event(containedObject, externalObject, updater,
+                          attributes, dict kwargs)
+
+cdef _notifyModified(containedObject, externalObject, updater, external_keys,
+                     dict kwargs)
 
 @cython.final
 @cython.internal

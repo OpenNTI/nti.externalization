@@ -93,7 +93,7 @@ if not PYPY:
         ext_modules,
         annotate=True,
         compiler_directives={
-            'linetrace': True,
+            #'linetrace': True,
             'infer_types': True,
         },
     )

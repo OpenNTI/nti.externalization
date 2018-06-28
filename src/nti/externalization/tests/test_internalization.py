@@ -87,13 +87,13 @@ class TestEvents(CleanUp,
                             key=lambda attrs: attrs.interface)
         assert_that(attributes, has_length(3))
         assert_that(attributes[0].interface, is_(IBar))
-        assert_that(attributes[0].attributes, is_(('attr_bar_1', 'attr_bar_2',)))
+        assert_that(attributes[0].attributes, is_({'attr_bar_1', 'attr_bar_2',}))
 
         assert_that(attributes[1].interface, is_(IFoo))
-        assert_that(attributes[1].attributes, is_(('attr_foo_1',)))
+        assert_that(attributes[1].attributes, is_({'attr_foo_1',}))
 
         assert_that(attributes[2].interface, is_(none()))
-        assert_that(attributes[2].attributes, is_(('no_iface_attr',)))
+        assert_that(attributes[2].attributes, is_({'no_iface_attr',}))
 
 
 class TestFunctions(CleanUp,

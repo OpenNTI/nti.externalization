@@ -35,7 +35,7 @@ from zope import interface
 
 from zope.dottedname.resolve import resolve
 from zope.event import notify as _zope_event_notify
-from zope.lifecycleevent import Attributes
+from zope.lifecycleevent import IAttributes
 from zope.schema.interfaces import IField
 from zope.schema.interfaces import IFromUnicode
 from zope.schema.interfaces import SchemaNotProvided
@@ -50,7 +50,7 @@ from nti.externalization.interfaces import IExternalReferenceResolver
 from nti.externalization.interfaces import IFactory
 from nti.externalization.interfaces import IInternalObjectUpdater
 from nti.externalization.interfaces import IMimeObjectFactory
-from nti.externalization.interfaces import ObjectModifiedFromExternalEvent # XXX: Move to base_interfaces
+from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import StandardExternalFields
 
 from ._base_interfaces import get_standard_external_fields
@@ -64,6 +64,7 @@ StandardInternalFields = get_standard_internal_fields()
 # pylint: disable=redefined-outer-name,inherit-non-class
 
 interface_implementedBy = interface.implementedBy
+interface_providedBy = interface.providedBy
 IPersistent_providedBy = IPersistent.providedBy
 component_queryAdapter = component.queryAdapter
 component_queryUtility = component.queryUtility
@@ -414,23 +415,26 @@ def _recall(k, obj, ext_obj, kwargs):
         obj._v_updated_from_external_source = ext_obj
     return obj
 
+class _Attributes(object):
+    # This is a cython version of zope.lifecycleevent.Attributes
+    # for faster instantiation and collection of attrs
 
-def _notifyModified(containedObject, externalObject, updater=None, external_keys=None,
-                    eventFactory=ObjectModifiedFromExternalEvent, kwargs=None):
-    # try to provide external keys
-    if kwargs is None:
-        kwargs = {}
-    if external_keys is None:
-        external_keys = [k for k in externalObject.keys()]
+    __slots__ = (
+        'interface',
+        'attributes',
+    )
 
-    # TODO: We need to try to find the actual interfaces and fields to allow correct
-    # decisions to be made at higher levels.
-    # zope.formlib.form.applyData does this because it has a specific, configured mapping. We
-    # just do the best we can by looking at what's implemented. The most specific
-    # interface wins
-    # map from interface class to list of keys
-    descriptions = {}
-    provides = interface.providedBy(containedObject)
+    def __init__(self, iface):
+        self.interface = iface
+        self.attributes = set()
+
+interface.classImplements(_Attributes,
+                          IAttributes)
+
+def _make_modified_attributes(containedObject, external_keys):
+    # {iface -> _Attributes(iface)}
+    attributes = {}
+    provides = interface_providedBy(containedObject)
     get_iface = provides.get
     for k in external_keys:
         iface_providing_attr = None
@@ -438,10 +442,18 @@ def _notifyModified(containedObject, externalObject, updater=None, external_keys
         if iface_attr is not None:
             iface_providing_attr = iface_attr.interface
 
-        descriptions.setdefault(iface_providing_attr, []).append(k)
-    attributes = [Attributes(iface, *sorted(keys))
-                  for iface, keys in descriptions.items()]
-    event = eventFactory(containedObject, *attributes, **kwargs)
+        try:
+            attrs = attributes[iface_providing_attr]
+        except KeyError:
+            attrs = attributes[iface_providing_attr] = _Attributes(iface_providing_attr)
+
+        attrs.attributes.add(k)
+
+    return attributes.values()
+
+def _make_modified_event(containedObject, externalObject, updater,
+                         attributes, kwargs):
+    event = ObjectModifiedFromExternalEvent(containedObject, *attributes, **kwargs)
     event.external_value = externalObject
     # Let the updater have its shot at modifying the event, too, adding
     # interfaces or attributes. (Note: this was added to be able to provide
@@ -454,15 +466,31 @@ def _notifyModified(containedObject, externalObject, updater=None, external_keys
         pass
     else:
         event = meth(event) # pragma: no cover
+
+    return event
+
+def _notifyModified(containedObject, externalObject, updater, external_keys,
+                    kwargs):
+    # try to provide external keys
+    if external_keys is None:
+        external_keys = list(externalObject.keys())
+
+    # TODO: We need to try to find the actual interfaces and fields to allow correct
+    # decisions to be made at higher levels.
+    # zope.formlib.form.applyData does this because it has a specific, configured mapping. We
+    # just do the best we can by looking at what's implemented. The most specific
+    # interface wins
+    # map from interface class to list of keys
+    attributes = _make_modified_attributes(containedObject, external_keys)
+    event = _make_modified_event(containedObject, externalObject, updater,
+                                 attributes, kwargs)
     _zope_event_notify(event)
     return event
 
 def notifyModified(containedObject, externalObject, updater=None, external_keys=(),
-                   eventFactory=ObjectModifiedFromExternalEvent, **kwargs):
+                   **kwargs):
     return _notifyModified(containedObject, externalObject, updater, external_keys,
-                           eventFactory, kwargs)
-
-notify_modified = notifyModified
+                           kwargs)
 
 
 def update_from_external_object(containedObject, externalObject,
@@ -609,7 +637,7 @@ def update_from_external_object(containedObject, externalObject,
         # Broadcast a modified event if the object seems to have changed.
         if notify and (updated is None or updated):
             _notifyModified(containedObject, externalObject,
-                            updater, external_keys)
+                            updater, external_keys, _EMPTY_DICT)
 
     return containedObject
 
@@ -643,6 +671,8 @@ class _FieldSet(object):
 
     def __init__(self, ext_self, field, value):
         self.ext_self = ext_self
+        # Don't denormalize field.set; there's a tiny
+        # chance we won't actually be called.
         self.field = field
         self.value = value
 
@@ -787,9 +817,6 @@ def validate_field_value(self, field_name, field, value):
         _do_set = _FieldSet(self, field, value)
 
     return _do_set
-
-
-
 
 
 def validate_named_field_value(self, iface, field_name, value):

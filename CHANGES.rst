@@ -26,6 +26,10 @@
   ``to_minimal_standard_external_dictionary`` no longer accepts
   arbitrary unused keywords.
 
+- ``notifyModified`` no longer accepts the ``eventFactory`` argument.
+
+- The ``notify_modified`` alias for ``notifyModified`` has been removed.
+
 1.0.0a1 (2017-09-29)
 ====================
 
