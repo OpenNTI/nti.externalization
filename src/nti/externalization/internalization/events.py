@@ -17,7 +17,7 @@ from zope.event import notify as _zope_event_notify
 from zope.lifecycleevent import IAttributes
 
 from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
-
+from nti.externalization._interface_cache import cache_for_key
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -41,26 +41,59 @@ class _Attributes(object):
 
 classImplements(_Attributes, IAttributes)
 
+
 def _make_modified_attributes(containedObject, external_keys):
-    # TODO: Share the interface cache from datastructures.
-    # {iface -> _Attributes(iface)}
-    attributes = {}
+    cache = cache_for_key(_Attributes, containedObject)
+    # {'attrname': Interface}
+    attr_to_iface = cache.modified_event_attributes
+
+    # Ensure that each attribute name in *names* is
+    # in the _v_attrs dict of *provides*. Also
+    # makes sure that self.attr_to_iface maps each
+    # name to its interface.
+    # Returns a sequence of fresh _Attributes objects.
     provides = providedBy(containedObject)
-    get_iface = provides.get
-    for k in external_keys:
-        iface_providing_attr = None
-        iface_attr = get_iface(k)
-        if iface_attr is not None:
-            iface_providing_attr = iface_attr.interface
+    # {iface -> _Attributes(iface)}
+    result = {}
+    # By the time we get here, we're guaranteed that
+    # _v_attrs exists---it's where we're cached
+    attrs = provides._v_attrs # pylint:disable=protected-access
 
-        try:
-            attrs = attributes[iface_providing_attr]
-        except KeyError:
-            attrs = attributes[iface_providing_attr] = _Attributes(iface_providing_attr)
+    for name in external_keys:
+        # This is the core loop of provides.get()
+        # (z.i.declaration.Declaration.get)
+        attr = attrs.get(name, cache)
+        # Steady state, misses are rare here.
+        if attr is cache:
+            for iface in provides.__iro__:
+                attr = iface.direct(name)
+                if attr is not None:
+                    attrs[name] = attr
+                    break
+            else:
+                # Not part of any interface
+                attr = attrs[name] = None
 
-        attrs.attributes.add(k)
+        providing_iface = attr_to_iface.get(name, cache)
+        if providing_iface is cache:
+            # In the steady state, misses should be rare here.
+            providing_iface = None
+            if attr is not None:
+                providing_iface = attr.interface
+            attr_to_iface[name] = providing_iface
 
-    return attributes.values()
+
+
+        attributes = result.get(providing_iface)
+        if attributes is None:
+            # Misses aren't unexpected here. often attributes
+            # are spread across multiple interfaces
+            attributes = result[providing_iface] = _Attributes(providing_iface)
+
+        attributes.attributes.add(name)
+
+    return result.values()
+
 
 def _make_modified_event(containedObject, externalObject, updater,
                          attributes, kwargs):
@@ -69,7 +102,7 @@ def _make_modified_event(containedObject, externalObject, updater,
     # Let the updater have its shot at modifying the event, too, adding
     # interfaces or attributes. (Note: this was added to be able to provide
     # sharedWith information on the event, since that makes for a better stream.
-    # If that use case expands, revisit this interface.
+    # If that use case expands, revisit this interface.)
     # XXX: Document and test this.
     try:
         meth = updater._ext_adjust_modified_event # pylint:disable=protected-access

@@ -15,6 +15,8 @@ from nti.externalization.__base_interfaces cimport StandardInternalFields as SIF
 
 from nti.externalization.internalization._fields cimport validate_named_field_value
 
+from nti.externalization.__interface_cache cimport cache_for
+
 cdef IInternalObjectIO
 cdef SEF StandardExternalFields
 cdef SIF StandardInternalFields
@@ -72,19 +74,5 @@ cdef class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
     )
     cpdef _ext_schemas_to_consider(self, ext_self)
 
-@cython.final
-@cython.internal
-@cython.freelist(1000)
-cdef class _InterfaceCache(object):
-    cdef __weakref__
-    cdef iface
-    cdef frozenset ext_all_possible_keys
-    cdef ext_accept_external_id
-    cdef frozenset ext_primitive_out_ivars
-
-
-cdef _InterfaceCache _cache_for(externalizer, ext_self)
-@cython.locals(x=_InterfaceCache)
-cdef _cache_cleanUp()
 
 cdef tuple _primitives

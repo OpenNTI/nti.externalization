@@ -76,12 +76,16 @@ if not PYPY:
             ('internalization.legacy_factories', ()),
             ('internalization.factories', ()),
             ('internalization.fields', ()),
-            ('internalization.events', ()),
+            ('internalization.events', ('_interface_cache',)),
             ('internalization.externals', ()),
             ('internalization.updater', ()),
             ('externalization', ('_base_interfaces',)),
-            ('datastructures', ('_base_interfaces', 'externalization',
-                                'internalization')),
+            ('_interface_cache', ()),
+            ('datastructures', (
+                '_base_interfaces',
+                '_interface_cache',
+                'externalization',
+                'internalization')),
     ):
         deps = ([_py_source(mod) for mod in deps]
                 + [_pxd(mod) for mod in deps]

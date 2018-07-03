@@ -15,7 +15,7 @@ from __future__ import print_function
 
 # stdlib imports
 import numbers
-from weakref import WeakSet
+
 
 import six
 from six import iteritems
@@ -40,6 +40,8 @@ from .representation import make_repr
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
 from ._base_interfaces import NotGiven
+
+from ._interface_cache import cache_for
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
@@ -299,62 +301,16 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
         setattr(ext_self, k, v)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
-        sup = super(ExternalizableInstanceDict, self)
-        return (sup._ext_accept_update_key(k, ext_self, ext_keys)
-                or (self._update_accepts_type_attrs and hasattr(ext_self, k)))
+        return (
+            super(ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys)
+            or (self._update_accepts_type_attrs and hasattr(ext_self, k))
+        )
 
     __repr__ = make_repr()
 
 
 
 _primitives = six.string_types + (numbers.Number, bool)
-
-# TODO: Refactor into a module and share with internalization.py
-class _InterfaceCache(object):
-    __slots__ = ('iface', 'ext_all_possible_keys',
-                 'ext_accept_external_id',
-                 'ext_primitive_out_ivars',
-                 '__weakref__')
-
-    def __init__(self):
-        self.iface = None
-        self.ext_all_possible_keys = None
-        self.ext_accept_external_id = None
-        self.ext_primitive_out_ivars = None
-
-_cache_instances = WeakSet()
-
-def _cache_for(externalizer, ext_self):
-    # The Declaration objects maintain a _v_attrs that
-    # gets blown away on changes to themselves or their
-    # dependents, including adding interfaces dynamically to an instance
-    # (In that case, the provided object actually gets reset)
-    cache_place = interface.providedBy(ext_self)
-    try:
-        attrs = cache_place._v_attrs
-    except AttributeError:
-        attrs = cache_place._v_attrs = {}
-    key = type(externalizer)
-    if key in attrs:
-        cache = attrs[key]
-    else:
-        cache = _InterfaceCache()
-        attrs[key] = cache
-        _cache_instances.add(cache)
-    return cache
-
-
-def _cache_cleanUp():
-    for x in list(_cache_instances):
-        x.__init__()
-
-try:
-    from zope.testing import cleanup
-except ImportError: # pragma: no cover
-    pass
-else:
-    cleanup.addCleanUp(_cache_cleanUp)
-
 
 
 class InterfaceObjectIO(AbstractDynamicObjectIO):
@@ -397,7 +353,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         self._ext_self = ext_self
         # Cache all of this data that we use. It's required often and, if not quite a bottleneck,
         # does show up in the profiling data
-        cache = _cache_for(self, ext_self)
+        cache = cache_for(self, ext_self)
         if cache.iface is None:
             cache.iface = self._ext_find_schema(
                 ext_self,
@@ -445,7 +401,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         return self._ext_self
 
     def _ext_all_possible_keys(self):
-        cache = _cache_for(self, self._ext_self)
+        cache = cache_for(self, self._ext_self)
         if cache.ext_all_possible_keys is None:
             iface = self._iface
             is_method = interface.interfaces.IMethod.providedBy
@@ -470,7 +426,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         this will return that value; otherwise, returns false.
         """
         __traceback_info__ = ext_self, parsed,
-        cache = _cache_for(self, ext_self)
+        cache = cache_for(self, ext_self)
         if cache.ext_accept_external_id is None:
             try:
                 field = cache.iface['id']
@@ -583,5 +539,6 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
                 if x.__module__ == search_module_name
                 and not x.queryTaggedValue('_ext_is_marker_interface')]
 
+# pylint:disable=wrong-import-position,wrong-import-order
 from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization._datastructures')
