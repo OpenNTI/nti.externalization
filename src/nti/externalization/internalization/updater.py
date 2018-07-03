@@ -14,15 +14,13 @@ from __future__ import print_function
 from collections import MutableSequence
 from collections import MutableMapping
 import inspect
-import numbers
 import warnings
 
 from persistent.interfaces import IPersistent
-from six import string_types
 from six import iteritems
 from zope import component
 
-
+from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization.interfaces import IInternalObjectUpdater
 
 from .factories import find_factory_for
@@ -30,8 +28,7 @@ from .events import _notifyModified
 from .externals import resolve_externals
 
 
-# Things we don't bother trying to internalize
-_primitives = string_types + (numbers.Number, bool)
+
 _EMPTY_DICT = {}
 IPersistent_providedBy = IPersistent.providedBy
 
@@ -152,7 +149,7 @@ def update_from_external_object(containedObject, externalObject,
     external_keys = list()
     for k, v in iteritems(externalObject):
         external_keys.append(k)
-        if isinstance(v, _primitives):
+        if isinstance(v, PRIMITIVES):
             continue
 
         if pre_hook is not None: # pragma: no cover

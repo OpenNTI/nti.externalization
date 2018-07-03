@@ -123,7 +123,6 @@ class TestJson(ExternalizationLayerTest):
         assert_that(result, is_('{}'))
 
     def test_second_pass(self):
-        from nti.externalization.externalization import _DevmodeNonExternalizableObjectReplacer
         from ..interfaces import IExternalObject
         from zope import component
 

@@ -29,11 +29,12 @@ from .interfaces import IInternalObjectIO
 from .interfaces import StandardInternalFields
 
 # Things imported from cython with matching cimport
-from .externalization import to_minimal_standard_external_dictionary
-from .externalization import internal_to_standard_external_dictionary
+from .externalization.dictionary import to_minimal_standard_external_dictionary
+from .externalization.dictionary import internal_to_standard_external_dictionary
 # Must rename this so it doesn't conflict with method defs;
 # that breaks cython
-from .externalization import toExternalObject as _toExternalObject
+from .externalization.externalizer import to_external_object as _toExternalObject
+
 from .internalization import validate_named_field_value
 from .representation import make_repr
 
@@ -78,10 +79,6 @@ class ExternalizableDictionaryMixin(object):
                                                       mergeFrom=mergeFrom,
                                                       **kwargs)
 
-    # # XXX: Why is this here as an instance method?
-    # @staticmethod
-    # def stripSyntheticKeysFromExternalDictionary(*args):
-    #     return stripSyntheticKeysFromExternalDictionary(*args)
 
 class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     """

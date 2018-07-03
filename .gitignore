@@ -4,6 +4,7 @@
 *.c
 src/nti/externalization/*.html
 src/nti/externalization/internalization/*.html
+src/nti/externalization/externalization/*.html
 
 
 __pycache__/*

@@ -30,7 +30,7 @@ from .._compat import PURE_PYTHON
 from ..datastructures import ExternalizableDictionaryMixin
 from ..datastructures import ExternalizableInstanceDict
 from ..externalization import NonExternalizableObjectError
-from ..externalization import _DevmodeNonExternalizableObjectReplacer
+from ..externalization.replacers import DevmodeNonExternalizableObjectReplacementFactory
 from ..externalization import catch_replace_action
 from ..externalization import choose_field
 from ..externalization import isSyntheticKey
@@ -175,9 +175,9 @@ class TestFunctions(ExternalizationLayerTest):
     def test_broken(self):
         # Without the devmode hooks
         gsm = component.getGlobalSiteManager()
-        gsm.unregisterAdapter(factory=_DevmodeNonExternalizableObjectReplacer,
+        gsm.unregisterAdapter(factory=DevmodeNonExternalizableObjectReplacementFactory,
                               required=())
-        gsm.unregisterAdapter(factory=_DevmodeNonExternalizableObjectReplacer,
+        gsm.unregisterAdapter(factory=DevmodeNonExternalizableObjectReplacementFactory,
                               required=(interface.Interface,))
 
         assert_that(toExternalObject(Broken(), registry=gsm),
@@ -241,7 +241,7 @@ class TestFunctions(ExternalizationLayerTest):
                     is_([[[1, 2, 3]]]))
 
     def test_devmode_non_externalizable_object_replacer(self):
-        assert_that(calling(_DevmodeNonExternalizableObjectReplacer(None)).with_args(self),
+        assert_that(calling(DevmodeNonExternalizableObjectReplacementFactory(None)).with_args(self),
                     raises(NonExternalizableObjectError, "Asked to externalize non-externalizable"))
 
 
@@ -281,10 +281,6 @@ class TestFunctions(ExternalizationLayerTest):
                      StandardExternalFields.CREATOR, fields=('user',))
         assert_that(result, is_({StandardExternalFields.CREATOR: SYSTEM_USER_NAME}))
 
-    def test_never_happens(self):
-        from nti.externalization.externalization import _should_never_convert
-        with self.assertRaises(AssertionError):
-            _should_never_convert(None)
 
 class TestDecorators(CleanUp,
                      unittest.TestCase):

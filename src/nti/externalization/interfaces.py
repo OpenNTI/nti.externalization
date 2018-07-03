@@ -27,8 +27,10 @@ from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
 
 StandardExternalFields = get_standard_external_fields()
-
 StandardInternalFields = get_standard_internal_fields()
+
+from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
+MINIMAL_SYNTHETIC_EXTERNAL_KEYS = MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 
 class IInternalObjectExternalizer(interface.Interface):
     """
@@ -52,9 +54,16 @@ class IInternalObjectExternalizer(interface.Interface):
 IExternalObject = IInternalObjectExternalizer  # b/c aliase
 
 
-class INonExternalizableReplacer(interface.Interface):
+class INonExternalizableReplacement(interface.Interface):
     """
-    An adapter object called to make a replacement when
+    This interface may be applied to objects that serve as a replacement
+    for a non-externalized object.
+    """
+
+
+class INonExternalizableReplacementFactory(interface.Interface):
+    """
+    An factory object called to make a replacement when
     some object cannot be externalized.
     """
 
@@ -62,14 +71,11 @@ class INonExternalizableReplacer(interface.Interface):
         """
         :return: An externalized object to replace the given object. Possibly the
                 given object itself if some higher level will handle it.
+                The returned object *may* have the ``INonExternalizableReplacement``
+                interface.
         """
 
-
-class INonExternalizableReplacement(interface.Interface):
-    """
-    This interface may be applied to objects that serve as a replacement
-    for a non-externalized object.
-    """
+INonExternalizableReplacer = INonExternalizableReplacementFactory
 
 
 class IExternalObjectDecorator(interface.Interface):
