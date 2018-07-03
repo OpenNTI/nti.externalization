@@ -17,6 +17,7 @@ from zope.configuration import xmlconfig
 
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IMimeObjectFactory
+from nti.externalization.interfaces import _ILegacySearchModuleFactory
 from nti.testing.matchers import is_empty
 
 from hamcrest import assert_that
@@ -206,10 +207,10 @@ class TestAutoPackageZCML(PlacelessSetup,
         factory = gsm.getUtility(IMimeObjectFactory, 'application/foo')
         assert_that(factory, has_property('_callable', equal_to(O)))
 
-        factory = gsm.getUtility(INT._ILegacySearchModuleFactory, 'o')
+        factory = gsm.getUtility(_ILegacySearchModuleFactory, 'o')
         assert_that(factory, is_(same_instance(O)))
 
-        factory = gsm.getUtility(INT._ILegacySearchModuleFactory, 'O')
+        factory = gsm.getUtility(_ILegacySearchModuleFactory, 'O')
         assert_that(factory, is_(same_instance(O)))
 
 class TestClassObjectFactory(PlacelessSetup,

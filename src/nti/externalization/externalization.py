@@ -42,7 +42,6 @@ from ._base_interfaces import make_external_dict
 from ._base_interfaces import NotGiven
 
 
-from ._compat import identity
 from ._threadlocal import ThreadLocalManager
 from .extension_points import get_current_request
 from .extension_points import set_external_identifiers
@@ -80,6 +79,9 @@ SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 
 def is_system_user(obj):
     return IPrincipal.providedBy(obj) and obj.id == system_user.id
+
+
+identity = lambda obj: obj
 
 
 # It turns out that the name we use for externalization (and really the registry, too)

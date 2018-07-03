@@ -20,13 +20,13 @@ from zope.configuration.fields import Tokens
 from zope.configuration.fields import MessageID
 from zope.configuration.fields import PythonIdentifier
 
-from . import internalization
+from .interfaces import _ILegacySearchModuleFactory
 from .autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 from .factory import MimeObjectFactory
 from .factory import ClassObjectFactory
 from .interfaces import IMimeObjectFactory
 from .interfaces import IClassObjectFactory
-from .internalization import _find_factories_in_module
+from .internalization.legacy_factories import find_factories_in_module
 
 __docformat__ = "restructuredtext en"
 
@@ -59,7 +59,7 @@ def registerMimeFactories(_context, module):
 
     :param module module: The module to inspect.
     """
-    for object_name, value in _find_factories_in_module(module, case_sensitive=True):
+    for object_name, value in find_factories_in_module(module, case_sensitive=True):
         __traceback_info__ = object_name, value
 
         try:
@@ -210,9 +210,9 @@ def autoPackageExternalization(_context, root_interfaces, modules,
         registerMimeFactories(_context, module)
 
     if register_legacy_search_module:
-        for name, factory in _find_factories_in_module(legacy_factories):
+        for name, factory in find_factories_in_module(legacy_factories):
             component_zcml.utility(_context,
-                                   provides=internalization._ILegacySearchModuleFactory,
+                                   provides=_ILegacySearchModuleFactory,
                                    component=factory,
                                    name=name)
 

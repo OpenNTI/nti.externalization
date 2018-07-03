@@ -44,12 +44,6 @@ def bytes_(s, encoding='utf-8', errors='strict'):
         s = s.encode(encoding, errors)
     return s
 
-try:
-    from cytoolz import identity
-except ImportError: # PyPy pragma: no cover
-    from toolz import identity
-
-identity = identity
 
 def import_c_accel(globs, cname):
     """

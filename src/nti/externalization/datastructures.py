@@ -309,7 +309,7 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
 
 _primitives = six.string_types + (numbers.Number, bool)
 
-
+# TODO: Refactor into a module and share with internalization.py
 class _InterfaceCache(object):
     __slots__ = ('iface', 'ext_all_possible_keys',
                  'ext_accept_external_id',

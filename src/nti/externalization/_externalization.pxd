@@ -59,6 +59,7 @@ cpdef DefaultNonExternalizableReplacer(obj)
 
 cdef bint is_system_user(obj)
 
+
 @cython.final
 @cython.internal
 @cython.freelist(1000)

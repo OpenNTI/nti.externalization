@@ -3,6 +3,7 @@
 # artifacts from cythonize
 *.c
 src/nti/externalization/*.html
+src/nti/externalization/internalization/*.html
 
 
 __pycache__/*

@@ -58,6 +58,7 @@ ext_modules = []
 # https://github.com/NextThought/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
 if not PYPY:
     def _source(m, ext):
+        m = m.replace('.', '/')
         return 'src/nti/externalization/' + m + '.' + ext
     def _py_source(m):
         return _source(m, 'py')
@@ -72,7 +73,12 @@ if not PYPY:
     for mod_name, deps in (
             ('singleton', ()),
             ('_base_interfaces', ()),
-            ('internalization', ()),
+            ('internalization.legacy_factories', ()),
+            ('internalization.factories', ()),
+            ('internalization.fields', ()),
+            ('internalization.events', ()),
+            ('internalization.externals', ()),
+            ('internalization.updater', ()),
             ('externalization', ('_base_interfaces',)),
             ('datastructures', ('_base_interfaces', 'externalization',
                                 'internalization')),
@@ -81,10 +87,17 @@ if not PYPY:
                 + [_pxd(mod) for mod in deps]
                 + [_c(mod) for mod in deps])
 
+        source = _py_source(mod_name)
+        # 'foo.bar' -> 'foo._bar'
+        mod_name_parts = mod_name.rsplit('.', 1)
+        mod_name_parts[-1] = '_' + mod_name_parts[-1]
+        mod_name = '.'.join(mod_name_parts)
+
+
         ext_modules.append(
             Extension(
-                'nti.externalization._' + mod_name,
-                sources=[_py_source(mod_name)],
+                'nti.externalization.' + mod_name,
+                sources=[source],
                 depends=deps,
                 define_macros=[('CYTHON_TRACE', '1')],
             ))
@@ -155,13 +168,7 @@ setup(
         'zope.security',
     ],
     extras_require={
-        ':platform_python_implementation=="CPython"': [
-            'cytoolz >= 0.8.2',
-        ],
-        ':platform_python_implementation=="PyPy"': [
-            'toolz',
-        ],
-        'test': TESTS_REQUIRE,
+       'test': TESTS_REQUIRE,
         'docs': [
             'Sphinx',
             'repoze.sphinx.autointerface',
