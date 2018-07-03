@@ -23,7 +23,7 @@ cdef IField_providedBy
 
 
 cdef noop()
-cdef identity(obj)
+
 
 @cython.final
 @cython.internal
@@ -40,6 +40,9 @@ cdef class FieldSet(object):
     cdef ext_self
     cdef field
     cdef value
+
+cpdef _adapt_sequence(field, value)
+cdef bint _all_SchemaNotProvided(sequence)
 
 cpdef validate_field_value(self, field_name, field, value)
 cpdef validate_named_field_value(self, iface, field_name, value)

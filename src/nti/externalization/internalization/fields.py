@@ -36,8 +36,6 @@ __all__ = [
 def noop():
     return
 
-def identity(obj):
-    return obj
 
 class SetattrSet(object):
     """
@@ -85,6 +83,43 @@ class FieldSet(object):
 
     def __call__(self):
         self.field.set(self.ext_self, self.value)
+
+class CannotConvertSequenceError(TypeError):
+    """
+    A TypeError raised when we are asked to convert a sequence
+    but we don't know how.
+    """
+
+def _adapt_sequence(field, value):
+    # IObject provides `schema`, which is an interface, so we can adapt
+    # using it. Some other things do not, for example nti.schema.field.Variant
+    # They might provide a `fromObject` function to do the conversion
+    # The field may be able to handle the whole thing by itself or we may need
+    # to do the individual objects
+
+    # The conversion process may raise TypeError
+    if hasattr(field, 'fromObject'):
+        value = field.fromObject(value)
+    else:
+        if hasattr(field.value_type, 'fromObject'):
+            converter = field.value_type.fromObject
+        elif hasattr(field.value_type, 'schema'):
+            converter = field.value_type.schema
+        else:
+            raise CannotConvertSequenceError(
+                "Don't know how to convert sequence %r for field %s"
+                % (value, field))
+
+        value = [converter(v) for v in value]
+
+    return value
+
+
+def _all_SchemaNotProvided(sequence):
+    for ex in sequence:
+        if not isinstance(ex, SchemaNotProvided):
+            return False # pragma: no cover
+    return True
 
 
 def validate_field_value(self, field_name, field, value):
@@ -172,7 +207,7 @@ def validate_field_value(self, field_name, field, value):
         # if the error is one that may be solved via simple adaptation
         # TODO: This is also thrown from IObject fields when validating the
         # fields of the object
-        if not e.args or not all([isinstance(x, SchemaNotProvided) for x in e.args[0]]):
+        if not e.args or not _all_SchemaNotProvided(e.args[0]):
             raise # pragma: no cover
         exc_info = sys.exc_info()
         # IObject provides `schema`, which is an interface, so we can adapt
@@ -181,17 +216,8 @@ def validate_field_value(self, field_name, field, value):
         # The field may be able to handle the whole thing by itself or we may need
         # to do the individual objects
 
-        converter = identity
-        loop = True
-        if hasattr(field, 'fromObject'):
-            converter = field.fromObject
-            loop = False
-        elif hasattr(field.value_type, 'fromObject'):
-            converter = field.value_type.fromObject
-        elif hasattr(field.value_type, 'schema'):
-            converter = field.value_type.schema
         try:
-            value = [converter(v) for v in value] if loop else converter(value)
+            value = _adapt_sequence(field, value)
         except TypeError:
             # TypeError means we couldn't adapt, in which case we want
             # to raise the original error. If we could adapt,
@@ -203,7 +229,7 @@ def validate_field_value(self, field_name, field, value):
                 del exc_info
 
 
-        # Now try to set the converted value
+        # Now try to validate the converted value
         try:
             field.validate(value)
         except ValidationError:
@@ -213,6 +239,7 @@ def validate_field_value(self, field_name, field, value):
             raise reraise(*exc_info)
         finally:
             del exc_info
+
     if (field.readonly
             and field.query(self) is None
             and field.queryTaggedValue('_ext_allow_initial_set')):

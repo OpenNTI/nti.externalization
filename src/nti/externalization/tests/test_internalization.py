@@ -633,3 +633,21 @@ class TestValidateFieldValue(CleanUp,
 
         setter = INT.validate_named_field_value(self.Bag(), IFace, 'thing', 42)
         setter()
+
+
+    def test_non_convertable_sequence(self):
+        from zope.schema.interfaces import WrongContainedType
+
+        class Field(object):
+            value_type = None
+            def bind(self, obj):
+                return self
+            def validate(self, obj):
+                raise WrongContainedType([])
+
+
+        with self.assertRaises(WrongContainedType):
+            INT.validate_field_value(self, 'name', Field(), [1])
+
+        with self.assertRaises(INT.fields.CannotConvertSequenceError):
+            INT.fields._adapt_sequence(Field(), [])
