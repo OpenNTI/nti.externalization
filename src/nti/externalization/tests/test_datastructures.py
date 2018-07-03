@@ -37,7 +37,7 @@ class TestAbstractDynamicObjectIO(ExternalizationLayerTest):
             _ext_setattr = staticmethod(setattr)
             _ext_getattr = staticmethod(getattr)
             def _ext_all_possible_keys(self):
-                return self.__dict__
+                return frozenset(self.__dict__)
         return IO()
 
     def test_ext_dict_key_already_exists(self):
@@ -49,18 +49,18 @@ class TestAbstractDynamicObjectIO(ExternalizationLayerTest):
                     is_({u'Class': 'IO', u'Creator': u'creator'}))
 
 
-        inst._excluded_out_ivars_ = ()
+        inst._excluded_out_ivars_ = frozenset()
 
         result = inst.toExternalDictionary()
         assert_that(result,
                     is_({u'Class': 'IO', u'Creator': u'creator', 'creator': 'creator'}))
 
-    @fudge.patch('nti.externalization.datastructures.toExternalObject')
-    def test_ext_dict_primitive_keys_bypass_toExternalObject(self, toExternalObject):
-        # leave the toExternalObject alone, if it is called it will
-        # raise an error.
+    def test_ext_dict_primitive_keys_bypass_toExternalObject(self):
+        # XXX: We used to monkey-patch datastructures.toExternalObject to
+        # make it explode if called, but we can't do that anymore, so this
+        # may not be testing what we think it is.
         inst = self._makeOne()
-        inst._ext_primitive_out_ivars_ = ('ivar',)
+        inst._ext_primitive_out_ivars_ = frozenset({'ivar',})
         inst.ivar = 42
 
         result = inst.toExternalDictionary()

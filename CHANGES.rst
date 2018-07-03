@@ -10,6 +10,24 @@
   ``update_from_external_object``. See
   https://github.com/NextThought/nti.externalization/issues/29.
 
+- A number of deprecated aliases for moved functions have been
+  removed.
+
+- On CPython, some of the modules are compiled as extension modules
+  using Cython for a 10-30% increase in speed. Set the ``PURE_PYTHON``
+  environment variable to disable this at runtime.
+
+- The unused, undocumented method
+  ``stripSyntheticKeysFromExternalDictionary`` was removed from
+  instances of ``ExternalizableDictionaryMixin``. Use the import instead.
+
+- Unused keyword arguments for ``to_standard_external_dictionary``
+  and ``to_minimal_standard_external_dictionary`` now produce a warning.
+  In the future, extra keyword arguments will be an error.
+
+- ``notifyModified`` no longer accepts the ``eventFactory`` argument.
+
+- The ``notify_modified`` alias for ``notifyModified`` has been removed.
 
 1.0.0a1 (2017-09-29)
 ====================

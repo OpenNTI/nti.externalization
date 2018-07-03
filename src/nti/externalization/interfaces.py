@@ -22,48 +22,13 @@ from zope.location import ILocation
 
 # pylint:disable=inherit-non-class,no-method-argument,no-self-argument
 
+from ._base_interfaces import LocatedExternalDict
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
 
-class StandardExternalFields(object):
-    """
-    Namespace object defining constants whose values are the
-    keys used in external mappings.
-    """
-    ID = u'ID'
-    OID = u'OID'
-    HREF = u'href'
-    INTID = u'INTID'
-    NTIID = u'NTIID'
-    CREATOR = u'Creator'
-    CONTAINER_ID = u'ContainerId'
-    CREATED_TIME = u'CreatedTime'
-    LAST_MODIFIED = u'Last Modified'
-    CLASS = u'Class'
-    LINKS = u'Links'
-    MIMETYPE = u'MimeType'
-    ITEMS = u'Items'
-    TOTAL = u'Total'
-    ITEM_COUNT = u'ItemCount'
+StandardExternalFields = get_standard_external_fields()
 
-
-StandardExternalFields.ALL = (lambda: [v for k, v in StandardExternalFields.__dict__.items()
-                                       if not k.startswith('_')])()
-
-
-class StandardInternalFields(object):
-    """
-    Namespace object defining constants whose values are the
-    property/attribute names looked for on internal objects.
-    """
-
-    ID = 'id'
-    NTIID = 'ntiid'
-
-    CREATOR = 'creator'
-    CREATED_TIME = 'createdTime'
-    CONTAINER_ID = 'containerId'
-    LAST_MODIFIED = 'lastModified'
-    LAST_MODIFIEDU = 'LastModified'
-
+StandardInternalFields = get_standard_internal_fields()
 
 class IInternalObjectExternalizer(interface.Interface):
     """
@@ -185,22 +150,7 @@ class ILocatedExternalSequence(IExternalizedObject, ILocation, ISequence):
     """
 
 
-@interface.implementer(ILocatedExternalMapping)
-class LocatedExternalDict(dict):
-    """
-    A dictionary that implements
-    :class:`~nti.externalization.interfaces.ILocatedExternalMapping`.
-    Returned by
-    :func:`~nti.externalization.externalization.to_standard_external_dictionary`.
-
-    This class is not :class:`.IContentTypeAware`, and it indicates so explicitly by declaring a
-    `mime_type` value of None.
-    """
-
-    __name__ = u''
-    __parent__ = None
-    __acl__ = ()
-    mimeType = None
+interface.classImplements(LocatedExternalDict, ILocatedExternalMapping)
 
 
 @interface.implementer(ILocatedExternalSequence)
@@ -397,3 +347,11 @@ class IList(IIterable):
     Marker interface for lists
     """
 interface.classImplements(list, IList)
+
+
+class _ILegacySearchModuleFactory(interface.Interface):
+
+    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ
+        """
+        Create and return the object.
+        """

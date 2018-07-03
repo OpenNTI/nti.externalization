@@ -1,5 +1,12 @@
+import os
+import sys
 import codecs
-from setuptools import setup, find_packages
+
+from setuptools import setup
+from setuptools import find_packages
+from setuptools import Extension
+
+PYPY = hasattr(sys, 'pypy_version_info')
 
 entry_points = {
     'console_scripts': [
@@ -17,6 +24,79 @@ def _read(fname):
     with codecs.open(fname, encoding='utf-8') as f:
         return f.read()
 
+# Cython
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    # The .c files had better already exist, as they should in
+    # an sdist. Based on code from
+    # http://cython.readthedocs.io/en/latest/src/reference/compilation.html#distributing-cython-modules
+    def cythonize(extensions, **_kwargs):
+        for extension in extensions:
+            sources = []
+            for sfile in extension.sources:
+                path, ext = os.path.splitext(sfile)
+                if ext in ('.pyx', '.py'):
+                    ext = '.c'
+                    sfile = path + ext
+                sources.append(sfile)
+            extension.sources[:] = sources
+        return extensions
+
+
+ext_modules = []
+
+# Modules we want to compile with Cython. These *should* have a parallel
+# .pxd file (with a leading _) defining cython attributes.
+# They should also have a cython comment at the top giving options,
+# and mention that they are compiled with cython on CPython.
+# The bottom of the file must call import_c_accel.
+# We use the support from Cython 28 to be able to parallel compile
+# and cythonize modules to a different name with a leading _.
+# This list is derived from the profile of bm_simple_iface
+# https://github.com/NextThought/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
+if not PYPY:
+    def _source(m, ext):
+        return 'src/nti/externalization/' + m + '.' + ext
+    def _py_source(m):
+        return _source(m, 'py')
+    def _pxd(m):
+        return _source(m, 'pxd')
+    def _c(m):
+        return _source(m, 'c')
+    # Each module should list the python name of the
+    # modules it cimports from as deps. We'll generate the rest.
+    # (Not that this actually appears to do anything right now.)
+
+    for mod_name, deps in (
+            ('singleton', ()),
+            ('_base_interfaces', ()),
+            ('internalization', ()),
+            ('externalization', ('_base_interfaces',)),
+            ('datastructures', ('_base_interfaces', 'externalization',
+                                'internalization')),
+    ):
+        deps = ([_py_source(mod) for mod in deps]
+                + [_pxd(mod) for mod in deps]
+                + [_c(mod) for mod in deps])
+
+        ext_modules.append(
+            Extension(
+                'nti.externalization._' + mod_name,
+                sources=[_py_source(mod_name)],
+                depends=deps,
+                define_macros=[('CYTHON_TRACE', '1')],
+            ))
+
+    ext_modules = cythonize(
+        ext_modules,
+        annotate=True,
+        compiler_directives={
+            #'linetrace': True,
+            'infer_types': True,
+        },
+    )
 
 setup(
     name='nti.externalization',
@@ -45,6 +125,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     namespace_packages=['nti'],
+    ext_modules=ext_modules,
     tests_require=TESTS_REQUIRE,
     install_requires=[
         'setuptools',
@@ -60,8 +141,6 @@ setup(
         'zope.component',
         'zope.configuration',
         'zope.container',
-        'zope.deferredimport',
-        'zope.deprecation >= 4.3.0',
         'zope.dottedname',
         'zope.dublincore',
         'zope.event',

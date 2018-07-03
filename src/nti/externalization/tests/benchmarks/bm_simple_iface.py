@@ -74,7 +74,7 @@ def profile():
         stats.strip_dirs()
         stats.sort_stats('cumulative')
         print("Profile of", func)
-        stats.print_stats(15)
+        stats.print_stats(20)
 
 
 def main(runner=None):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# cython: auto_pickle=False,embedsignature=True,always_allow_keywords=False
 # -*- coding: utf-8 -*-
 """
 Functions for taking externalized objects and creating application
@@ -6,12 +6,20 @@ model objects.
 
 """
 
+# There are a *lot* of fixme (XXX and the like) in this file.
+# Turn those off in general so we can see through the noise.
+# pylint:disable=fixme
+
+
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 # stdlib imports
-import collections
+from collections import MutableSequence
+from collections import MutableMapping
 import inspect
 import numbers
 import sys
@@ -25,10 +33,10 @@ from six import reraise
 from six import iteritems
 from zope import component
 from zope import interface
-from zope.deprecation import deprecated
+
 from zope.dottedname.resolve import resolve
 from zope.event import notify as _zope_event_notify
-from zope.lifecycleevent import Attributes
+from zope.lifecycleevent import IAttributes
 from zope.schema.interfaces import IField
 from zope.schema.interfaces import IFromUnicode
 from zope.schema.interfaces import SchemaNotProvided
@@ -46,8 +54,21 @@ from nti.externalization.interfaces import IMimeObjectFactory
 from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization.interfaces import StandardExternalFields
 
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
+
+StandardExternalFields = get_standard_external_fields()
+StandardInternalFields = get_standard_internal_fields()
+
+
 # pylint: disable=protected-access,ungrouped-imports,too-many-branches
 # pylint: disable=redefined-outer-name,inherit-non-class
+
+interface_implementedBy = interface.implementedBy
+interface_providedBy = interface.providedBy
+IPersistent_providedBy = IPersistent.providedBy
+component_queryAdapter = component.queryAdapter
+component_queryUtility = component.queryUtility
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -65,9 +86,6 @@ except ImportError: # pragma: no cover
 else:
     addCleanUp(LEGACY_FACTORY_SEARCH_MODULES.clear)
 
-StandardExternalFields_CLASS = StandardExternalFields.CLASS
-StandardExternalFields_MIMETYPE = StandardExternalFields.MIMETYPE
-
 
 def register_legacy_search_module(module_name):
     """
@@ -84,16 +102,11 @@ def register_legacy_search_module(module_name):
 
     .. deprecated:: 1.0
         Use explicit mime or class factories instead.
+        See https://github.com/NextThought/nti.externalization/issues/35
     """
+    warnings.warn("This function is deprecated", FutureWarning)
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
-
-
-deprecated(('register_legacy_search_module', 'LEGACY_FACTORY_SEARCH_MODULES'),
-           "Legacy search modules are deprecated. Prefer to register "
-           "explicit mime or class factories. See "
-           "https://github.com/NextThought/nti.externalization/issues/35",
-           cls=FutureWarning)
 
 
 ## Implementation of legacy search modules.
@@ -101,14 +114,8 @@ deprecated(('register_legacy_search_module', 'LEGACY_FACTORY_SEARCH_MODULES'),
 # We go through the global component registry, using a local
 # interface. We treat the registry as a cache and we will only
 # look at any given module object one time. We can detect duplicates
-# in this fashion.
-
-class _ILegacySearchModuleFactory(interface.Interface):
-
-    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ
-        """
-        Create and return the object.
-        """
+# in this fashion. (For cython compilation, this lives in interfaces.)
+from nti.externalization.interfaces import _ILegacySearchModuleFactory # pylint:disable=wrong-import-position,wrong-import-order
 
 def __register_legacy_if_not(gsm, name, factory):
     registered = gsm.queryUtility(_ILegacySearchModuleFactory, name)
@@ -162,8 +169,8 @@ def _register_factories_from_search_set():
     for module in modules:
         _register_factories_from_module(module)
 
-# Explicit for use of the warnings module.
-__warningregistry__ = {}
+
+_ext_factory_warnings = set()
 
 def _search_for_external_factory(typeName):
     """
@@ -191,61 +198,107 @@ def _search_for_external_factory(typeName):
     if factory is None and className.lower() != className:
         factory = gsm.queryUtility(_ILegacySearchModuleFactory, name=className.lower())
 
-    if factory is not None:
-        # This will produce a new warnings cache entry for each new
-        # class type we get (because the whole string is part of the
-        # key). Since this is external input, that could theoretically
-        # be used to DDOS us. We keep an eye on that and don't let the cache
-        # get too big, but that does mean we could ultimately produce
-        # duplicate warnings.
-        warnings.warn("Using legacy class finder for %r" % (typeName),
-                      FutureWarning)
-        if len(__warningregistry__) > 1024:
-            __warningregistry__.clear() # pragma: no cover
+    if factory is not None and typeName not in _ext_factory_warnings:
+        # Previously we used the `warnings` module to produce a
+        # FutureWarning for each distinct typeName. This had the
+        # problem that it would result in an ever growing
+        # __warningregistry__ in this module. We worked around that by
+        # periodically clearing it (which could sometimes result in
+        # duplicate warnings).
+
+        # However, if we're compiled into an extension module, it won't be
+        # this module that gets the __warningregistry__, it will be whatever
+        # the last Python caller was, which is unpredictable.
+
+        # Therefore, to control this, we instead switch to logging a warning
+        # and managing our own cache.
+        _ext_factory_warnings.add(typeName)
+        logger.debug("Deprecated: Using legacy class finder for %r", typeName)
+        if len(_ext_factory_warnings) > 1024:
+            _ext_factory_warnings.clear() # pragma: no cover
 
     return factory
 
-
-@interface.implementer(IFactory)
-def default_externalized_object_factory_finder(externalized_object):
-    mime_type = factory = None
-    # We use specialized interfaces instead of plain IFactory to make it clear
-    # that these are being created from external data
-    try:
-        if StandardExternalFields_MIMETYPE in externalized_object:
-            mime_type = externalized_object[StandardExternalFields_MIMETYPE]
-
-        if mime_type:
-            factory = component.queryAdapter(externalized_object, IMimeObjectFactory,
-                                             name=mime_type)
-            if not factory:
-                # What about a named utility?
-                factory = component.queryUtility(IMimeObjectFactory,
-                                                 name=mime_type)
-
-            if not factory:
-                # Is there a default?
-                factory = component.queryAdapter(externalized_object,
-                                                 IMimeObjectFactory)
-
-        if not factory and StandardExternalFields_CLASS in externalized_object:
-            class_name = externalized_object[StandardExternalFields_CLASS]
-            if class_name:
-                factory = component.queryAdapter(externalized_object,
-                                                 IClassObjectFactory,
-                                                 name=class_name)
-                if not factory:
-                    factory = find_factory_for_class_name(class_name)
-    except (TypeError, KeyError):
-        # XXX: These catches are too broad. If there is a programming error
-        # in the adapter (eg, it doesn't have the correct __init__), we
-        # want that to propagate.
+def _search_for_mime_factory(externalized_object, mime_type):
+    if not mime_type:
         return None
 
+    factory = component_queryAdapter(externalized_object,
+                                     IMimeObjectFactory,
+                                     mime_type)
+    if factory is not None:
+        return factory
+
+    # What about a named utility?
+    factory = component_queryUtility(IMimeObjectFactory,
+                                     mime_type)
+
+    if factory is not None:
+        return factory
+
+    # Is there a default?
+    factory = component_queryAdapter(externalized_object,
+                                     IMimeObjectFactory)
+
     return factory
-# XXX: This is ugly and introduces a cycle. Fix this by converting to
-# a class?
-default_externalized_object_factory_finder.find_factory = default_externalized_object_factory_finder
+
+def _search_for_class_factory(externalized_object, class_name):
+    if not class_name:
+        return None
+
+    factory = component_queryAdapter(externalized_object,
+                                     IClassObjectFactory,
+                                     class_name)
+
+    if factory is not None:
+        return factory
+
+    return find_factory_for_class_name(class_name)
+
+def _find_factory_for_mime_or_class(externalized_object):
+    # We use specialized interfaces instead of plain IFactory to make it clear
+    # that these are being created from external data
+
+    try:
+        mime_type = externalized_object[StandardExternalFields.MIMETYPE]
+    except TypeError:
+        # Not subscriptable. We won't be able to work for
+        # this object
+        return None
+    except KeyError:
+        # sad trombone. Not present.
+        pass
+    else:
+        factory = _search_for_mime_factory(externalized_object, mime_type)
+        if factory is not None:
+            return factory
+
+    # Fallback to class
+    try:
+        class_name = externalized_object[StandardExternalFields.CLASS]
+    except KeyError:
+        # very sad trombone
+        return None
+
+    return _search_for_class_factory(externalized_object, class_name)
+
+
+class _DefaultExternalizedObjectFactoryFinder(object):
+    # This is an IFactory, declared below.
+    # (Cython cdef classes cannot have decorators)
+    __slots__ = ()
+
+    def find_factory(self, externalized_object):
+        return _find_factory_for_mime_or_class(externalized_object)
+
+    # We are callable for BWC and because that's what an IFactory is
+    def __call__(self, externalized_object):
+        return self.find_factory(externalized_object)
+
+interface.classImplements(_DefaultExternalizedObjectFactoryFinder,
+                          IFactory)
+
+default_externalized_object_factory_finder = _DefaultExternalizedObjectFactoryFinder()
 
 
 @interface.implementer(IExternalizedObjectFactoryFinder)
@@ -254,11 +307,11 @@ def default_externalized_object_factory_finder_factory(unused_externalized_objec
 
 
 def find_factory_for_class_name(class_name):
-    factory = component.queryUtility(IClassObjectFactory, name=class_name)
-    if not factory:
+    factory = component_queryUtility(IClassObjectFactory, class_name)
+    if factory is None:
         factory = _search_for_external_factory(class_name)
     # Did we chop off an extra 's'?
-    if not factory and class_name and class_name.endswith('s'):
+    if factory is None and class_name and class_name.endswith('s'):
         factory = _search_for_external_factory(class_name + 's')
     return factory
 
@@ -270,9 +323,12 @@ def find_factory_for(externalized_object, registry=component):
     """
     factory_finder = registry.queryAdapter(
         externalized_object,
-        IExternalizedObjectFactoryFinder,
-        default=default_externalized_object_factory_finder)
-    return factory_finder.find_factory(externalized_object)
+        IExternalizedObjectFactoryFinder)
+    if factory_finder is not None:
+        return factory_finder.find_factory(externalized_object)
+
+
+    return _find_factory_for_mime_or_class(externalized_object)
 
 
 def _resolve_externals(object_io, updating_object, externalObject,
@@ -288,11 +344,11 @@ def _resolve_externals(object_io, updating_object, externalObject,
             continue
         externalObjectOid = externalObject[keyPath]
         unwrap = False
-        if not isinstance(externalObjectOid, collections.MutableSequence):
+        if not isinstance(externalObjectOid, MutableSequence):
             externalObjectOid = [externalObjectOid, ]
             unwrap = True
 
-        for i in range(0, len(externalObjectOid)):
+        for i in range(0, len(externalObjectOid)): # pylint:disable=consider-using-enumerate
             resolver = registry.queryMultiAdapter((updating_object, externalObjectOid[i]),
                                                   IExternalReferenceResolver)
             if resolver:
@@ -326,43 +382,79 @@ def _resolve_externals(object_io, updating_object, externalObject,
 # Things we don't bother trying to internalize
 _primitives = string_types + (numbers.Number, bool)
 
+class _RecallArgs(object):
+    __slots__ = (
+        'registry',
+        'context',
+        'require_updater',
+        'notify',
+        'pre_hook',
+    )
 
-def _pre_hook(k, x):
-    pass
-pre_hook = _pre_hook
-
+    def __init__(self, registry,
+                 context,
+                 require_updater,
+                 notify,
+                 pre_hook):
+        self.registry = registry
+        self.context = context
+        self.require_updater = require_updater
+        self.notify = notify
+        self.pre_hook = pre_hook
 
 
 def _recall(k, obj, ext_obj, kwargs):
-    obj = update_from_external_object(obj, ext_obj, **kwargs)
-    if IPersistent.providedBy(obj): # pragma: no cover
+    # We must manually pass all the args to get the optimized
+    # cython call
+    obj = update_from_external_object(obj, ext_obj,
+                                      registry=kwargs.registry,
+                                      context=kwargs.context,
+                                      require_updater=kwargs.require_updater,
+                                      notify=kwargs.notify,
+                                      pre_hook=kwargs.pre_hook)
+    if IPersistent_providedBy(obj): # pragma: no cover
         obj._v_updated_from_external_source = ext_obj
     return obj
 
+class _Attributes(object):
+    # This is a cython version of zope.lifecycleevent.Attributes
+    # for faster instantiation and collection of attrs
 
-def notifyModified(containedObject, externalObject, updater=None, external_keys=(),
-                   eventFactory=ObjectModifiedFromExternalEvent, **kwargs):
-    # try to provide external keys
-    if not external_keys:
-        external_keys = [k for k in externalObject.keys()]
+    __slots__ = (
+        'interface',
+        'attributes',
+    )
 
-    # TODO: We need to try to find the actual interfaces and fields to allow correct
-    # decisions to be made at higher levels.
-    # zope.formlib.form.applyData does this because it has a specific, configured mapping. We
-    # just do the best we can by looking at what's implemented. The most specific
-    # interface wins
-    # map from interface class to list of keys
-    descriptions = collections.defaultdict(list)
-    provides = interface.providedBy(containedObject)
+    def __init__(self, iface):
+        self.interface = iface
+        self.attributes = set()
+
+interface.classImplements(_Attributes,
+                          IAttributes)
+
+def _make_modified_attributes(containedObject, external_keys):
+    # {iface -> _Attributes(iface)}
+    attributes = {}
+    provides = interface_providedBy(containedObject)
+    get_iface = provides.get
     for k in external_keys:
         iface_providing_attr = None
-        iface_attr = provides.get(k)
-        if iface_attr:
+        iface_attr = get_iface(k)
+        if iface_attr is not None:
             iface_providing_attr = iface_attr.interface
-        descriptions[iface_providing_attr].append(k)
-    attributes = [Attributes(iface, *sorted(keys))
-                  for iface, keys in descriptions.items()]
-    event = eventFactory(containedObject, *attributes, **kwargs)
+
+        try:
+            attrs = attributes[iface_providing_attr]
+        except KeyError:
+            attrs = attributes[iface_providing_attr] = _Attributes(iface_providing_attr)
+
+        attrs.attributes.add(k)
+
+    return attributes.values()
+
+def _make_modified_event(containedObject, externalObject, updater,
+                         attributes, kwargs):
+    event = ObjectModifiedFromExternalEvent(containedObject, *attributes, **kwargs)
     event.external_value = externalObject
     # Let the updater have its shot at modifying the event, too, adding
     # interfaces or attributes. (Note: this was added to be able to provide
@@ -375,17 +467,38 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
         pass
     else:
         event = meth(event) # pragma: no cover
+
+    return event
+
+def _notifyModified(containedObject, externalObject, updater, external_keys,
+                    kwargs):
+    # try to provide external keys
+    if external_keys is None:
+        external_keys = list(externalObject.keys())
+
+    # TODO: We need to try to find the actual interfaces and fields to allow correct
+    # decisions to be made at higher levels.
+    # zope.formlib.form.applyData does this because it has a specific, configured mapping. We
+    # just do the best we can by looking at what's implemented. The most specific
+    # interface wins
+    # map from interface class to list of keys
+    attributes = _make_modified_attributes(containedObject, external_keys)
+    event = _make_modified_event(containedObject, externalObject, updater,
+                                 attributes, kwargs)
     _zope_event_notify(event)
     return event
 
-notify_modified = notifyModified
+def notifyModified(containedObject, externalObject, updater=None, external_keys=None,
+                   **kwargs):
+    return _notifyModified(containedObject, externalObject, updater, external_keys,
+                           kwargs)
 
 
 def update_from_external_object(containedObject, externalObject,
                                 registry=component, context=None,
                                 require_updater=False,
                                 notify=True,
-                                pre_hook=_pre_hook):
+                                pre_hook=None):
     """
     Central method for updating objects from external values.
 
@@ -422,17 +535,18 @@ def update_from_external_object(containedObject, externalObject,
        Remove the ``object_hook`` parameter.
     """
 
-    if pre_hook is not None and pre_hook is not _pre_hook: # pragma: no cover
+    if pre_hook is not None: # pragma: no cover
         for i in range(3):
             warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
 
-    pre_hook = _pre_hook if pre_hook is None else pre_hook
+    kwargs = _RecallArgs(
+        registry,
+        context,
+        require_updater,
+        notify,
+        pre_hook
+    )
 
-    kwargs = dict(notify=notify,
-                  context=context,
-                  registry=registry,
-                  pre_hook=pre_hook,
-                  require_updater=require_updater)
 
     # Parse any contained objects
     # TODO: We're (deliberately?) not actually updating any contained
@@ -444,17 +558,18 @@ def update_from_external_object(containedObject, externalObject,
 
     # Sequences do not represent python types, they represent collections of
     # python types
-    if isinstance(externalObject, collections.MutableSequence):
+    if isinstance(externalObject, MutableSequence):
         tmp = []
         for value in externalObject:
-            pre_hook(None, value)
+            if pre_hook is not None: # pragma: no cover
+                pre_hook(None, value)
             factory = find_factory_for(value, registry=registry)
-            tmp.append(_recall(None, factory(), value, kwargs) if factory else value)
+            tmp.append(_recall(None, factory(), value, kwargs) if factory is not None else value)
         # XXX: TODO: Should we be assigning this to the slice of externalObject?
         # in-place?
         return tmp
 
-    assert isinstance(externalObject, collections.MutableMapping)
+    assert isinstance(externalObject, MutableMapping)
 
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
@@ -464,9 +579,10 @@ def update_from_external_object(containedObject, externalObject,
         if isinstance(v, _primitives):
             continue
 
-        pre_hook(k, v)
+        if pre_hook is not None: # pragma: no cover
+            pre_hook(k, v)
 
-        if isinstance(v, collections.MutableSequence):
+        if isinstance(v, MutableSequence):
             # Update the sequence in-place
             # XXX: This is not actually updating it.
             # We need to slice externalObject[k[:]]
@@ -475,7 +591,7 @@ def update_from_external_object(containedObject, externalObject,
             externalObject[k] = v
         else:
             factory = find_factory_for(v, registry=registry)
-            if factory:
+            if factory is not None:
                 externalObject[k] = _recall(k, factory(), v, kwargs)
 
     updater = None
@@ -502,22 +618,67 @@ def update_from_external_object(containedObject, externalObject,
         # The signature may vary.
         # XXX: This is slow and cumbersome and needs to go.
         # See https://github.com/NextThought/nti.externalization/issues/30
-        argspec = inspect.getargspec(updater.updateFromExternalObject)
-        if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
-            updated = updater.updateFromExternalObject(externalObject,
-                                                       context=context)
-        elif argspec.keywords or 'dataserver' in argspec.args:
-            updated = updater.updateFromExternalObject(externalObject,
-                                                       dataserver=context)
+        try:
+            argspec = inspect.getargspec(updater.updateFromExternalObject)
+        except TypeError: # pragma: no cover (This is hard to catch in pure-python coverage mode)
+            # Cython functions and other extension types are "not a Python function"
+            # and don't work with this. We assume they use the standard form accepting
+            # 'context' as kwarg
+            updated = updater.updateFromExternalObject(externalObject, context=context)
         else:
-            updated = updater.updateFromExternalObject(externalObject)
+            if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
+                updated = updater.updateFromExternalObject(externalObject,
+                                                           context=context)
+            elif argspec.keywords or 'dataserver' in argspec.args:
+                updated = updater.updateFromExternalObject(externalObject,
+                                                           dataserver=context)
+            else:
+                updated = updater.updateFromExternalObject(externalObject)
 
         # Broadcast a modified event if the object seems to have changed.
         if notify and (updated is None or updated):
-            notifyModified(containedObject, externalObject,
-                           updater, external_keys)
+            _notifyModified(containedObject, externalObject,
+                            updater, external_keys, _EMPTY_DICT)
 
     return containedObject
+
+def _noop():
+    pass
+
+
+class _FirstSet(object):
+
+    __slots__ = (
+        'ext_self',
+        'field_name',
+        'value',
+    )
+
+    def __init__(self, ext_self, field_name, value):
+        self.ext_self = ext_self
+        self.field_name = field_name
+        self.value = value
+
+    def __call__(self):
+        setattr(self.ext_self, self.field_name, self.value)
+
+class _FieldSet(object):
+
+    __slots__ = (
+        'ext_self',
+        'field',
+        'value'
+    )
+
+    def __init__(self, ext_self, field, value):
+        self.ext_self = ext_self
+        # Don't denormalize field.set; there's a tiny
+        # chance we won't actually be called.
+        self.field = field
+        self.value = value
+
+    def __call__(self):
+        self.field.set(self.ext_self, self.value)
 
 
 def validate_field_value(self, field_name, field, value):
@@ -572,12 +733,12 @@ def validate_field_value(self, field_name, field, value):
         exp_type = e.args[1]
         # If the type unambiguously implements an interface (one interface)
         # that's our target. IDate does this
-        if len(list(interface.implementedBy(exp_type))) != 1:
+        if len(list(interface_implementedBy(exp_type))) != 1:
             try:
-                raise
+                raise # pylint:disable=misplaced-bare-raise
             finally:
                 del exc_info
-        schema = list(interface.implementedBy(exp_type))[0]
+        schema = list(interface_implementedBy(exp_type))[0]
         try:
             value = schema(value)
         except (LookupError, TypeError):
@@ -603,7 +764,7 @@ def validate_field_value(self, field_name, field, value):
         # if the error is one that may be solved via simple adaptation
         # TODO: This is also thrown from IObject fields when validating the
         # fields of the object
-        if not e.args or not all((isinstance(x, SchemaNotProvided) for x in e.args[0])):
+        if not e.args or not all([isinstance(x, SchemaNotProvided) for x in e.args[0]]):
             raise # pragma: no cover
         exc_info = sys.exc_info()
         # IObject provides `schema`, which is an interface, so we can adapt
@@ -644,22 +805,17 @@ def validate_field_value(self, field_name, field, value):
             raise reraise(*exc_info)
         finally:
             del exc_info
-
     if (field.readonly
             and field.query(self) is None
             and field.queryTaggedValue('_ext_allow_initial_set')):
         if value is not None:
             # First time through we get to set it, but we must bypass
             # the field
-            def _do_set():
-                setattr(self, str(field_name), value)
+            _do_set = _FirstSet(self, str(field_name), value)
         else:
-            def _do_set():
-                # no-op
-                return
+            _do_set = _noop
     else:
-        def _do_set():
-            return field.set(self, value)
+        _do_set = _FieldSet(self, field, value)
 
     return _do_set
 
@@ -680,4 +836,9 @@ def validate_named_field_value(self, iface, field_name, value):
     field = iface[field_name]
     if IField.providedBy(field):
         return validate_field_value(self, field_name, field, value)
-    return lambda: setattr(self, field_name, value)
+
+    return _FirstSet(self, field_name, value)
+
+
+from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+import_c_accel(globals(), 'nti.externalization._internalization')

@@ -11,7 +11,7 @@ import json
 from numbers import Number
 import unittest
 
-import fudge
+
 from ZODB.broken import Broken
 import persistent
 from zope import component
@@ -25,6 +25,8 @@ from nti.testing.matchers import is_true
 from nti.testing.matchers import is_false
 
 from . import ExternalizationLayerTest
+from .._compat import PY3
+from .._compat import PURE_PYTHON
 from ..datastructures import ExternalizableDictionaryMixin
 from ..datastructures import ExternalizableInstanceDict
 from ..externalization import NonExternalizableObjectError
@@ -33,7 +35,7 @@ from ..externalization import catch_replace_action
 from ..externalization import choose_field
 from ..externalization import isSyntheticKey
 from ..externalization import removed_unserializable
-from ..externalization import set_external_identifiers
+from ..extension_points import set_external_identifiers
 from ..externalization import to_standard_external_dictionary
 from ..externalization import toExternalObject
 from ..interfaces import EXT_REPR_JSON
@@ -185,18 +187,39 @@ class TestFunctions(ExternalizationLayerTest):
                     has_items(has_entry("Class", "NonExternalizableObject")))
 
     def test_catching_component(self):
+        class MyCustomException(Exception):
+            pass
+
         class Raises(object):
             def toExternalObject(self, **unused_kwargs):
-                assert False
+                raise MyCustomException
 
-        assert_that(toExternalObject([Raises()],
-                                     catch_components=(AssertionError,),
-                                     catch_component_action=catch_replace_action),
-                    is_([catch_replace_action(None, None)]))
+        expect_exception = PY3 and not PURE_PYTHON
+        if expect_exception: # pragma: no cover
+            # Cython 0.28.3 has a bug on Python 3.
+            # https://github.com/cython/cython/issues/2425
+            # Depending on how we factor the code, it may or may
+            # not be triggered.
+            try:
+                assert_that(calling(toExternalObject).with_args(
+                    [Raises()],
+                    catch_components=(MyCustomException,),
+                    catch_component_action=catch_replace_action),
+                            raises(MyCustomException))
+            except AssertionError:
+                # Hmm, it wasn't raised. OK, then we have a fixed
+                # version of Python, or we refactored the code.
+                expect_exception = False
+
+        if not expect_exception:
+            assert_that(toExternalObject([Raises()],
+                                         catch_components=(MyCustomException,),
+                                         catch_component_action=catch_replace_action),
+                        is_([catch_replace_action(None, None)]))
 
         # Default doesn't catch
         assert_that(calling(toExternalObject).with_args([Raises()]),
-                    raises(AssertionError))
+                    raises(MyCustomException))
 
 
     def test_removed_unserializable(self):
@@ -236,18 +259,22 @@ class TestFunctions(ExternalizationLayerTest):
             def __getattr__(self, name):
                 raise POSKeyError(name)
 
-        assert_that(choose_field({}, Raises(), 'ext_name',
+        assert_that(choose_field({}, Raises(), u'ext_name',
                                  fields=('a', 'b')),
                     is_(none()))
 
-    @fudge.patch('nti.externalization.externalization.is_system_user')
-    def test_choose_field_system_user(self, is_system_user):
+    def test_choose_field_system_user(self):
         from nti.externalization.externalization import SYSTEM_USER_NAME
-        system_user = object()
+        from zope.security.interfaces import IPrincipal
+        from zope.security.management import system_user
 
-        is_system_user.expects_call().returns(True)
+        @interface.implementer(IPrincipal)
+        class MySystemUser(object):
+            id = system_user.id
+
+
         class WithSystemUser(object):
-            user = system_user
+            user = MySystemUser()
 
         result = {}
         choose_field(result, WithSystemUser,

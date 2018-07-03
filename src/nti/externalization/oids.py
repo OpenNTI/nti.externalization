@@ -15,7 +15,7 @@ import collections
 
 from ZODB.interfaces import IConnection
 from zope import component
-import zope.deferredimport
+
 from zope.intid.interfaces import IIntIds
 
 from nti.externalization._compat import bytes_
@@ -161,12 +161,3 @@ def fromExternalOID(ext_oid):
 
     return ParsedOID(oid_string, name_s, intid)
 from_external_oid = fromExternalOID
-
-# Things that have moved
-zope.deferredimport.initialize()
-zope.deferredimport.deprecatedFrom(
-    "Import from nti.ntiids.oids",
-    "nti.ntiids.oids",
-    "MASKED_EXTERNAL_CREATOR",
-    "DEFAULT_EXTERNAL_CREATOR",
-    "to_external_ntiid_oid")

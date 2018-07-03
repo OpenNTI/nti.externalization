@@ -175,7 +175,6 @@ class TestAutoPackageZCML(PlacelessSetup,
 
     def test_scan_package_empty(self):
         from nti.externalization import internalization as INT
-        from zope.deprecation import Suppressor
         xmlconfig.string(self.SCAN_THIS_MODULE)
         gsm = component.getGlobalSiteManager()
         # The interfaces IExtRoot and IInternalObjectIO were registered
@@ -185,9 +184,8 @@ class TestAutoPackageZCML(PlacelessSetup,
 
         # The module was added to the legacy search list directly,
         # now, producing the factories it needed (which was none)
-        with Suppressor():
-            assert_that(INT.LEGACY_FACTORY_SEARCH_MODULES,
-                        is_empty())
+        assert_that(INT.LEGACY_FACTORY_SEARCH_MODULES,
+                    is_empty())
 
 
     def test_scan_package_legacy_utility(self):

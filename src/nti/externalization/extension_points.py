@@ -67,6 +67,7 @@ def get_current_request():
        The automatic fallback to Pyramid. It will be removed
        in 1.1 or before.
     """
+    return None # pragma: no cover
 
 
 try:
