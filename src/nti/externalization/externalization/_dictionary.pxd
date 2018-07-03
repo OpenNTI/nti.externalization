@@ -30,7 +30,6 @@ cdef NotGiven
 # Constants
 
 
-
 cpdef LED internal_to_standard_external_dictionary(self,
                                                    mergeFrom=*,
                                                    registry=*,

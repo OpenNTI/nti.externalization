@@ -2,7 +2,7 @@
 import cython
 
 from nti.externalization.externalization._dictionary cimport internal_to_standard_external_dictionary
-
+from nti.externalization.__base_interfaces cimport LocatedExternalDict as LED
 
 
 # Imports
@@ -38,7 +38,6 @@ cdef tuple SEQUENCE_TYPES
 cdef tuple MAPPING_TYPES
 
 
-
 @cython.final
 @cython.internal
 @cython.freelist(1000)
@@ -52,6 +51,13 @@ cdef class _ExternalizationState(object):
     cdef request
     cdef default_non_externalizable_replacer
 
+    cdef bint decorate
+    cdef bint useCache
+    cdef decorate_callback
+
+    cdef dict _kwargs
+
+    cdef dict as_kwargs(self)
 
 # can't use freelist on subclass
 @cython.final
@@ -75,11 +81,24 @@ cpdef to_external_object(
     default_non_externalizable_replacer=*
 )
 
+cdef LED _externalize_mapping(obj, _ExternalizationState state)
+
+cdef _externalize_sequence(obj, _ExternalizationState state)
+
+cdef _decorate_external(obj, result, _ExternalizationState state)
+
+cdef _usable_externalObject_cache
+cdef _usable_externalObject_cache_get
+
+@cython.locals(
+    has_ext_obj=bint,
+)
+cdef _obj_has_usable_externalObject(obj)
+
+cdef _externalize_object(obj, _ExternalizationState state)
+
 @cython.locals(
     obj_has_usable_external_object=bint,
 )
 cdef _to_external_object_state(obj, _ExternalizationState state,
-                               bint top_level=*,
-                               bint decorate=*,
-                               bint useCache=*,
-                               decorate_callback=*)
+                               bint top_level=*)

@@ -15,17 +15,14 @@ from __future__ import print_function
 
 # stdlib imports
 import collections
-from collections import defaultdict
-
+import warnings
+from weakref import WeakKeyDictionary
 
 import BTrees.OOBTree
-
 import persistent
-
 
 from zope import component
 from zope.interface.common.sequence import IFiniteSequence
-
 
 from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import PRIMITIVES
@@ -44,6 +41,7 @@ from nti.externalization.externalization.dictionary import internal_to_standard_
 
 logger = __import__('logging').getLogger(__name__)
 
+defaultdict = collections.defaultdict
 
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
@@ -56,35 +54,52 @@ _manager_get = _manager.get
 _manager_pop = _manager.pop
 _manager_push = _manager.push
 
-# Things that can be directly externalized
-
-
 
 #: The types that we will treat as sequences for externalization purposes. These
 #: all map onto lists. (TODO: Should we just try to iter() it, ignoring strings?)
 #: In addition, we also support :class:`~zope.interface.common.sequence.IFiniteSequence`
 #: by iterating it and mapping onto a list. This allows :class:`~z3c.batching.interfaces.IBatch`
 #: to be directly externalized.
-SEQUENCE_TYPES = (persistent.list.PersistentList,
-                  collections.Set,
-                  list,
-                  tuple)
+SEQUENCE_TYPES = (
+    persistent.list.PersistentList,
+    collections.Set,
+    list,
+    tuple,
+)
 
 #: The types that we will treat as mappings for externalization purposes. These
 #: all map onto a dict.
-MAPPING_TYPES = (persistent.mapping.PersistentMapping,
-                 BTrees.OOBTree.OOBTree,
-                 collections.Mapping)
+MAPPING_TYPES = (
+    persistent.mapping.PersistentMapping,
+    BTrees.OOBTree.OOBTree,
+    collections.Mapping
+)
 
 
 
 class _ExternalizationState(object):
 
-    # XXX: Which of these do we actually use?
+    __slots__ = (
+        'name',
+        'memo',
+        'registry',
+        'catch_components',
+        'catch_component_action',
+        'request',
+        'default_non_externalizable_replacer',
+        'decorate',
+        'useCache',
+        'decorate_callback',
+        '_kwargs',
+    )
+
     def __init__(self, memos,
                  name, registry, catch_components, catch_component_action,
                  request,
-                 default_non_externalizable_replacer):
+                 default_non_externalizable_replacer,
+                 decorate=True,
+                 useCache=True,
+                 decorate_callback=None):
         self.name = name
         # We take a similar approach to pickle.Pickler
         # for memoizing objects we've seen:
@@ -99,30 +114,156 @@ class _ExternalizationState(object):
         self.request = request
         self.default_non_externalizable_replacer = default_non_externalizable_replacer
 
+        self.decorate = decorate
+        self.useCache = useCache
+        self.decorate_callback = decorate_callback
+
+        self._kwargs = None
+
+    def as_kwargs(self):
+        if self._kwargs is None:
+            self._kwargs = dict(
+                request=self.request, name=self.name,
+                decorate=self.decorate, useCache=self.useCache,
+                decorate_callback=self.decorate_callback
+            )
+        return self._kwargs
+
 class _RecursiveCallState(dict):
     pass
 
 
 _marker = object()
 
+def _externalize_mapping(obj, state):
+    # XXX: This winds up calling decorate_callback at least twice.
+    result = internal_to_standard_external_dictionary(
+        obj,
+        None,
+        state.registry,
+        state.decorate,
+        state.request,
+        state.decorate_callback)
+    if obj.__class__ is dict:
+        result.pop('Class', None)
+    # Note that we recurse on the original items, not the things newly added.
+    # NOTE: This means that Links added here will not be externalized. There
+    # is an IExternalObjectDecorator that does that
+    for key, value in obj.items():
+        if not isinstance(value, PRIMITIVES):
+            value = _to_external_object_state(value, state,
+                                              top_level=False)
+        result[key] = value
 
-def _to_external_object_state(obj, state, top_level=False, decorate=True,
-                              useCache=True, decorate_callback=NotGiven):
+    return result
+
+
+def _externalize_sequence(obj, state):
+    result = []
+    for value in obj:
+        if not isinstance(value, PRIMITIVES):
+            value = _to_external_object_state(value, state,
+                                              top_level=False)
+        result.append(value)
+    result = state.registry.getAdapter(result,
+                                       ILocatedExternalSequence)
+    return result
+
+
+_usable_externalObject_cache = WeakKeyDictionary()
+_usable_externalObject_cache_get = _usable_externalObject_cache.get
+
+try:
+    # pylint:disable=ungrouped-imports
+    from zope.testing import cleanup
+except ImportError: # pragma: no cover
+    pass
+else:
+    cleanup.addCleanUp(_usable_externalObject_cache.clear)
+
+
+def _obj_has_usable_externalObject(obj):
+    # This is for legacy code support, to allow existing methods to move to adapters
+    # and call us without infinite recursion
+    kind = type(obj)
+    answer = _usable_externalObject_cache_get(kind)
+    if answer is None:
+        answer = False
+        has_ext_obj = hasattr(kind, 'toExternalObject')
+        if has_ext_obj:
+            ext_ignored = getattr(kind, '__ext_ignore_toExternalObject__', None)
+            answer = not ext_ignored
+            if ext_ignored is not None:
+                warnings.warn("The type %r still has __ext_ignore_toExternalObject__. "
+                              "Remove it and toExternalObject()." % (kind,),
+                              FutureWarning)
+
+        _usable_externalObject_cache[kind] = answer
+
+    return answer
+
+
+def _externalize_object(obj, state):
+    # Unlike the other functions, this one returns None to indicate
+    # that it failed and legacy behaviour is needed.
+
+    # TODO: This is needless for the mapping types and sequence types. rework to avoid.
+    # Benchmarks show that simply moving it into the last block doesn't actually save much
+    # (due to all the type checks in front of it?)
+    result = toExternalObject = None
+
+    obj_has_usable_external_object = _obj_has_usable_externalObject(obj)
+    if obj_has_usable_external_object:
+        toExternalObject = obj.toExternalObject
+    else:
+        adapter = state.registry.queryAdapter(obj, IExternalObject, state.name)
+
+        if adapter is None and state.name != '':
+            # try for the default, but allow passing name of None to
+            # disable (?)
+            adapter = state.registry.queryAdapter(obj, IExternalObject)
+
+        if adapter is not None:
+            toExternalObject = adapter.toExternalObject
+
+    if toExternalObject is not None:
+        result = toExternalObject(**state.as_kwargs())
+
+    return result
+
+
+def _decorate_external(obj, result, state):
+    if state.decorate:
+        for decorator in state.registry.subscribers((obj,), IExternalObjectDecorator):
+            decorator.decorateExternalObject(obj, result)
+    elif callable(state.decorate_callback):
+        state.decorate_callback(obj, result)
+
+    # Request specific decorating, if given, is more specific than plain object
+    # decorating, so it gets to go last.
+    if state.decorate and state.request is not None and state.request is not NotGiven:
+        for decorator in state.registry.subscribers((obj, state.request),
+                                                    IExternalObjectDecorator):
+            decorator.decorateExternalObject(obj, result)
+
+
+def _to_external_object_state(obj, state, top_level=False):
     # This function is way to long and ugly. Given cython's 0 function call overhead,
     # we can probably refactor.
     # pylint:disable=too-many-branches
     __traceback_info__ = obj
 
-    orig_obj = obj
+    assert obj is not None # caught by primitives already.
+
     orig_obj_id = id(obj) # XXX: Relatively expensive on PyPy
-    if useCache:
+    if state.useCache:
         value = state.memo.get(orig_obj_id, None)
         result = value[1] if value is not None else None
         if result is None:  # mark as in progress
-            state.memo[orig_obj_id] = (orig_obj, _marker)
+            state.memo[orig_obj_id] = (obj, _marker)
         elif result is not _marker:
             return result
-        elif obj is not None:
+        else:
             logger.warn("Recursive call to object %s.", obj)
             result = internal_to_standard_external_dictionary(obj,
                                                               decorate=False)
@@ -134,101 +275,33 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
         # Benchmarks show that simply moving it into the last block doesn't actually save much
         # (due to all the type checks in front of it?)
 
-        # This is for legacy code support, to allow existing methods to move to adapters
-        # and call us without infinite recursion
-        obj_has_usable_external_object = \
-            hasattr(obj, 'toExternalObject') \
-            and not getattr(obj, '__ext_ignore_toExternalObject__', False)
+        result = _externalize_object(obj, state)
+        if result is None:
+            # Legacy codepaths
 
-        if not obj_has_usable_external_object and not IExternalObject.providedBy(obj):
-            adapter = state.registry.queryAdapter(obj, IExternalObject, state.name)
+            if hasattr(obj, "toExternalDictionary"):
+                result = obj.toExternalDictionary(**state.as_kwargs())
+            elif hasattr(obj, "toExternalList"):
+                result = obj.toExternalList()
+            elif isinstance(obj, MAPPING_TYPES):
+                result = _externalize_mapping(obj, state)
+            elif isinstance(obj, SEQUENCE_TYPES) or IFiniteSequence.providedBy(obj):
+                result = _externalize_sequence(obj, state)
+            else:
+                # Otherwise, we probably won't be able to JSON-ify it.
+                # TODO: Should this live here, or at a higher level where the ultimate
+                # external target/use-case is known?
+                replacer = state.default_non_externalizable_replacer
+                result = state.registry.queryAdapter(obj, INonExternalizableReplacementFactory,
+                                                     default=replacer)(obj)
 
-            if adapter is None and state.name != '':
-                # try for the default, but allow passing name of None to
-                # disable (?)
-                adapter = state.registry.queryAdapter(obj, IExternalObject)
+        _decorate_external(obj, result, state)
 
-            if adapter is not None:
-                obj = adapter
-                obj_has_usable_external_object = True
-
-        # Note that for speed, before calling 'recall' we are performing the
-        # primitive check
-        result = obj
-        if obj_has_usable_external_object:  # either an adapter or the original object
-            result = obj.toExternalObject(request=state.request, name=state.name,
-                                          decorate=decorate, useCache=useCache,
-                                          decorate_callback=decorate_callback)
-        elif hasattr(obj, "toExternalDictionary"):
-            result = obj.toExternalDictionary(request=state.request, name=state.name,
-                                              decorate=decorate, useCache=useCache,
-                                              decorate_callback=decorate_callback)
-        elif hasattr(obj, "toExternalList"):
-            result = obj.toExternalList()
-        elif isinstance(obj, MAPPING_TYPES):
-            # XXX: This winds up calling decorate_callback at least twice.
-            result = internal_to_standard_external_dictionary(
-                obj,
-                registry=state.registry,
-                request=state.request,
-                decorate=decorate,
-                decorate_callback=decorate_callback)
-            if obj.__class__ is dict:
-                result.pop('Class', None)
-            # Note that we recurse on the original items, not the things newly added.
-            # NOTE: This means that Links added here will not be externalized. There
-            # is an IExternalObjectDecorator that does that
-            for key, value in obj.items():
-                if not isinstance(value, PRIMITIVES):
-                    ext_obj = _to_external_object_state(value, state,
-                                                        top_level=False,
-                                                        decorate=decorate,
-                                                        useCache=useCache,
-                                                        decorate_callback=decorate_callback)
-                else:
-                    ext_obj = value
-                result[key] = ext_obj
-
-        elif isinstance(obj, SEQUENCE_TYPES) or IFiniteSequence.providedBy(obj):
-            result = []
-            for value in obj:
-                if not isinstance(value, PRIMITIVES):
-                    ext_obj = _to_external_object_state(value, state,
-                                                        top_level=False,
-                                                        decorate=decorate,
-                                                        useCache=useCache,
-                                                        decorate_callback=decorate_callback)
-                else:
-                    ext_obj = value
-                result.append(ext_obj)
-            result = state.registry.getAdapter(result,
-                                               ILocatedExternalSequence)
-        elif obj is not None:
-            # Otherwise, we probably won't be able to JSON-ify it.
-            # TODO: Should this live here, or at a higher level where the ultimate
-            # external target/use-case is known?
-            replacer = state.default_non_externalizable_replacer
-            result = state.registry.queryAdapter(obj, INonExternalizableReplacementFactory,
-                                                 default=replacer)(obj)
-
-        if decorate:
-            for decorator in state.registry.subscribers((orig_obj,), IExternalObjectDecorator):
-                decorator.decorateExternalObject(orig_obj, result)
-        elif callable(decorate_callback):
-            decorate_callback(orig_obj, result)
-
-        # Request specific decorating, if given, is more specific than plain object
-        # decorating, so it gets to go last.
-        if decorate and state.request is not None and state.request is not NotGiven:
-            for decorator in state.registry.subscribers((orig_obj, state.request),
-                                                        IExternalObjectDecorator):
-                decorator.decorateExternalObject(orig_obj, result)
-
-        if useCache:  # save result
-            state.memo[orig_obj_id] = (orig_obj, result)
+        if state.useCache:  # save result
+            state.memo[orig_obj_id] = (obj, result)
         return result
     except state.catch_components as t:
-        if top_level:
+        if top_level or state.catch_component_action is None:
             raise
         # python rocks. catch_components could be an empty tuple, meaning we catch nothing.
         # or it could be any arbitrary list of exceptions.
@@ -286,7 +359,8 @@ def to_external_object(
     :param decorate_callback: Callable to be invoked in case there is no decaration
     """
 
-    # Catch the primitives up here, quickly
+    # Catch the primitives up here, quickly. This catches
+    # numbers, strings, and None
     if isinstance(obj, PRIMITIVES):
         return obj
 
@@ -305,14 +379,13 @@ def to_external_object(
 
     state = _ExternalizationState(memos, name, registry, catch_components, catch_component_action,
                                   request,
-                                  default_non_externalizable_replacer)
+                                  default_non_externalizable_replacer,
+                                  decorate, useCache, decorate_callback)
 
     _manager_push((name, memos))
 
     try:
-        return _to_external_object_state(obj, state, top_level=True,
-                                         decorate=decorate, useCache=useCache,
-                                         decorate_callback=decorate_callback)
+        return _to_external_object_state(obj, state, top_level=True)
     finally:
         _manager_pop()
 

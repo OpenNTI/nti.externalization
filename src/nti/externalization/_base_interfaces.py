@@ -194,7 +194,7 @@ def get_standard_internal_fields():
     return _standard_internal_fields
 
 
-PRIMITIVES = six.string_types + (numbers.Number, bool)
+PRIMITIVES = six.string_types + (numbers.Number, bool, type(None))
 
 
 

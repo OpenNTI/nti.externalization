@@ -473,7 +473,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 break
 
         if ext_class_name:
-            mergeFrom = mergeFrom or {}
+            mergeFrom = mergeFrom if mergeFrom is not None else {}
             mergeFrom[StandardExternalFields.CLASS] = ext_class_name
 
         result = super(InterfaceObjectIO, self).toExternalObject(mergeFrom=mergeFrom, **kwargs)
