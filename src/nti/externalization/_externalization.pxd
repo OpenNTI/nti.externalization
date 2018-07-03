@@ -94,7 +94,9 @@ cpdef toExternalObject(obj,
                        decorate_callback=*,
                        default_non_externalizable_replacer=*)
 
-
+@cython.locals(
+    obj_has_usable_external_object=bint,
+)
 cdef _to_external_object_state(obj, _ExternalizationState state,
                                bint top_level=*,
                                bint decorate=*,

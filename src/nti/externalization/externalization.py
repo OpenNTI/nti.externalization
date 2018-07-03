@@ -218,14 +218,14 @@ def _to_external_object_state(obj, state, top_level=False, decorate=True,
             and not getattr(obj, '__ext_ignore_toExternalObject__', False)
 
         if not obj_has_usable_external_object and not IExternalObject.providedBy(obj):
-            adapter = state.registry.queryAdapter(obj, IExternalObject, default=None,
-                                                  name=state.name)
-            if not adapter and state.name != '':
+            adapter = state.registry.queryAdapter(obj, IExternalObject, state.name)
+
+            if adapter is None and state.name != '':
                 # try for the default, but allow passing name of None to
                 # disable (?)
-                adapter = state.registry.queryAdapter(obj, IExternalObject,
-                                                      default=None, name='')
-            if adapter:
+                adapter = state.registry.queryAdapter(obj, IExternalObject)
+
+            if adapter is not None:
                 obj = adapter
                 obj_has_usable_external_object = True
 
