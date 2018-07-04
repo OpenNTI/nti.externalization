@@ -8,6 +8,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# pylint:disable=inconsistent-return-statements
 
 from calendar import timegm as dt_tuple_to_unix
 
@@ -25,7 +26,6 @@ StandardInternalFields = get_standard_internal_fields()
 def datetime_to_unix_time(dt):
     if dt is not None:
         return dt_tuple_to_unix(dt.utctimetuple())
-    return None
 
 
 _LAST_MOD_FIELDS = (

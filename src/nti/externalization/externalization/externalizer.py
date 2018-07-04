@@ -193,7 +193,7 @@ def _obj_has_usable_externalObject(obj):
         if has_ext_obj:
             ext_ignored = getattr(kind, '__ext_ignore_toExternalObject__', None)
             answer = not ext_ignored
-            if ext_ignored is not None:
+            if ext_ignored is not None: # pragma: no cover
                 warnings.warn("The type %r still has __ext_ignore_toExternalObject__. "
                               "Remove it and toExternalObject()." % (kind,),
                               FutureWarning)

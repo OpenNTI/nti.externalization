@@ -526,6 +526,15 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(ex_dic,
                     has_entry(StandardExternalFields.CREATED_TIME, is_(Number)))
 
+
+    def test_stand_ext_props(self):
+        self.assertIn(StandardExternalFields.CREATED_TIME,
+                      StandardExternalFields.EXTERNAL_KEYS)
+
+
+        self.assertIn('CREATED_TIME',
+                      StandardExternalFields.ALL)
+
     def test_to_stand_dict_merges(self):
         obj = {}
         result = to_standard_external_dictionary(obj, mergeFrom={'abc': 42})
@@ -554,6 +563,13 @@ class TestToExternalObject(ExternalizationLayerTest):
 
     def test_sequence_of_primitives(self):
         assert_that(toExternalObject([42]), is_([42]))
+
+    def test_mapping_of_non_primitives(self):
+        class Foo(object):
+            def toExternalObject(self, **kwargs):
+                return 42
+        assert_that(toExternalObject({'key': Foo()}),
+                    is_({'key': 42}))
 
     def test_decorate_callback(self):
         # decorate_callback doesn't make much sense.
