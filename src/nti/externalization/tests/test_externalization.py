@@ -38,6 +38,7 @@ from ..externalization import removed_unserializable
 from ..extension_points import set_external_identifiers
 from ..externalization import to_standard_external_dictionary
 from ..externalization import toExternalObject
+from ..externalization.standard_fields import get_creator
 from ..interfaces import EXT_REPR_JSON
 from ..interfaces import EXT_REPR_YAML
 from ..interfaces import IExternalObject
@@ -263,7 +264,7 @@ class TestFunctions(ExternalizationLayerTest):
             choose_field({}, Raises(), u'ext_name',
                          fields=('a', 'b'))
 
-    def test_choose_field_system_user(self):
+    def test_choose_field_system_user_not_special(self):
         from nti.externalization.externalization import SYSTEM_USER_NAME
         from zope.security.interfaces import IPrincipal
         from zope.security.management import system_user
@@ -279,7 +280,27 @@ class TestFunctions(ExternalizationLayerTest):
         result = {}
         choose_field(result, WithSystemUser,
                      StandardExternalFields.CREATOR, fields=('user',))
+        assert_that(result, is_({StandardExternalFields.CREATOR: WithSystemUser.user}))
+
+    def test_get_creator_system_user(self):
+        from nti.externalization.externalization import SYSTEM_USER_NAME
+        from zope.security.interfaces import IPrincipal
+        from zope.security.management import system_user
+
+        @interface.implementer(IPrincipal)
+        class MySystemUser(object):
+            id = system_user.id
+
+
+        class WithSystemUser(object):
+            creator = MySystemUser()
+
+        result = {}
+
+        value = get_creator(WithSystemUser, None, result)
+        assert_that(value, is_(SYSTEM_USER_NAME))
         assert_that(result, is_({StandardExternalFields.CREATOR: SYSTEM_USER_NAME}))
+
 
 
 class TestDecorators(CleanUp,

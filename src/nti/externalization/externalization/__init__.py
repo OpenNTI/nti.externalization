@@ -33,8 +33,8 @@ from nti.externalization.extension_points import get_current_request
 from .replacers import NonExternalizableObjectError
 
 from .fields import choose_field
-from .fields import SYSTEM_USER_NAME
 
+from .standard_fields import SYSTEM_USER_NAME
 from .standard_fields import get_last_modified_time
 from .standard_fields import get_created_time
 
