@@ -2,11 +2,10 @@
 import cython
 
 
-from nti.externalization._externalization cimport toExternalObject as _toExternalObject
-from nti.externalization._externalization cimport stripSyntheticKeysFromExternalDictionary
-from nti.externalization._externalization cimport _isMagicKey
-from nti.externalization._externalization cimport to_minimal_standard_external_dictionary
-from nti.externalization._externalization cimport internal_to_standard_external_dictionary
+from nti.externalization.externalization._externalizer cimport to_external_object as _toExternalObject
+
+from nti.externalization.externalization._dictionary cimport to_minimal_standard_external_dictionary
+from nti.externalization.externalization._dictionary cimport internal_to_standard_external_dictionary
 
 from nti.externalization.__base_interfaces cimport get_standard_external_fields
 from nti.externalization.__base_interfaces cimport StandardExternalFields as SEF

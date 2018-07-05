@@ -56,11 +56,11 @@
 			 provides=".interfaces.IExternalizedObjectFactoryFinder" />
 
 	<adapter for=""
-			 factory=".externalization._DevmodeNonExternalizableObjectReplacer"
+			 factory=".externalization.replacers.DevmodeNonExternalizableObjectReplacementFactory"
 			 zcml:condition="have devmode" />
 
 	<adapter for="*"
-			 factory=".externalization._DevmodeNonExternalizableObjectReplacer"
+			 factory=".externalization.replacers.DevmodeNonExternalizableObjectReplacementFactory"
 			 zcml:condition="have devmode" />
 
 </configure>

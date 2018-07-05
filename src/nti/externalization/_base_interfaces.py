@@ -13,6 +13,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numbers
+import six
+
 __all__ = [
     'NotGiven',
     'LocatedExternalDict',
@@ -61,6 +64,9 @@ class LocatedExternalDict(dict):
         self.__acl__ = ()
         self.mimeType = None
 
+    def update_from_other(self, other):
+        return dict.update(self, other)
+
 def make_external_dict():
     # This layer of indirection is for cython; it can't cimport
     # types when the extension name doesn't match the
@@ -92,7 +98,9 @@ class StandardExternalFields(object):
         'ITEMS',
         'TOTAL',
         'ITEM_COUNT',
-        'ALL'
+
+        '_ALL_ATTR_NAMES',
+        '_ALL_EXTERNAL_KEYS',
     )
 
     def __init__(self):
@@ -111,13 +119,44 @@ class StandardExternalFields(object):
         self.ITEMS = u'Items'
         self.TOTAL = u'Total'
         self.ITEM_COUNT = u'ItemCount'
-        self.ALL = frozenset(StandardExternalFields.__slots__) - {'ALL'}
 
+        self._ALL_ATTR_NAMES = frozenset((s for s in StandardExternalFields.__slots__
+                                          if not s.startswith('_')))
+        self._ALL_EXTERNAL_KEYS = frozenset((getattr(self, s) for s in self._ALL_ATTR_NAMES))
+
+    @property
+    def ALL(self):
+        return self._ALL_ATTR_NAMES
+
+    @property
+    def EXTERNAL_KEYS(self):
+        return self._ALL_EXTERNAL_KEYS
 
 _standard_external_fields = StandardExternalFields()
 
 def get_standard_external_fields():
     return _standard_external_fields
+
+
+#: A set of the external keys (fields) used in
+#: minimal external dictionaries. In general,
+#: you should prefer StandardExternalFields.EXTERNAL_KEYS
+MINIMAL_SYNTHETIC_EXTERNAL_KEYS = frozenset((
+    'OID',
+    'ID',
+    'Last Modified',
+    'Creator',
+    'ContainerId',
+    'Class',
+))
+
+
+def isSyntheticKey(k):
+    """
+    Deprecated. Prefer to test against StandardExternalFields.EXTERNAL_KEYS
+    """
+    # pylint:disable=protected-access
+    return k in _standard_external_fields._ALL_EXTERNAL_KEYS
 
 
 
@@ -153,6 +192,10 @@ _standard_internal_fields = StandardInternalFields()
 
 def get_standard_internal_fields():
     return _standard_internal_fields
+
+
+PRIMITIVES = six.string_types + (numbers.Number, bool, type(None))
+
 
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position

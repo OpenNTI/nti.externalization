@@ -21,7 +21,7 @@ cdef IInternalObjectUpdater
 cdef IPersistent_providedBy
 
 # constants
-cdef tuple _primitives
+cdef tuple PRIMITIVES
 cdef dict _EMPTY_DICT
 
 

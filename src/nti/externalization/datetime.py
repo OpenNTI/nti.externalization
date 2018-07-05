@@ -93,10 +93,9 @@ def _local_tzinfo(local_tzname=None):
     if not tzinfo:
         # well nuts. Do the best we can with the current info
         # First, get the timezone name, using daylight name if appropriate
-        if time.daylight and time.altzone is not None and time.tzname[1]:
-            offset = time.altzone
-        else:
-            offset = time.timezone
+        offset = (time.altzone
+                  if time.daylight and time.altzone is not None and time.tzname[1]
+                  else time.timezone)
 
         add = '+' if offset > 0 else ''
         local_tzname = 'Etc/GMT' + add + str((offset // 60 // 60))

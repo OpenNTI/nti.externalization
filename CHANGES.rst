@@ -29,6 +29,11 @@
 
 - The ``notify_modified`` alias for ``notifyModified`` has been removed.
 
+- Decorating external mappings and external objects handled
+  ``decorate_callback`` differently. This argument is only used when
+  ``decorate`` is false. This argument is also confusing and should be
+  considered deprecated.
+
 1.0.0a1 (2017-09-29)
 ====================
 

@@ -14,6 +14,8 @@ cdef class LocatedExternalDict(dict):
     cdef public __acl__
     cdef readonly mimeType
 
+    cdef update_from_other(self, other)
+
 cpdef LocatedExternalDict make_external_dict()
 
 cdef class StandardExternalFields(object):
@@ -33,7 +35,9 @@ cdef class StandardExternalFields(object):
     cdef readonly unicode ITEMS
     cdef readonly unicode TOTAL
     cdef readonly unicode ITEM_COUNT
-    cdef readonly frozenset ALL
+
+    cdef readonly frozenset _ALL_ATTR_NAMES
+    cdef readonly frozenset _ALL_EXTERNAL_KEYS
 
 cdef StandardExternalFields _standard_external_fields
 

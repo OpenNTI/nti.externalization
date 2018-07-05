@@ -79,7 +79,15 @@ if not PYPY:
             ('internalization.events', ('_interface_cache',)),
             ('internalization.externals', ()),
             ('internalization.updater', ()),
-            ('externalization', ('_base_interfaces',)),
+            ('externalization.fields', ('_base_interfaces',)),
+            ('externalization.standard_fields', (
+                '_base_interfaces',
+                '_fields',
+            )),
+            ('externalization.dictionary', ('_base_interfaces',)),
+            ('externalization.externalizer', ('_base_interfaces',)),
+            ('externalization.decorate', ()),
+            #('externalization', ('_base_interfaces',)),
             ('_interface_cache', ()),
             ('datastructures', (
                 '_base_interfaces',

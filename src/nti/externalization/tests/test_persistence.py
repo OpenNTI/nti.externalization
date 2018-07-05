@@ -117,7 +117,7 @@ class TestGetPersistentState(unittest.TestCase):
 
         assert_that(getPersistentState(P), is_(persistent.CHANGED))
 
-    def test_with_proxy(self):
+    def test_with_proxy_p_changed(self):
         from zope.proxy import ProxyBase
         class P(object):
             _p_state = persistent.UPTODATE
@@ -135,6 +135,24 @@ class TestGetPersistentState(unittest.TestCase):
         assert_that(getPersistentState(proxy), is_(persistent.CHANGED))
 
         setPersistentStateChanged(proxy) # Does nothing
+
+    def test_with_proxy_p_state(self):
+        from zope.proxy import ProxyBase
+        class P(object):
+            _p_state = persistent.CHANGED
+            _p_jar = None
+
+        class MyProxy(ProxyBase):
+
+            @property
+            def _p_state(self):
+                raise AttributeError()
+
+        proxy = MyProxy(P())
+        assert_that(getPersistentState(proxy), is_(persistent.CHANGED))
+
+        setPersistentStateChanged(proxy) # Does nothing
+
 
 class TestWeakRef(unittest.TestCase):
 
