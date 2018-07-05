@@ -38,6 +38,9 @@
   ``decorate`` is false. This argument is also confusing and should be
   considered deprecated.
 
+- ``choose_field`` no longer has the undocumented conversion behaviour for the
+  CREATOR external field name.
+
 1.0.0a1 (2017-09-29)
 ====================
 

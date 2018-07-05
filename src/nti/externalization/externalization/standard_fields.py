@@ -12,7 +12,11 @@ from __future__ import print_function
 
 from calendar import timegm as dt_tuple_to_unix
 
+from six import text_type
+
 from zope.dublincore.interfaces import IDCTimes
+from zope.security.management import system_user
+from zope.security.interfaces import IPrincipal
 
 from nti.externalization._base_interfaces import get_standard_external_fields
 from nti.externalization._base_interfaces import get_standard_internal_fields
@@ -21,6 +25,14 @@ from .fields import choose_field
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
+
+_SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
+SYSTEM_USER_NAME = _SYSTEM_USER_NAME # Export from cython to python
+_SYSTEM_USER_ID = system_user.id
+del system_user
+
+IPrincipal_providedBy = IPrincipal.providedBy
+del IPrincipal
 
 
 def datetime_to_unix_time(dt):
@@ -95,14 +107,28 @@ _CREATOR_FIELDS = (
     StandardExternalFields.CREATOR,
 )
 
+
+def _system_user_converter(value):
+    if IPrincipal_providedBy(value) and value.id == _SYSTEM_USER_ID:
+        # Catch the system user
+        value = SYSTEM_USER_NAME
+    else:
+        # This is a likely recursion point, we want to be
+        # sure we don't do that.
+        value = text_type(value)
+    return value
+
+
 def get_creator(context, default=None, _write_into=None):
-    holder = _write_into if _write_into is not None else {}
+    for field_name in _CREATOR_FIELDS:
+        result = getattr(context, field_name, None)
+        if result is not None:
+            result = _system_user_converter(result)
+            if _write_into is not None:
+                _write_into[StandardExternalFields.CREATOR] = result
+            return result
 
-    choose_field(holder, context, StandardExternalFields.CREATOR,
-                 None,
-                 _CREATOR_FIELDS)
-
-    return holder.get(StandardExternalFields.CREATOR, default)
+    return default
 
 
 _CONTAINER_FIELDS = (
