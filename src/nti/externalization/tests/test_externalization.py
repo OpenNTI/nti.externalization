@@ -253,15 +253,15 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(isSyntheticKey('OID'), is_true())
         assert_that(isSyntheticKey('key'), is_false())
 
-    def test_choose_field_POSKeyError_ignored(self):
+    def test_choose_field_POSKeyError_not_ignored(self):
         from ZODB.POSException import POSKeyError
         class Raises(object):
             def __getattr__(self, name):
                 raise POSKeyError(name)
 
-        assert_that(choose_field({}, Raises(), u'ext_name',
-                                 fields=('a', 'b')),
-                    is_(none()))
+        with self.assertRaises(POSKeyError):
+            choose_field({}, Raises(), u'ext_name',
+                         fields=('a', 'b'))
 
     def test_choose_field_system_user(self):
         from nti.externalization.externalization import SYSTEM_USER_NAME

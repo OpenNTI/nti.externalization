@@ -6,6 +6,10 @@
 1.0.0a2 (unreleased)
 ====================
 
+- The low levels of externalization no longer catch and hide
+  POSKeyError. This indicates a problem with the database. See
+  https://github.com/NextThought/nti.externalization/issues/60
+
 - Remove support for ``object_hook`` in
   ``update_from_external_object``. See
   https://github.com/NextThought/nti.externalization/issues/29.
