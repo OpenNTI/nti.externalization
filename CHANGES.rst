@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a2 (unreleased)
+1.0.0a2 (2018-07-05)
 ====================
 
 - The low levels of externalization no longer catch and hide
