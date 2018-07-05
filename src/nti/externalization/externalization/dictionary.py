@@ -22,7 +22,6 @@ from nti.externalization._base_interfaces import make_external_dict
 from nti.externalization._base_interfaces import NotGiven
 
 
-from nti.externalization.extension_points import get_current_request
 from nti.externalization.extension_points import set_external_identifiers
 from nti.externalization.interfaces import IExternalMappingDecorator
 
@@ -36,6 +35,7 @@ from nti.externalization.externalization.standard_fields import get_creator
 from nti.externalization.externalization.standard_fields import get_container_id
 from nti.externalization.externalization.standard_fields import get_class
 
+from nti.externalization.externalization.decorate import decorate_external_object
 
 StandardExternalFields = get_standard_external_fields()
 
@@ -63,14 +63,12 @@ def internal_to_standard_external_dictionary(
 
     get_container_id(self, None, result)
 
-    if decorate:
-        if request is NotGiven:
-            request = get_current_request()
-
-        decorate_external_mapping(self, result, registry=registry,
-                                  request=request)
-    elif callable(decorate_callback):
-        decorate_callback(self, result)
+    decorate_external_object(
+        decorate, decorate_callback,
+        IExternalMappingDecorator, 'decorateExternalMapping',
+        self, result,
+        registry, request
+    )
 
     return result
 
@@ -123,20 +121,6 @@ def to_standard_external_dictionary(
         request,
         decorate_callback,
     )
-
-
-def decorate_external_mapping(self, result, registry=component, request=NotGiven):
-    for decorator in registry.subscribers((self,), IExternalMappingDecorator):
-        decorator.decorateExternalMapping(self, result)
-
-    if request is NotGiven:
-        request = get_current_request()
-
-    if request is not None:
-        for decorator in registry.subscribers((self, request), IExternalMappingDecorator):
-            decorator.decorateExternalMapping(self, result)
-
-    return result
 
 
 def to_minimal_standard_external_dictionary(self, mergeFrom=None):

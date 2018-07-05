@@ -38,6 +38,7 @@ from nti.externalization.externalization.replacers import DefaultNonExternalizab
 
 from nti.externalization.externalization.dictionary import internal_to_standard_external_dictionary
 
+from nti.externalization.externalization.decorate import decorate_external_object
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -232,21 +233,6 @@ def _externalize_object(obj, state):
     return result
 
 
-def _decorate_external(obj, result, state):
-    if state.decorate:
-        for decorator in state.registry.subscribers((obj,), IExternalObjectDecorator):
-            decorator.decorateExternalObject(obj, result)
-    elif callable(state.decorate_callback):
-        state.decorate_callback(obj, result)
-
-    # Request specific decorating, if given, is more specific than plain object
-    # decorating, so it gets to go last.
-    if state.decorate and state.request is not None and state.request is not NotGiven:
-        for decorator in state.registry.subscribers((obj, state.request),
-                                                    IExternalObjectDecorator):
-            decorator.decorateExternalObject(obj, result)
-
-
 def _to_external_object_state(obj, state, top_level=False):
     # This function is way to long and ugly. Given cython's 0 function call overhead,
     # we can probably refactor.
@@ -295,7 +281,12 @@ def _to_external_object_state(obj, state, top_level=False):
                 result = state.registry.queryAdapter(obj, INonExternalizableReplacementFactory,
                                                      default=replacer)(obj)
 
-        _decorate_external(obj, result, state)
+        decorate_external_object(
+            state.decorate, state.decorate_callback,
+            IExternalObjectDecorator, 'decorateExternalObject',
+            obj, result,
+            state.registry, state.request
+        )
 
         if state.useCache:  # save result
             state.memo[orig_obj_id] = (obj, result)
@@ -326,7 +317,7 @@ def to_external_object(
         request=NotGiven,
         decorate=True,
         useCache=True,
-        # XXX: Why do we have this? It's only used when decotare is False,
+        # XXX: Why do we have this? It's only used when decorate is False,
         # which doesn't make much sense.
         decorate_callback=NotGiven,
         default_non_externalizable_replacer=DefaultNonExternalizableReplacer
@@ -364,7 +355,7 @@ def to_external_object(
     if isinstance(obj, PRIMITIVES):
         return obj
 
-    manager_top = _manager_get()
+    manager_top = _manager_get() # (name, memos)
     if name is NotGiven:
         name = manager_top[0]
     if name is NotGiven:

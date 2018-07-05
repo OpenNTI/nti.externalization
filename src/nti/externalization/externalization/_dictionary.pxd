@@ -12,6 +12,8 @@ from ._standard_fields cimport get_creator
 from ._standard_fields cimport get_container_id
 from ._standard_fields cimport get_class
 
+from ._decorate cimport decorate_external_object
+
 cdef SEF StandardExternalFields
 
 
@@ -20,7 +22,6 @@ cdef warnings
 cdef component
 
 
-cdef get_current_request
 cdef set_external_identifiers
 cdef IExternalMappingDecorator
 
@@ -36,9 +37,6 @@ cpdef LED internal_to_standard_external_dictionary(self,
                                                    bint decorate=*,
                                                    request=*,
                                                    decorate_callback=*)
-
-
-cpdef decorate_external_mapping(self, result, registry=*, request=*)
 
 
 cpdef to_minimal_standard_external_dictionary(self, mergeFrom=*)

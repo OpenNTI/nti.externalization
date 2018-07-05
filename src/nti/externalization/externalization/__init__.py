@@ -2,11 +2,11 @@
 """
 Functions related to actually externalizing objects.
 
+Only import from this module. Sub-modules of this package
+are implementation details.
 
 """
-# There are a *lot* of fixme (XXX and the like) in this file.
-# Turn those off in general so we can see through the noise.
-# pylint:disable=fixme
+
 
 # Our request hook function always returns None, and pylint
 # flags that as useless (good for it)
@@ -21,11 +21,14 @@ from __future__ import print_function
 import collections
 import warnings
 
+from zope import component
 
 from nti.externalization._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 from nti.externalization._base_interfaces import isSyntheticKey
+from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import PRIMITIVES as _primitives
 
+from nti.externalization.extension_points import get_current_request
 
 from .replacers import NonExternalizableObjectError
 
@@ -37,16 +40,10 @@ from .standard_fields import get_created_time
 
 from .dictionary import to_standard_external_dictionary
 from .dictionary import to_minimal_standard_external_dictionary
-from .dictionary import decorate_external_mapping
 
 from .externalizer import to_external_object
 
-
-#: Constant requesting JSON format data
-EXT_FORMAT_JSON = 'json'
-
-
-
+from .decorate import decorate_external_mapping as _decorate_external_mapping
 
 __all__ = [
     'choose_field',
@@ -56,11 +53,17 @@ __all__ = [
 
     'to_standard_external_dictionary',
     'to_minimal_standard_external_dictionary',
-    'decorate_external_mapping', # XXX: Maybe in a new file?
+
+    'decorate_external_mapping',
 
     'to_external_object',
     'catch_replace_action',
 ]
+
+
+#: Constant requesting JSON format data
+EXT_FORMAT_JSON = 'json'
+
 
 def catch_replace_action(obj, exc):
     """
@@ -70,6 +73,15 @@ def catch_replace_action(obj, exc):
     return {"Class": "BrokenExceptionObject"}
 
 
+def decorate_external_mapping(original_object, external_object,
+                              registry=component, request=NotGiven):
+    if request is NotGiven:
+        request = get_current_request()
+    return _decorate_external_mapping(
+        original_object, external_object,
+        registry, request
+    )
+
 # BWC exports
 
 SYSTEM_USER_NAME = SYSTEM_USER_NAME
@@ -77,9 +89,6 @@ to_standard_external_created_time = get_created_time
 to_standard_external_last_modified_time = get_last_modified_time
 isSyntheticKey = isSyntheticKey
 toExternalObject = to_external_object
-
-logger = __import__('logging').getLogger(__name__)
-
 
 
 def stripSyntheticKeysFromExternalDictionary(external):

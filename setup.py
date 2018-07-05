@@ -86,6 +86,7 @@ if not PYPY:
             )),
             ('externalization.dictionary', ('_base_interfaces',)),
             ('externalization.externalizer', ('_base_interfaces',)),
+            ('externalization.decorate', ()),
             #('externalization', ('_base_interfaces',)),
             ('_interface_cache', ()),
             ('datastructures', (

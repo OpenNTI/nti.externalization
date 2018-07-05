@@ -3,7 +3,7 @@ import cython
 
 from nti.externalization.externalization._dictionary cimport internal_to_standard_external_dictionary
 from nti.externalization.__base_interfaces cimport LocatedExternalDict as LED
-
+from nti.externalization.externalization._decorate cimport decorate_external_object
 
 # Imports
 cdef collections
@@ -84,8 +84,6 @@ cpdef to_external_object(
 cdef LED _externalize_mapping(obj, _ExternalizationState state)
 
 cdef _externalize_sequence(obj, _ExternalizationState state)
-
-cdef _decorate_external(obj, result, _ExternalizationState state)
 
 cdef _usable_externalObject_cache
 cdef _usable_externalObject_cache_get
