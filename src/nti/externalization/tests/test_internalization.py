@@ -106,7 +106,7 @@ class TestFunctions(CleanUp,
     def test_search_for_factory_updates_search_set(self):
         from zope.testing.loggingsupport import InstalledHandler
 
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(record=True):
             INT.register_legacy_search_module(__name__)
             # The cache is initialized lazily
             assert_that(__name__, is_in(INT.LEGACY_FACTORY_SEARCH_MODULES))
@@ -483,6 +483,7 @@ class TestUpdateFromExternaObject(CleanUp,
         with warnings.catch_warnings(record=True) as w:
             self._callFUT(contained, {})
         assert_that(contained, has_property('updated', True))
+        __traceback_info__ = [repr(i.__dict__) for i in w]
         assert_that(w, has_length(1))
 
     def test_update_mapping_with_registered_factory(self):

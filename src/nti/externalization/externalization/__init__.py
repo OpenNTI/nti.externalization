@@ -107,8 +107,9 @@ def toExternalDictionary(*args, **kwargs): # pragma: no cover
     return to_standard_external_dictionary(*args, **kwargs)
 
 
-def is_nonstr_iter(v):
-    warnings.warn("'is_nonstr_iter' will be deleted.", FutureWarning)
+def is_nonstr_iter(v): # pragma: no cover
+    warnings.warn("'is_nonstr_iter' will be deleted. It is broken on Python 3",
+                  FutureWarning, stacklevel=2)
     return hasattr(v, '__iter__')
 
 
@@ -116,9 +117,10 @@ def removed_unserializable(ext):
     # pylint:disable=too-many-branches
     # XXX: Why is this here? We don't use it anymore.
     # Can it be removed?
-    warnings.warn("'removed_unserializable' will be deleted.", FutureWarning)
+    warnings.warn("'removed_unserializable' will be deleted.", FutureWarning, stacklevel=2)
     def _is_sequence(m):
-        return not isinstance(m, collections.Mapping) and is_nonstr_iter(m)
+        return (not isinstance(m, (str, collections.Mapping))
+                and hasattr(m, '__iter__'))
 
     def _clean(m):
         if isinstance(m, collections.Mapping):

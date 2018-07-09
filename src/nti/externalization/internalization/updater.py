@@ -94,7 +94,16 @@ def _get_update_signature(updater):
     spec = _argspec_cache.get(kind)
     if spec is None:
         try:
-            argspec = inspect.getargspec(updater.updateFromExternalObject)
+            func = updater.updateFromExternalObject
+            if hasattr(inspect, 'getfullargspec'): # pragma: no cover
+                # Python 3. getargspec() is deprecated.
+                argspec = inspect.getfullargspec(func) # pylint:disable=no-member
+                keywords = argspec.varkw
+            else:
+                argspec = inspect.getargspec(func)
+                keywords = argspec.keywords
+            args = argspec.args
+            defaults = argspec.defaults
         except TypeError: # pragma: no cover (This is hard to catch in pure-python coverage mode)
             # Cython functions and other extension types are "not a Python function"
             # and don't work with this. We assume they use the standard form accepting
@@ -105,24 +114,24 @@ def _get_update_signature(updater):
             # argspec.keywords, if not none, is the name of the **kwarg
             # These all must be methods (or at least classmethods), having
             # an extra 'self' argument.
-            if not argspec.keywords:
+            if not keywords:
                 # No **kwarg, good!
-                if len(argspec.args) == 3:
+                if len(args) == 3:
                     # update(ext, context) or update(ext, context=None) or update(ext, dataserver)
                     spec = _UPDATE_ARGS_TWO
                 else:
                     # update(ext)
                     spec = _UPDATE_ARGS_ONE
             else:
-                if len(argspec.args) == 3:
+                if len(args) == 3:
                     # update(ext, context, **kwargs) or update(ext, dataserver, **kwargs)
                     spec = _UPDATE_ARGS_TWO
-                elif argspec.keywords.startswith("unused") or argspec.keywords.startswith('_'):
+                elif keywords.startswith("unused") or keywords.startswith('_'):
                     spec = _UPDATE_ARGS_ONE
                 else:
                     spec = _UPDATE_ARGS_CONTEXT_KW
 
-            if 'dataserver' in argspec.args and argspec.defaults and len(argspec.defaults) >= 1:
+            if 'dataserver' in args and defaults and len(defaults) >= 1:
                 warnings.warn("The type %r still uses updateFromExternalObject(dataserver=None). "
                               "Please change to context=None." % (kind,),
                               FutureWarning)
@@ -130,6 +139,7 @@ def _get_update_signature(updater):
         _argspec_cache[kind] = spec
 
     return spec
+
 
 _usable_updateFromExternalObject_cache = {}
 
@@ -153,6 +163,7 @@ def _obj_has_usable_updateFromExternalObject(obj):
         _usable_updateFromExternalObject_cache[kind] = usable_from
 
     return usable_from
+
 
 try:
     from zope.testing import cleanup # pylint:disable=ungrouped-imports

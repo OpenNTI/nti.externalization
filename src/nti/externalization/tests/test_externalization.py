@@ -204,22 +204,23 @@ class TestFunctions(ExternalizationLayerTest):
 
 
     def test_removed_unserializable(self):
+        import warnings
         marker = object()
         ext = {'x': 1, 'y': [1, 2, marker], 'z': marker,
                'a': {3, 4}, 'b': {'c': (marker, 1)}}
-        removed_unserializable(ext)
+        with warnings.catch_warnings(record=True): # removed_unserializable is deprecated
+            assert_that(removed_unserializable((1, 2, 3)),
+                        is_([1, 2, 3]))
+
+            assert_that(removed_unserializable([[(1, 2, 3)]]),
+                        is_([[[1, 2, 3]]]))
+            removed_unserializable(ext)
         assert_that(ext, has_entry('x', is_(1)))
         assert_that(ext, has_entry('y', is_([1, 2, None])))
         assert_that(ext, has_entry('a', is_([3, 4])))
         assert_that(ext, has_entry('z', is_(none())))
         assert_that(ext, has_entry('b', has_entry('c', is_([None, 1]))))
 
-
-        assert_that(removed_unserializable((1, 2, 3)),
-                    is_([1, 2, 3]))
-
-        assert_that(removed_unserializable([[(1, 2, 3)]]),
-                    is_([[[1, 2, 3]]]))
 
     def test_devmode_non_externalizable_object_replacer(self):
         assert_that(calling(DevmodeNonExternalizableObjectReplacementFactory(None)).with_args(self),
