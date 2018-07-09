@@ -184,9 +184,11 @@ else:
 
 
 def _obj_has_usable_externalObject(obj):
-    # This is for legacy code support, to allow existing methods to move to adapters
-    # and call us without infinite recursion
-    kind = type(obj)
+    # This is for legacy code support, to allow existing methods to
+    # move to adapters and call us without infinite recursion.
+    # We use __class__ instead of type() to allow for proxies;
+    # The proxy itself cannot implement toExternalObject
+    kind = obj.__class__
     answer = _usable_externalObject_cache_get(kind)
     if answer is None:
         answer = False

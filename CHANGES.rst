@@ -6,7 +6,8 @@
 1.0.0a3 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Proxies around objects that implement ``toExternalObject`` are
+  allowed again; the proxied object's ``toExternalObject`` will be called.
 
 
 1.0.0a2 (2018-07-05)

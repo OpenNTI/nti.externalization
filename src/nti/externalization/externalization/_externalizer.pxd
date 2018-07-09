@@ -91,7 +91,7 @@ cdef _usable_externalObject_cache_get
 @cython.locals(
     has_ext_obj=bint,
 )
-cdef _obj_has_usable_externalObject(obj)
+cpdef _obj_has_usable_externalObject(obj)
 
 cdef _externalize_object(obj, _ExternalizationState state)
 
