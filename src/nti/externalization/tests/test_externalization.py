@@ -25,8 +25,6 @@ from nti.testing.matchers import is_true
 from nti.testing.matchers import is_false
 
 from . import ExternalizationLayerTest
-from .._compat import PY3
-from .._compat import PURE_PYTHON
 from ..datastructures import ExternalizableDictionaryMixin
 from ..datastructures import ExternalizableInstanceDict
 from ..externalization import NonExternalizableObjectError
@@ -195,28 +193,10 @@ class TestFunctions(ExternalizationLayerTest):
             def toExternalObject(self, **unused_kwargs):
                 raise MyCustomException
 
-        expect_exception = PY3 and not PURE_PYTHON
-        if expect_exception: # pragma: no cover
-            # Cython 0.28.3 has a bug on Python 3.
-            # https://github.com/cython/cython/issues/2425
-            # Depending on how we factor the code, it may or may
-            # not be triggered.
-            try:
-                assert_that(calling(toExternalObject).with_args(
-                    [Raises()],
-                    catch_components=(MyCustomException,),
-                    catch_component_action=catch_replace_action),
-                            raises(MyCustomException))
-            except AssertionError:
-                # Hmm, it wasn't raised. OK, then we have a fixed
-                # version of Python, or we refactored the code.
-                expect_exception = False
-
-        if not expect_exception:
-            assert_that(toExternalObject([Raises()],
-                                         catch_components=(MyCustomException,),
-                                         catch_component_action=catch_replace_action),
-                        is_([catch_replace_action(None, None)]))
+        assert_that(toExternalObject([Raises()],
+                                     catch_components=(MyCustomException,),
+                                     catch_component_action=catch_replace_action),
+                    is_([catch_replace_action(None, None)]))
 
         # Default doesn't catch
         assert_that(calling(toExternalObject).with_args([Raises()]),
@@ -265,7 +245,6 @@ class TestFunctions(ExternalizationLayerTest):
                          fields=('a', 'b'))
 
     def test_choose_field_system_user_not_special(self):
-        from nti.externalization.externalization import SYSTEM_USER_NAME
         from zope.security.interfaces import IPrincipal
         from zope.security.management import system_user
 
