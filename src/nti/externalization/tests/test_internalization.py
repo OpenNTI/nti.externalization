@@ -7,6 +7,7 @@ from __future__ import print_function
 
 # stdlib imports
 import unittest
+import warnings
 
 import fudge
 from zope import component
@@ -103,7 +104,6 @@ class TestFunctions(CleanUp,
         assert_that(INT.find_factory_for_class_name(''), is_(none()))
 
     def test_search_for_factory_updates_search_set(self):
-        import warnings
         from zope.testing.loggingsupport import InstalledHandler
 
         with warnings.catch_warnings():
@@ -392,16 +392,18 @@ class TestUpdateFromExternaObject(CleanUp,
 
     def test_update_mapping_with_update_on_contained_object_ignored(self):
 
-        class ContainedObject(object):
+        class ContainedObjectIgnoreDeprecated(object):
             updated = False
             __ext_ignore_updateFromExternalObject__ = True
 
             def updateFromExternalObject(self, ext):
                 raise AssertionError("Should not be called")
 
-        contained = ContainedObject()
-        self._callFUT(contained, {})
+        contained = ContainedObjectIgnoreDeprecated()
+        with warnings.catch_warnings(record=True) as w:
+            self._callFUT(contained, {})
         assert_that(contained, has_property('updated', False))
+        assert_that(w, has_length(1))
 
     def test_update_mapping_with_context_arg(self):
         class ContainedObject(object):
@@ -415,17 +417,17 @@ class TestUpdateFromExternaObject(CleanUp,
         assert_that(contained, has_property('updated', True))
 
     def test_update_mapping_with_ds_arg(self):
-        class ContainedObject(object):
+        class ContainedObjectDSArg(object):
             updated = False
             def updateFromExternalObject(self, ext, dataserver):
                 self.updated = True
                 return True
 
-        contained = ContainedObject()
+        contained = ContainedObjectDSArg()
         self._callFUT(contained, {})
         assert_that(contained, has_property('updated', True))
 
-    def test_update_mapping_with_kwargs(self):
+    def test_update_mapping_with_kwargs_only(self):
         class ContainedObject(object):
             updated = False
             args = None
@@ -438,6 +440,50 @@ class TestUpdateFromExternaObject(CleanUp,
         self._callFUT(contained, {})
         assert_that(contained, has_property('updated', True))
         assert_that(contained, has_property('args', {'context': None}))
+
+    def test_update_mapping_with_kwargs_context(self):
+        class ContainedObject(object):
+            updated = False
+            args = None
+            context = None
+            def updateFromExternalObject(self, ext, context=None, **kwargs):
+                self.updated = True
+                self.args = kwargs
+                self.context = context
+                return True
+
+        contained = ContainedObject()
+        self._callFUT(contained, {}, context=42)
+        assert_that(contained, has_property('updated', True))
+        assert_that(contained, has_property('args', {}))
+        assert_that(contained, has_property('context', 42))
+
+    def test_update_mapping_with_unused_kwargs(self):
+        class ContainedObject(object):
+            updated = False
+            args = None
+            def updateFromExternalObject(self, ext, **unused_kwargs):
+                self.updated = True
+                self.args = unused_kwargs
+                return True
+
+        contained = ContainedObject()
+        self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', True))
+        assert_that(contained, has_property('args', {}))
+
+    def test_update_mapping_with_ds_arg_kwarg(self):
+        class ContainedObjectDSArg(object):
+            updated = False
+            def updateFromExternalObject(self, ext, dataserver=None):
+                self.updated = True
+                return True
+
+        contained = ContainedObjectDSArg()
+        with warnings.catch_warnings(record=True) as w:
+            self._callFUT(contained, {})
+        assert_that(contained, has_property('updated', True))
+        assert_that(w, has_length(1))
 
     def test_update_mapping_with_registered_factory(self):
         ext = {'MimeType': 'mime'}

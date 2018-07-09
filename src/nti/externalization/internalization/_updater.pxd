@@ -31,9 +31,9 @@ cdef dict _EMPTY_DICT
 cdef class _RecallArgs(object):
     cdef registry
     cdef context
-    cdef require_updater
-    cdef notify
     cdef pre_hook
+    cdef bint require_updater
+    cdef bint notify
 
 
 cdef _recall(k, obj, ext_obj, _RecallArgs kwargs)
@@ -42,6 +42,15 @@ cpdef update_from_external_object(containedObject,
                                   externalObject,
                                   registry=*,
                                   context=*,
-                                  require_updater=*,
-                                  notify=*,
+                                  bint require_updater=*,
+                                  bint notify=*,
                                   pre_hook=*)
+
+cdef dict _argspec_cacheg
+cdef str _UPDATE_ARGS_TWO
+cdef str _UPDATE_ARGS_ONE
+cdef str _UPDATE_ARGS_CONTEXT_KW
+cdef _get_update_signature(updater)
+
+cdef dict _upsable_updateFromExternalObject_cache
+cdef _obj_has_usable_updateFromExternalObject(obj)

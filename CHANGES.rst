@@ -9,6 +9,20 @@
 - Proxies around objects that implement ``toExternalObject`` are
   allowed again; the proxied object's ``toExternalObject`` will be called.
 
+- The signature for ``updateFromExternalObject()`` has been tightened.
+  It should be ``(self, external_object, context, **kwargs)``, where
+  ``**kwargs`` is optional, as is context. ``**kwargs`` currently
+  contains nothing useful. Uses of ``dataserver=None`` in the
+  signature will generate a warning. This may be tightened further in
+  the future. See `issue 30
+  <https://github.com/NextThought/nti.externalization/issues/30>`_.
+
+- ``__ext_ignore_updateFromExternalObject__`` is officially
+  deprecated and generates a warning.
+
+- ``update_from_external_object`` caches certain information about the
+  types of the updater objects, making it 8-25% faster.
+
 
 1.0.0a2 (2018-07-05)
 ====================

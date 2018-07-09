@@ -7,6 +7,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import perf
 from zope.configuration import xmlconfig
 
@@ -73,6 +75,7 @@ def main(runner=None):
 
     runner.bench_func(__name__ + ": fromExternalObject (context arg)", context_arg)
 
+    warnings.simplefilter('ignore')
     runner.bench_func(__name__ + ": fromExternalObject (ds arg)", ds_arg)
 
 

@@ -40,7 +40,7 @@ class TestFunctions(unittest.TestCase):
         class Proxy(ProxyBase):
 
             def toExternalObject(self, **kwargs):
-                return {'a': 42}
+                raise NotImplementedError
 
         self.assertFalse(_obj_has_usable_externalObject(Proxy(object())))
 
