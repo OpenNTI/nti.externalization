@@ -58,7 +58,7 @@ class TestWithRepr(unittest.TestCase):
     def test_raises_POSError(self):
         def raise_(self):
             from ZODB.POSException import ConnectionStateError
-            raise ConnectionStateError("CSE")
+            raise ConnectionStateError()
 
         @representation.WithRepr(raise_)
         class Foo(object):
@@ -67,11 +67,11 @@ class TestWithRepr(unittest.TestCase):
         r = repr(Foo())
         assert_that(r,
                     is_("<nti.externalization.tests.test_representation.Foo(Ghost, "
-                        "ConnectionStateError('CSE',))>"))
+                        "ConnectionStateError())>"))
 
     def test_raises_attribute_error(self):
         def raise_(self):
-            raise AttributeError("an attr")
+            raise AttributeError()
 
         @representation.WithRepr(raise_)
         class Foo(object):
@@ -80,7 +80,7 @@ class TestWithRepr(unittest.TestCase):
         r = repr(Foo())
         assert_that(r,
                     is_("<nti.externalization.tests.test_representation.Foo("
-                        "AttributeError('an attr',))>"))
+                        "AttributeError())>"))
 
 class TestYaml(unittest.TestCase):
 

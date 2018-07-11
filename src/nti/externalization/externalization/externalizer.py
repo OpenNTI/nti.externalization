@@ -14,8 +14,14 @@ from __future__ import division
 from __future__ import print_function
 
 # stdlib imports
-import collections
 import warnings
+try:
+    from collections.abc import Set
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Set
+    from collections import Mapping
+from collections import defaultdict
 from weakref import WeakKeyDictionary
 
 import BTrees.OOBTree
@@ -42,7 +48,6 @@ from nti.externalization.externalization.decorate import decorate_external_objec
 
 logger = __import__('logging').getLogger(__name__)
 
-defaultdict = collections.defaultdict
 
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
@@ -63,7 +68,7 @@ _manager_push = _manager.push
 #: to be directly externalized.
 SEQUENCE_TYPES = (
     persistent.list.PersistentList,
-    collections.Set,
+    Set,
     list,
     tuple,
 )
@@ -73,7 +78,7 @@ SEQUENCE_TYPES = (
 MAPPING_TYPES = (
     persistent.mapping.PersistentMapping,
     BTrees.OOBTree.OOBTree,
-    collections.Mapping
+    Mapping
 )
 
 

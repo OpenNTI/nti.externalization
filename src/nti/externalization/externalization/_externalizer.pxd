@@ -6,7 +6,6 @@ from nti.externalization.__base_interfaces cimport LocatedExternalDict as LED
 from nti.externalization.externalization._decorate cimport decorate_external_object
 
 # Imports
-cdef collections
 cdef defaultdict
 cdef six
 cdef numbers

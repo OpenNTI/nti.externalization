@@ -95,6 +95,17 @@ class TestPersistentExternalizableWeakList(ExternalizationLayerTest):
         obj.remove(pers2)
         assert_that(obj, is_([]))
 
+    def test_equality(self):
+
+        obj = PersistentExternalizableWeakList()
+        pers = Persistent()
+        obj.append(pers)
+
+        assert_that(obj, is_([pers]))
+        assert_that(obj, is_not([pers, pers]))
+        assert_that(obj, is_not([]))
+        assert_that(obj, is_not([self]))
+
 class TestPersistentExternalizableDict(unittest.TestCase):
 
     def test_to_external_dict(self):
@@ -162,7 +173,6 @@ class TestWeakRef(unittest.TestCase):
             def toExternalObject(self, **kwargs):
                 return {'a': 42}
 
-        p = P()
         wref = PWeakRef(P())
 
         assert_that(wref.toExternalObject(), is_({'a': 42}))
@@ -173,7 +183,6 @@ class TestWeakRef(unittest.TestCase):
             def toExternalOID(self, **kwargs):
                 return b'abc'
 
-        p = P()
         wref = PWeakRef(P())
 
         assert_that(wref.toExternalOID(), is_(b'abc'))
