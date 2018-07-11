@@ -190,7 +190,6 @@ class TestAutoPackageZCML(PlacelessSetup,
 
 
     def test_scan_package_legacy_utility(self):
-        from nti.externalization import internalization as INT
         @interface.implementer(IExtRoot)
         class O(object):
             __external_can_create__ = True
@@ -229,13 +228,17 @@ class TestClassObjectFactory(PlacelessSetup,
         </configure>
     """ % (__name__,)
 
+    assertRaisesRegex = getattr(unittest.TestCase,
+                                'assertRaisesRegex',
+                                unittest.TestCase.assertRaisesRegexp)
+
     def test_scan_no_create(self):
         class O(object):
             pass
 
         self._addFactory(O)
-        with self.assertRaisesRegexp(xmlconfig.ZopeXMLConfigurationError,
-                                     "must set __external_can_create__ to true"):
+        with self.assertRaisesRegex(xmlconfig.ZopeXMLConfigurationError,
+                                    "must set __external_can_create__ to true"):
             xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
 
     def test_scan_not_callable(self):
@@ -244,8 +247,8 @@ class TestClassObjectFactory(PlacelessSetup,
 
         self._addFactory(O())
 
-        with self.assertRaisesRegexp(xmlconfig.ZopeXMLConfigurationError,
-                                     "must be callable"):
+        with self.assertRaisesRegex(xmlconfig.ZopeXMLConfigurationError,
+                                    "must be callable"):
             xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
 
     def test_scan_no_name(self):

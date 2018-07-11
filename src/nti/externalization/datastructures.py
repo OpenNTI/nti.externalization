@@ -432,8 +432,8 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
 
-    def updateFromExternalObject(self, parsed, *args, **kwargs):
-        result = super(InterfaceObjectIO, self).updateFromExternalObject(parsed, *args, **kwargs)
+    def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
+        result = AbstractDynamicObjectIO.updateFromExternalObject(self, parsed)
         # If we make it this far, then validate the object.
 
         # TODO: Should probably just make sure that there are no /new/

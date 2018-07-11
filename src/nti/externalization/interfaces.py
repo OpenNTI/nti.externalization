@@ -288,15 +288,19 @@ class IInternalObjectUpdater(interface.Interface):
 		It should return the new value. Note that the function here is at most
 		a class or static method, not an instance method.""")
 
-    def updateFromExternalObject(externalObject, *args, **kwargs):
+    def updateFromExternalObject(externalObject, context, **kwargs):
         """
         Update the object this is adapting from the external object.
-        Two alternate signatures are supported, one with ``dataserver`` instead of
-        context, and one with no keyword args.
+
+        Alternately, the signature can be ``updateFromExternalObject(externalObject)``
+        or simply ``updateFromExternalObject(externalObject, **kwargs)``. In this
+        last case, ``context`` will be passed as a value in ``**kwargs``.
+
 
         :return: If not ``None``, a value that can be interpreted as a boolean,
                 indicating whether or not the internal object actually
-                underwent updates. If ``None``, no meaning is assigned (to allow older
+                underwent updates. If ``None``, the caller should assume that the object
+                was updated (to allow older
                 code that doesn't return at all.)
         """
 

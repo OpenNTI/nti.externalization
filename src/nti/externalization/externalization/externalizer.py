@@ -184,9 +184,11 @@ else:
 
 
 def _obj_has_usable_externalObject(obj):
-    # This is for legacy code support, to allow existing methods to move to adapters
-    # and call us without infinite recursion
-    kind = type(obj)
+    # This is for legacy code support, to allow existing methods to
+    # move to adapters and call us without infinite recursion.
+    # We use __class__ instead of type() to allow for proxies;
+    # The proxy itself cannot implement toExternalObject
+    kind = obj.__class__
     answer = _usable_externalObject_cache_get(kind)
     if answer is None:
         answer = False
@@ -250,7 +252,7 @@ def _to_external_object_state(obj, state, top_level=False):
         elif result is not _marker:
             return result
         else:
-            logger.warn("Recursive call to object %s.", obj)
+            logger.warning("Recursive call to object %s.", obj)
             result = internal_to_standard_external_dictionary(obj,
                                                               decorate=False)
 

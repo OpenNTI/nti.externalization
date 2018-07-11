@@ -41,16 +41,16 @@ class _RecallArgs(object):
         'pre_hook',
     )
 
-    def __init__(self, registry,
-                 context,
-                 require_updater,
-                 notify,
-                 pre_hook):
-        self.registry = registry
-        self.context = context
-        self.require_updater = require_updater
-        self.notify = notify
-        self.pre_hook = pre_hook
+    # We don't have an __init__, we ask the caller
+    # to fill us in. In cython, this avoids some
+    # unneeded bint->object->bint conversions.
+
+    def __init__(self):
+        self.registry = None
+        self.context = None
+        self.require_updater = False
+        self.notify = True
+        self.pre_hook = None
 
 
 def _recall(k, obj, ext_obj, kwargs):
@@ -63,8 +63,115 @@ def _recall(k, obj, ext_obj, kwargs):
                                       notify=kwargs.notify,
                                       pre_hook=kwargs.pre_hook)
     if IPersistent_providedBy(obj): # pragma: no cover
-        obj._v_updated_from_external_source = ext_obj
+        obj._v_updated_from_external_source = ext_obj # pylint:disable=protected-access
     return obj
+
+##
+# Note on caching: We do not expect the updater objects to be proxied.
+# So we directly use type() instead of .__class__, which is faster.
+# We also do not expect them to be unloaded/updated/unbounded,
+# so we use a regular dict to cache info about them, which is faster
+# than a WeakKeyDictionary. For the same reason, we use dynamic warning
+# strings.
+
+# Support for varying signatures of the updater. This is slow and
+# cumbersome and needs to go; we are in the deprecation period now.
+# See https://github.com/NextThought/nti.externalization/issues/30
+
+_argspec_cache = {}
+
+# update(ext, context) or update(ext, context=None) or update(ext, dataserver)
+# exactly two arguments. It doesn't matter what the name is, we'll call it
+# positional.
+_UPDATE_ARGS_TWO = "update args two"
+_UPDATE_ARGS_CONTEXT_KW = "update args **kwargs"
+_UPDATE_ARGS_ONE = "update args external only"
+
+
+def _get_update_signature(updater):
+    kind = type(updater)
+
+    spec = _argspec_cache.get(kind)
+    if spec is None:
+        try:
+            func = updater.updateFromExternalObject
+            if hasattr(inspect, 'getfullargspec'): # pragma: no cover
+                # Python 3. getargspec() is deprecated.
+                argspec = inspect.getfullargspec(func) # pylint:disable=no-member
+                keywords = argspec.varkw
+            else:
+                argspec = inspect.getargspec(func)
+                keywords = argspec.keywords
+            args = argspec.args
+            defaults = argspec.defaults
+        except TypeError: # pragma: no cover (This is hard to catch in pure-python coverage mode)
+            # Cython functions and other extension types are "not a Python function"
+            # and don't work with this. We assume they use the standard form accepting
+            # 'context' as kwarg
+            spec = _UPDATE_ARGS_CONTEXT_KW
+        else:
+            # argspec.args contains the names of all the parameters.
+            # argspec.keywords, if not none, is the name of the **kwarg
+            # These all must be methods (or at least classmethods), having
+            # an extra 'self' argument.
+            if not keywords:
+                # No **kwarg, good!
+                if len(args) == 3:
+                    # update(ext, context) or update(ext, context=None) or update(ext, dataserver)
+                    spec = _UPDATE_ARGS_TWO
+                else:
+                    # update(ext)
+                    spec = _UPDATE_ARGS_ONE
+            else:
+                if len(args) == 3:
+                    # update(ext, context, **kwargs) or update(ext, dataserver, **kwargs)
+                    spec = _UPDATE_ARGS_TWO
+                elif keywords.startswith("unused") or keywords.startswith('_'):
+                    spec = _UPDATE_ARGS_ONE
+                else:
+                    spec = _UPDATE_ARGS_CONTEXT_KW
+
+            if 'dataserver' in args and defaults and len(defaults) >= 1:
+                warnings.warn("The type %r still uses updateFromExternalObject(dataserver=None). "
+                              "Please change to context=None." % (kind,),
+                              FutureWarning)
+
+        _argspec_cache[kind] = spec
+
+    return spec
+
+
+_usable_updateFromExternalObject_cache = {}
+
+def _obj_has_usable_updateFromExternalObject(obj):
+    kind = type(obj)
+
+    usable_from = _usable_updateFromExternalObject_cache.get(kind)
+    if usable_from is None:
+        has_update = hasattr(obj, 'updateFromExternalObject')
+        if not has_update:
+            usable_from = False
+        else:
+            wants_ignore = getattr(obj, '__ext_ignore_updateFromExternalObject__', False)
+            usable_from = not wants_ignore
+            if wants_ignore:
+                warnings.warn("The type %r has __ext_ignore_updateFromExternalObject__=True. "
+                              "Please remove updateFromExternalObject from the type." % (kind,),
+                              FutureWarning)
+
+
+        _usable_updateFromExternalObject_cache[kind] = usable_from
+
+    return usable_from
+
+
+try:
+    from zope.testing import cleanup # pylint:disable=ungrouped-imports
+except ImportError: # pragma: no cover
+    raise
+else:
+    cleanup.addCleanUp(_argspec_cache.clear)
+    cleanup.addCleanUp(_usable_updateFromExternalObject_cache.clear)
 
 
 def update_from_external_object(containedObject, externalObject,
@@ -102,7 +209,7 @@ def update_from_external_object(containedObject, externalObject,
         Signature ``f(k,x)`` where ``k`` is either the key name, or
         None in the case of a sequence and ``x`` is the external
         object. Deprecated.
-    :return: `containedObject` after updates from `externalObject`
+    :return: *containedObject* after updates from *externalObject*
 
     .. versionchanged:: 1.0.0a2
        Remove the ``object_hook`` parameter.
@@ -112,13 +219,12 @@ def update_from_external_object(containedObject, externalObject,
         for i in range(3):
             warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
 
-    kwargs = _RecallArgs(
-        registry,
-        context,
-        require_updater,
-        notify,
-        pre_hook
-    )
+    kwargs = _RecallArgs()
+    kwargs.registry = registry
+    kwargs.context = context
+    kwargs.require_updater = require_updater
+    kwargs.notify = notify
+    kwargs.pre_hook = pre_hook
 
 
     # Parse any contained objects
@@ -168,8 +274,7 @@ def update_from_external_object(containedObject, externalObject,
                 externalObject[k] = _recall(k, factory(), v, kwargs)
 
     updater = None
-    if hasattr(containedObject, 'updateFromExternalObject') \
-        and not getattr(containedObject, '__ext_ignore_updateFromExternalObject__', False):
+    if _obj_has_usable_updateFromExternalObject(containedObject):
         # legacy support. The __ext_ignore_updateFromExternalObject__
         # allows a transition to an adapter without changing
         # existing callers and without triggering infinite recursion
@@ -189,24 +294,14 @@ def update_from_external_object(containedObject, externalObject,
 
         updated = None
         # The signature may vary.
-        # XXX: This is slow and cumbersome and needs to go.
-        # See https://github.com/NextThought/nti.externalization/issues/30
-        try:
-            argspec = inspect.getargspec(updater.updateFromExternalObject)
-        except TypeError: # pragma: no cover (This is hard to catch in pure-python coverage mode)
-            # Cython functions and other extension types are "not a Python function"
-            # and don't work with this. We assume they use the standard form accepting
-            # 'context' as kwarg
-            updated = updater.updateFromExternalObject(externalObject, context=context)
+        arg_kind = _get_update_signature(updater)
+        if arg_kind is _UPDATE_ARGS_TWO:
+            updated = updater.updateFromExternalObject(externalObject, context)
+        elif arg_kind is _UPDATE_ARGS_ONE:
+            updated = updater.updateFromExternalObject(externalObject)
         else:
-            if 'context' in argspec.args or (argspec.keywords and 'dataserver' not in argspec.args):
-                updated = updater.updateFromExternalObject(externalObject,
-                                                           context=context)
-            elif argspec.keywords or 'dataserver' in argspec.args:
-                updated = updater.updateFromExternalObject(externalObject,
-                                                           dataserver=context)
-            else:
-                updated = updater.updateFromExternalObject(externalObject)
+            updated = updater.updateFromExternalObject(externalObject,
+                                                       context=context)
 
         # Broadcast a modified event if the object seems to have changed.
         if notify and (updated is None or updated):
@@ -214,6 +309,7 @@ def update_from_external_object(containedObject, externalObject,
                             updater, external_keys, _EMPTY_DICT)
 
     return containedObject
+
 
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
