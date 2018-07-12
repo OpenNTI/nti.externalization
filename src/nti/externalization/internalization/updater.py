@@ -23,9 +23,11 @@ import warnings
 from persistent.interfaces import IPersistent
 from six import iteritems
 from zope import component
+from zope import interface
 
 from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization.interfaces import IInternalObjectUpdater
+from nti.externalization.interfaces import IInternalObjectFactoryFinder
 
 from .factories import find_factory_for
 from .events import _notifyModified
@@ -178,6 +180,16 @@ else:
     cleanup.addCleanUp(_usable_updateFromExternalObject_cache.clear)
 
 
+class DefaultInternalObjectFactoryFinder(object):
+
+    def get_object_to_update(self, key, value, registry):
+        return find_factory_for(value, registry)
+
+
+interface.classImplements(DefaultInternalObjectFactoryFinder, IInternalObjectFactoryFinder)
+
+_default_factory_finder = DefaultInternalObjectFactoryFinder()
+
 def update_from_external_object(containedObject, externalObject,
                                 registry=component, context=None,
                                 require_updater=False,
@@ -254,6 +266,10 @@ def update_from_external_object(containedObject, externalObject,
 
     assert isinstance(externalObject, MutableMapping)
 
+    updater = registry.queryAdapter(containedObject, IInternalObjectFactoryFinder,
+                                    u'', _default_factory_finder)
+    get_object_to_update = updater.get_object_to_update
+
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
     external_keys = list()
@@ -273,23 +289,24 @@ def update_from_external_object(containedObject, externalObject,
             v = _recall(k, (), v, kwargs)
             externalObject[k] = v
         else:
-            factory = find_factory_for(v, registry=registry)
+            factory = get_object_to_update(k, v, registry)
             if factory is not None:
                 externalObject[k] = _recall(k, factory(), v, kwargs)
 
-    updater = None
+
     if _obj_has_usable_updateFromExternalObject(containedObject):
         # legacy support. The __ext_ignore_updateFromExternalObject__
         # allows a transition to an adapter without changing
         # existing callers and without triggering infinite recursion
         updater = containedObject
     else:
-        if require_updater:
-            get = registry.getAdapter
-        else:
-            get = registry.queryAdapter
+        if not IInternalObjectUpdater.providedBy(updater):
+            if require_updater:
+                get = registry.getAdapter
+            else:
+                get = registry.queryAdapter
 
-        updater = get(containedObject, IInternalObjectUpdater)
+            updater = get(containedObject, IInternalObjectUpdater)
 
     if updater is not None:
         # Let the updater resolve externals too

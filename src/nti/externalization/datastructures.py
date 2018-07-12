@@ -25,7 +25,7 @@ from zope.schema.interfaces import SchemaNotProvided
 
 from nti.schema.interfaces import find_most_derived_interface
 
-from .interfaces import IInternalObjectIO
+from .interfaces import IInternalObjectIOFinder
 from .interfaces import StandardInternalFields
 
 # Things imported from cython with matching cimport
@@ -36,6 +36,7 @@ from .externalization.dictionary import internal_to_standard_external_dictionary
 from .externalization.externalizer import to_external_object as _toExternalObject
 
 from .internalization import validate_named_field_value
+from .internalization.factories import find_factory_for
 from .representation import make_repr
 
 from ._base_interfaces import get_standard_external_fields
@@ -55,9 +56,6 @@ class ExternalizableDictionaryMixin(object):
     #: If true, then when asked for the standard dictionary, we will instead
     #: produce the *minimal* dictionary. See :func:`~to_minimal_standard_external_dictionary`
     __external_use_minimal_base__ = False
-
-    def __init__(self, *args):
-        super(ExternalizableDictionaryMixin, self).__init__(*args)
 
     def _ext_replacement(self):
         return self
@@ -123,6 +121,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     _ext_primitive_out_ivars_ = frozenset()
     _prefer_oid_ = False
 
+    def get_object_to_update(self, key, value, registry):
+        return find_factory_for(value, registry)
 
     def _ext_all_possible_keys(self):
         """
@@ -239,6 +239,9 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         return False  # false by default
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
+        return self._updateFromExternalObject(parsed)
+
+    def _updateFromExternalObject(self, parsed):
         updated = False
 
         ext_self = self._ext_replacement()
@@ -270,7 +273,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         return updated
 
-interface.classImplements(AbstractDynamicObjectIO, IInternalObjectIO)
+interface.classImplements(AbstractDynamicObjectIO, IInternalObjectIOFinder)
 
 
 class ExternalizableInstanceDict(AbstractDynamicObjectIO):
@@ -346,7 +349,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             schema will be validated after an object has been updated with
             :meth:`update_from_external_object`, not just the keys that were assigned.
         """
-        super(InterfaceObjectIO, self).__init__()
+        AbstractDynamicObjectIO.__init__(self)
         self._ext_self = ext_self
         # Cache all of this data that we use. It's required often and, if not quite a bottleneck,
         # does show up in the profiling data
@@ -360,7 +363,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
         if not cache.ext_primitive_out_ivars:
             keys = self._ext_find_primitive_keys()
-            cache.ext_primitive_out_ivars = self._ext_primitive_out_ivars_.union(keys)
+            cache.ext_primitive_out_ivars = self._ext_primitive_out_ivars_ | keys
         self._ext_primitive_out_ivars_ = cache.ext_primitive_out_ivars
 
         self.validate_after_update = validate_after_update
@@ -432,8 +435,20 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
 
+    def get_object_to_update(self, key, value, registry):
+        factory = AbstractDynamicObjectIO.get_object_to_update(self, key, value, registry)
+        if factory is None:
+            # Is there a factory on the field?
+            try:
+                field = self._iface[key]
+                # XXX: Maybe this should be a string naming a factory we find in the registry?
+                # Or a string giving the dottedname to a class we resolve at runtime (and reify)
+                return field.getTaggedValue('__external_factory__')
+            except KeyError:
+                return None
+
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
-        result = AbstractDynamicObjectIO.updateFromExternalObject(self, parsed)
+        result = AbstractDynamicObjectIO._updateFromExternalObject(self, parsed)
         # If we make it this far, then validate the object.
 
         # TODO: Should probably just make sure that there are no /new/

@@ -268,6 +268,15 @@ class IExternalReferenceResolver(interface.Interface):
         Resolve the external reference and return it.
         """
 
+class IInternalObjectFactoryFinder(interface.Interface):
+    """
+    TODO: Document me.
+    """
+
+    def get_object_to_update(key, value, registry):
+        """
+        Document me.
+        """
 
 class IInternalObjectUpdater(interface.Interface):
     """
@@ -310,6 +319,9 @@ class IInternalObjectIO(IInternalObjectExternalizer, IInternalObjectUpdater):
     A single object responsible for both reading and writing internal objects
     in external forms.
     """
+
+class IInternalObjectIOFinder(IInternalObjectFactoryFinder, IInternalObjectIO):
+    pass
 
 class IObjectWillUpdateFromExternalEvent(IObjectEvent):
     """

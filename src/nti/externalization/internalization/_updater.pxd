@@ -14,7 +14,9 @@ cdef warnings
 cdef string_types
 cdef iteritems
 cdef component
+cdef interface
 cdef IInternalObjectUpdater
+cdef IInternalObjectFactoryFinder
 
 # optimizations
 
@@ -35,6 +37,10 @@ cdef class _RecallArgs(object):
     cdef bint require_updater
     cdef bint notify
 
+@cython.internal
+@cython.final
+cdef class DefaultInternalObjectFactoryFinder(object):
+    pass
 
 cdef _recall(k, obj, ext_obj, _RecallArgs kwargs)
 
