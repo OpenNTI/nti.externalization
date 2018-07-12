@@ -9,7 +9,15 @@ from __future__ import division
 from __future__ import print_function
 
 # stdlib imports
-import collections
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
+
+try:
+    from itertools import izip
+except ImportError:
+    izip = zip
 
 import persistent
 from persistent.list import PersistentList
@@ -86,16 +94,15 @@ def setPersistentStateChanged(obj):
 
 def _weakRef_toExternalObject(self):
     val = self()
-    if val is not None:
-        return toExternalObject(val)
+    return toExternalObject(val) if val is not None else None
+
 PWeakRef.toExternalObject = _weakRef_toExternalObject
 interface.classImplements(PWeakRef, IExternalObject)
 
 
 def _weakRef_toExternalOID(self):
     val = self()
-    if val is not None:
-        return toExternalOID(val)
+    return toExternalOID(val) if val is not None else None
 PWeakRef.toExternalOID = _weakRef_toExternalOID
 
 
@@ -176,17 +183,17 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
     def __eq__(self, other):
         # If we just compare lists, weak refs will fail badly
         # if they're compared with non-weak refs
-        if not isinstance(other, collections.Sequence):
+        if not isinstance(other, Sequence):
             return False
 
-        result = False
-        if len(self) == len(other):
-            result = True
-            for i in range(len(self)):
-                if self[i] != other[i]:
-                    result = False
-                    break
-        return result
+        if len(self) != len(other):
+            return False
+
+        for obj1, obj2 in izip(self, other):
+            if obj1 != obj2:
+                return False
+
+        return True
 
     def __wrap(self, obj):
         return obj if isinstance(obj, PWeakRef) else PWeakRef(obj)

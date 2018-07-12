@@ -14,7 +14,10 @@ from __future__ import print_function
 
 
 # stdlib imports
-from collections import MutableSequence
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
 
 
 from zope import component
