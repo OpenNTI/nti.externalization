@@ -335,7 +335,7 @@ def anonymousObjectFactoryDirective(_context, factory, for_, field, title=u'', d
                            name=name)
 
     _context.action(
-        discriminator=('anonymousObjectFactory', field),
+        discriminator=('anonymousObjectFactory', for_, field_name),
         callable=field.setTaggedValue,
         args=('__external_factory__', name)
     )
