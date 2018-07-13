@@ -232,18 +232,15 @@ class IGlobalRoot(interface.Interface):
 
 @interface.implementer(IGlobalRoot)
 class GlobalRoot(object):
-    __external_can_create__ = True
     def __init__(self):
         self.field = None
 
 @interface.implementer(IGlobalMiddleThing)
 class GlobalMiddleThing(object):
-    __external_can_create__ = True
     def __init__(self):
         self.nested = None
 
 @interface.implementer(IGlobalNestedThing)
 class GlobalNestedThing(object):
-
     def __init__(self):
         self.value = -1
