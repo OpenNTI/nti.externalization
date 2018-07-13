@@ -24,3 +24,10 @@ class SimplestPossibleObject(ExternalizableInstanceDict):
 @interface.implementer(interfaces.IDerivedWithOneTextField)
 class DerivedWithOneTextField(object):
     createDirectFieldProperties(interfaces.IDerivedWithOneTextField)
+
+    def __init__(self, text=u''):
+        self.text = text
+
+@interface.implementer(interfaces.IHasListOfDerived)
+class HasListOfDerived(object):
+    createDirectFieldProperties(interfaces.IHasListOfDerived)

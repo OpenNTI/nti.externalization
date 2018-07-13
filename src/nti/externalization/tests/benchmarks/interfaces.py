@@ -10,6 +10,9 @@ from __future__ import print_function
 from zope.interface import Interface
 from zope.interface import taggedValue
 
+from zope.schema import List
+from zope.schema import Object
+
 from nti.schema.field import TextLine
 
 class ISimplestPossibleObject(Interface):
@@ -29,3 +32,11 @@ class IDerivedWithOneTextField(IRootInterface):
 
     taggedValue('__external_class_name__',
                 'DerivedWithOneTextField')
+
+
+class IHasListOfDerived(IRootInterface):
+
+    the_objects = List(Object(IDerivedWithOneTextField))
+
+    taggedValue('__external_class_name__',
+                'HasListOfDerived')

@@ -12,7 +12,7 @@ cdef class LocatedExternalDict(dict):
     cdef public __name__
     cdef public __parent__
     cdef public __acl__
-    cdef readonly mimeType
+    cdef public mimeType
 
     cdef update_from_other(self, other)
 

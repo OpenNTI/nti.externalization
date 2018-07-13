@@ -8,6 +8,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 import sys
 
 import perf
@@ -15,10 +16,12 @@ from perf import perf_counter
 
 from zope.configuration import xmlconfig
 
+from nti.externalization.representation import JsonRepresenter
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.internalization import default_externalized_object_factory_finder
 from nti.externalization.internalization import update_from_external_object
+
 import nti.externalization.tests.benchmarks
 from nti.externalization.tests.benchmarks.objects import DerivedWithOneTextField
 
@@ -42,21 +45,26 @@ def find_factory_time_func(loops, ext):
 
 def update_from_external_object_time_func(loops, ext):
     factory = default_externalized_object_factory_finder(ext)
+    # Updating *may* modify the object in place, so we need to
+    # make deep copies of it.
+    rep = JsonRepresenter()
+    json = rep.dump(ext)
+    exts = [rep.load(json) for x in range(loops * INNER_LOOPS)]
     begin = perf_counter()
-    for _ in range(loops):
-        for _ in range(INNER_LOOPS):
-            obj = factory()
-            update_from_external_object(obj, ext)
+    for x in exts:
+        obj = factory()
+        update_from_external_object(obj, x)
     end = perf_counter()
     return end - begin
 
 
-def profile():
+def profile(loops=1000, obj=None):
     from cProfile import Profile
     import pstats
 
-    obj = DerivedWithOneTextField()
-    obj.text = u'This is some text'
+    if obj is None:
+        obj = DerivedWithOneTextField()
+        obj.text = u'This is some text'
 
     ext = toExternalObject(obj)
 
@@ -68,7 +76,7 @@ def profile():
 
         prof = Profile()
         prof.enable()
-        func(1000, arg)
+        func(loops, arg)
         prof.disable()
         stats = pstats.Stats(prof)
         stats.strip_dirs()
