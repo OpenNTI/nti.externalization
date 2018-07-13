@@ -443,9 +443,10 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 field = self._iface[key]
                 # XXX: Maybe this should be a string naming a factory we find in the registry?
                 # Or a string giving the dottedname to a class we resolve at runtime (and reify)
-                return field.getTaggedValue('__external_factory__')
+                factory = field.getTaggedValue('__external_factory__')
             except KeyError:
-                return None
+                pass
+        return factory
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
         result = AbstractDynamicObjectIO._updateFromExternalObject(self, parsed)

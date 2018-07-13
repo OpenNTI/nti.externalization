@@ -40,7 +40,6 @@ def main(runner=None):
     obj.the_objects = [DerivedWithOneTextField(text=u"This is some text " + str(i))
                        for i in range(10)]
 
-
     if '--profile' in sys.argv:
         profile(100, obj)
         return
