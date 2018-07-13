@@ -14,6 +14,7 @@ import perf
 
 from zope.configuration import xmlconfig
 
+from nti.externalization._compat import PYPY
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import StandardExternalFields
 
@@ -26,7 +27,8 @@ from nti.externalization.tests.benchmarks.bm_simple_iface import (
     INNER_LOOPS,
     to_external_object_time_func,
     update_from_external_object_time_func,
-    profile
+    profile,
+    vmprofile,
 )
 
 logger = __import__('logging').getLogger(__name__)
@@ -42,6 +44,10 @@ def main(runner=None):
 
     if '--profile' in sys.argv:
         profile(100, obj)
+        return
+
+    if '--vmprofile' in sys.argv:
+        vmprofile(100 if not PYPY else 1, obj)
         return
 
     mt = getattr(obj, 'mimeType')

@@ -21,7 +21,7 @@ LINUX = sys.platform.startswith('linux')
 OSX = sys.platform == 'darwin'
 
 
-PURE_PYTHON = PYPY or os.getenv('PURE_PYTHON')
+PURE_PYTHON = PYPY or os.getenv('PURE_PYTHON') or os.getenv("NTI_EXT_PURE_PYTHON")
 
 
 def to_unicode(s, encoding='utf-8', err='strict'):

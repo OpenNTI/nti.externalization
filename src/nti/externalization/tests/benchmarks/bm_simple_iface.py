@@ -84,6 +84,29 @@ def profile(loops=1000, obj=None):
         print("Profile of", func)
         stats.print_stats(20)
 
+def vmprofile(loops=1000, obj=None):
+    import vmprof
+
+    if obj is None:
+        obj = DerivedWithOneTextField()
+        obj.text = u'This is some text'
+
+    ext = toExternalObject(obj)
+
+    for func, arg in (
+            (to_external_object_time_func, obj),
+            (find_factory_time_func, ext),
+            # This one often segfaults if we use Cython somewhere in the
+            # guts of libunwind.
+            (update_from_external_object_time_func, ext),
+    ):
+        with open('benchmark_results/' + func.__name__ + '.vmprof', 'w+b') as f:
+            print("Begin", func)
+            vmprof.enable(f.fileno())
+            func(loops, arg)
+            vmprof.disable()
+            print("End", func)
+
 
 def main(runner=None):
 
