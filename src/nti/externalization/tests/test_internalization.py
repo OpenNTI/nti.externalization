@@ -376,8 +376,7 @@ class TestUpdateFromExternaObject(CleanUp,
         assert_that(result, is_(same_instance(self)))
 
         assert_that(ext, is_({'a': 1, 'b': b, 'c': {}}))
-        # This should change.
-        assert_that(ext['b'], is_not(same_instance(b)))
+        assert_that(ext['b'], is_(same_instance(b)))
 
     def test_update_mapping_with_update_on_contained_object(self):
         class ContainedObject(object):

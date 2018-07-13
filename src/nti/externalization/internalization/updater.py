@@ -272,7 +272,7 @@ def update_from_external_object(containedObject, externalObject,
 
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
-    external_keys = list()
+    external_keys = []
     for k, v in iteritems(externalObject):
         external_keys.append(k)
         if isinstance(v, PRIMITIVES):
@@ -283,11 +283,11 @@ def update_from_external_object(containedObject, externalObject,
 
         if isinstance(v, MutableSequence):
             # Update the sequence in-place
-            # XXX: This is not actually updating it.
-            # We need to slice externalObject[k[:]]
             __traceback_info__ = k, v
-            v = _recall(k, (), v, kwargs)
-            externalObject[k] = v
+            for index, item in enumerate(v):
+                factory = get_object_to_update(k, item, registry)
+                if factory is not None:
+                    v[index] = _recall(k, factory(), item, kwargs)
         else:
             factory = get_object_to_update(k, v, registry)
             if factory is not None:

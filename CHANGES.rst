@@ -29,6 +29,8 @@
 - ``update_from_external_object`` caches certain information about the
   types of the updater objects, making it 8-25% faster.
 
+- ``update_from_external_object`` mutates sequences contained in a
+  dict in-place instead of overwriting with a new list.
 
 1.0.0a2 (2018-07-05)
 ====================
