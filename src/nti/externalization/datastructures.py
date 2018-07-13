@@ -26,6 +26,7 @@ from zope.schema.interfaces import SchemaNotProvided
 from nti.schema.interfaces import find_most_derived_interface
 
 from .interfaces import IInternalObjectIOFinder
+from .interfaces import IAnonymousObjectFactory
 from .interfaces import StandardInternalFields
 
 # Things imported from cython with matching cimport
@@ -441,11 +442,22 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             # Is there a factory on the field?
             try:
                 field = self._iface[key]
-                # XXX: Maybe this should be a string naming a factory we find in the registry?
-                # Or a string giving the dottedname to a class we resolve at runtime (and reify)
-                factory = field.getTaggedValue('__external_factory__')
+                # See zcml.py:anonymousObjectFactoryDirective.
+                # This *should* be a string giving the dottedname of a factory utility.
+                # For test purposes we also allow it to be an actual object.
+
+                # TODO: If this becomes a bottleneck, the ZCML could
+                # have an argument global=False to allow setting the type
+                # directly instead of a string; the user would have to
+                # *know* that no sites would ever need a different value.
             except KeyError:
                 pass
+            else:
+                factory = field.queryTaggedValue('__external_factory__')
+                # When it is a string, we require the factory to exist.
+                # Anything else is a programming error.
+                if isinstance(factory, str):
+                    factory = registry.getUtility(IAnonymousObjectFactory, factory)
         return factory
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):

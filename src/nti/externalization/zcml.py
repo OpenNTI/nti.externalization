@@ -24,8 +24,10 @@ from .interfaces import _ILegacySearchModuleFactory
 from .autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 from .factory import MimeObjectFactory
 from .factory import ClassObjectFactory
+from .factory import AnonymousObjectFactory
 from .interfaces import IMimeObjectFactory
 from .interfaces import IClassObjectFactory
+from .interfaces import IAnonymousObjectFactory
 from .internalization.legacy_factories import find_factories_in_module
 
 __docformat__ = "restructuredtext en"
@@ -34,6 +36,12 @@ logger = __import__('logging').getLogger(__name__)
 
 # pylint: disable=protected-access,inherit-non-class
 
+__all__ = [
+    'IRegisterInternalizationMimeFactoriesDirective',
+    'IAutoPackageExternalizationDirective',
+    'IClassObjectFactoryDirective',
+    'IAnonymousObjectFactoryDirective',
+]
 
 
 class IRegisterInternalizationMimeFactoriesDirective(interface.Interface):
@@ -265,3 +273,69 @@ def classObjectFactoryDirective(_context, factory, name='', title='', descriptio
                            provides=IClassObjectFactory,
                            component=factory,
                            name=name)
+
+
+class IAnonymousObjectFactoryDirective(interface.Interface):
+    """
+    This directive registers a single
+    :class:`nti.externaliaztion.interfaces.IAnonymousObjectFactory`
+    for a single field used within a single object.
+    """
+
+    factory = GlobalObject(
+        title=u'The class object that will be created.',
+        required=True,
+    )
+
+    for_ = GlobalInterface(
+        title=u"The interface that is the *parent* object this will be used for",
+        required=True,
+    )
+
+    field = PythonIdentifier(
+        title=u'The name of the schema field',
+        description=u'The factory results will be assigned to this field.',
+        required=True,
+    )
+
+    title = MessageID(
+        title=u"Title",
+        description=u"Provides a title for the object.",
+        required=False,
+    )
+
+    description = MessageID(
+        title=u"Description",
+        description=u"Provides a description for the object.",
+        required=False
+    )
+
+
+def anonymousObjectFactoryDirective(_context, factory, for_, field, title=u'', description=u''):
+    if not callable(factory):
+        raise TypeError("Object %r must be callable" % factory)
+
+    if not getattr(factory, '__external_can_create__', False):
+        raise TypeError("Object %r must set __external_can_create__ to true" % factory)
+
+
+    field_name = str(field)
+    field = for_[field]
+    if field.interface is not for_:
+        raise TypeError("Field %r is not directly part of the interface %r (it is %r)"
+                        % (field_name, for_, field.interface))
+
+    factory = AnonymousObjectFactory(factory, title, description)
+
+    name = '%s.%s:%s' % (for_.__module__, for_.__name__, field_name)
+    assert isinstance(name, str)
+    component_zcml.utility(_context,
+                           provides=IAnonymousObjectFactory,
+                           component=factory,
+                           name=name)
+
+    _context.action(
+        discriminator=('anonymousObjectFactory', field),
+        callable=field.setTaggedValue,
+        args=('__external_factory__', name)
+    )

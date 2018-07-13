@@ -35,6 +35,10 @@ from hamcrest import none
 
 class RegistrationMixin(object):
 
+    assertRaisesRegex = getattr(unittest.TestCase,
+                                'assertRaisesRegex',
+                                unittest.TestCase.assertRaisesRegexp)
+
     def _getModule(self):
         import sys
         return sys.modules[__name__]
@@ -228,9 +232,6 @@ class TestClassObjectFactory(PlacelessSetup,
         </configure>
     """ % (__name__,)
 
-    assertRaisesRegex = getattr(unittest.TestCase,
-                                'assertRaisesRegex',
-                                unittest.TestCase.assertRaisesRegexp)
 
     def test_scan_no_create(self):
         class O(object):
@@ -281,3 +282,69 @@ class TestClassObjectFactory(PlacelessSetup,
         xmlconfig.string(self.SCAN_THIS_MODULE.replace('PLACEHOLDER', ''))
         factory = component.getUtility(IClassObjectFactory, 'FromClass')
         assert_that(factory, has_property('_callable', equal_to(O)))
+
+
+class ISchema(interface.Interface):
+
+    field = interface.Attribute("This is a field")
+
+class IDerived(ISchema):
+    pass
+
+class TestAnonymousObjectFactoryZCML(PlacelessSetup,
+                                     RegistrationMixin,
+                                     unittest.TestCase):
+
+    SCAN_THIS_MODULE = """
+        <configure xmlns:ext="http://nextthought.com/ntp/ext"
+                   xmlns:i18n="http://namespaces.zope.org/i18n"
+                   i18n_domain="zope">
+           <include package="nti.externalization" file="meta.zcml" />
+           <ext:anonymousObjectFactory
+                factory="{0}.Factory"
+                for="{0}.ISchema"
+                field="field"
+             />
+        </configure>
+    """.format(__name__)
+
+    def test_sets_tagged_value(self):
+        class O(object):
+            __external_can_create__ = True
+
+        self._addFactory(O)
+
+        xmlconfig.string(self.SCAN_THIS_MODULE)
+
+        assert_that(ISchema['field'].getTaggedValue('__external_factory__'),
+                    is_('nti.externalization.tests.test_zcml.ISchema:field'))
+
+    def test_scan_no_create(self):
+        class O(object):
+            pass
+
+        self._addFactory(O)
+        with self.assertRaisesRegex(xmlconfig.ZopeXMLConfigurationError,
+                                    "must set __external_can_create__ to true"):
+            xmlconfig.string(self.SCAN_THIS_MODULE)
+
+    def test_scan_not_callable(self):
+        class O(object):
+            __external_can_create__ = True
+
+        self._addFactory(O())
+
+        with self.assertRaisesRegex(xmlconfig.ZopeXMLConfigurationError,
+                                    "must be callable"):
+            xmlconfig.string(self.SCAN_THIS_MODULE)
+
+    def test_scan_not_direct(self):
+        class O(object):
+            __external_can_create__ = True
+
+        self._addFactory(O)
+        zcml = self.SCAN_THIS_MODULE.replace("ISchema", 'IDerived')
+
+        with self.assertRaisesRegex(xmlconfig.ZopeXMLConfigurationError,
+                                    "is not directly part of the interface"):
+            xmlconfig.string(zcml)

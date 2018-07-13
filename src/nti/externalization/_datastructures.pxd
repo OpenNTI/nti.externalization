@@ -20,6 +20,7 @@ from nti.externalization.__interface_cache cimport cache_for
 
 
 cdef IInternalObjectIOFinder
+cdef IAnonymousObjectFactory
 cdef SEF StandardExternalFields
 cdef SIF StandardInternalFields
 cdef validate_named_field_value

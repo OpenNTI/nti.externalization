@@ -25,11 +25,11 @@ from zope.location import ILocation
 from ._base_interfaces import LocatedExternalDict
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
+from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
 
-from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 MINIMAL_SYNTHETIC_EXTERNAL_KEYS = MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 
 class IInternalObjectExternalizer(interface.Interface):
@@ -238,6 +238,19 @@ class IMimeObjectFactory(IFactory):
 class IClassObjectFactory(IFactory):
     """
     A factory named for the external class name of objects it works with.
+    """
+
+
+class IAnonymousObjectFactory(IFactory):
+    """
+    A factory for external data that doesn't identify its object type.
+
+    This data is not produced by this library but comes from external sources.
+
+    When these are registered as factories (utilities) care must be taken
+    to avoid name clashes (since there are no "natural" unique names).
+
+    .. versionadded:: 1.0a3
     """
 
 

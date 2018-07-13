@@ -17,10 +17,11 @@ from __future__ import print_function
 import warnings
 try:
     from collections.abc import Set
-    from collections.abc import Mapping
 except ImportError:
     from collections import Set
     from collections import Mapping
+else: # pragma: no cover
+    from collections.abc import Mapping
 from collections import defaultdict
 from weakref import WeakKeyDictionary
 

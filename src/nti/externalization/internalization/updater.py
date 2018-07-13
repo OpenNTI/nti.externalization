@@ -13,10 +13,11 @@ from __future__ import print_function
 # stdlib imports
 try:
     from collections.abc import MutableSequence
-    from collections.abc import MutableMapping
 except ImportError:
     from collections import MutableSequence
     from collections import MutableMapping
+else: # pragma: no cover
+    from collections.abc import MutableMapping
 import inspect
 import warnings
 
