@@ -26,6 +26,8 @@ cdef notify
 
 # optimizations
 cdef IField_providedBy
+cdef IFromUnicode_providedBy
+cdef get_exc_info
 
 
 cdef noop()
@@ -51,6 +53,10 @@ cdef class FieldSet(object):
 
 cpdef _adapt_sequence(field, value)
 cdef bint _all_SchemaNotProvided(sequence)
+
+cdef _handle_SchemaNotProvided(field_name, field, value)
+cdef _handle_WrongType(field_name, field, value)
+cdef _handle_WrongContainedType(field_name, field, value)
 
 cpdef validate_field_value(self, field_name, field, value)
 cpdef validate_named_field_value(self, iface, field_name, value)
