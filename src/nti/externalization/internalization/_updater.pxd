@@ -16,7 +16,7 @@ cdef iteritems
 cdef component
 cdef interface
 cdef IInternalObjectUpdater
-cdef IInternalObjectFactoryFinder
+cdef INamedExternalizedObjectFactoryFinder
 
 # optimizations
 

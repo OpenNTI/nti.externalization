@@ -28,7 +28,7 @@ from zope import interface
 
 from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization.interfaces import IInternalObjectUpdater
-from nti.externalization.interfaces import IInternalObjectFactoryFinder
+from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
 
 from .factories import find_factory_for
 from .events import _notifyModified
@@ -175,7 +175,7 @@ def _obj_has_usable_updateFromExternalObject(obj):
 try:
     from zope.testing import cleanup # pylint:disable=ungrouped-imports
 except ImportError: # pragma: no cover
-    raise
+    pass
 else:
     cleanup.addCleanUp(_argspec_cache.clear)
     cleanup.addCleanUp(_usable_updateFromExternalObject_cache.clear)
@@ -183,11 +183,11 @@ else:
 
 class DefaultInternalObjectFactoryFinder(object):
 
-    def get_object_to_update(self, key, value, registry):
+    def find_factory_for_named_value(self, name, value, registry):
         return find_factory_for(value, registry)
 
 
-interface.classImplements(DefaultInternalObjectFactoryFinder, IInternalObjectFactoryFinder)
+interface.classImplements(DefaultInternalObjectFactoryFinder, INamedExternalizedObjectFactoryFinder)
 
 _default_factory_finder = DefaultInternalObjectFactoryFinder()
 
@@ -228,6 +228,8 @@ def update_from_external_object(containedObject, externalObject,
         object. Deprecated.
     :return: *containedObject* after updates from *externalObject*
 
+    .. seealso:: `~.INamedExternalizedObjectFactoryFinder`
+
     .. versionchanged:: 1.0.0a2
        Remove the ``object_hook`` parameter.
     """
@@ -267,9 +269,9 @@ def update_from_external_object(containedObject, externalObject,
 
     assert isinstance(externalObject, MutableMapping)
 
-    updater = registry.queryAdapter(containedObject, IInternalObjectFactoryFinder,
+    updater = registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder,
                                     u'', _default_factory_finder)
-    get_object_to_update = updater.get_object_to_update
+    find_factory_for_named_value = updater.find_factory_for_named_value
 
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
@@ -286,11 +288,11 @@ def update_from_external_object(containedObject, externalObject,
             # Update the sequence in-place
             __traceback_info__ = k, v
             for index, item in enumerate(v):
-                factory = get_object_to_update(k, item, registry)
+                factory = find_factory_for_named_value(k, item, registry)
                 if factory is not None:
                     v[index] = _recall(k, factory(), item, kwargs)
         else:
-            factory = get_object_to_update(k, v, registry)
+            factory = find_factory_for_named_value(k, v, registry)
             if factory is not None:
                 externalObject[k] = _recall(k, factory(), v, kwargs)
 

@@ -49,6 +49,14 @@ from ._interface_cache import cache_for
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
 
+__all__ = [
+    'ExternalizableDictionaryMixin',
+    'AbstractDynamicObjectIO',
+    'ExternalizableInstanceDict',
+    'InterfaceObjectIO',
+    'ModuleScopedInterfaceObjectIO',
+]
+
 class ExternalizableDictionaryMixin(object):
     """
     Implements a toExternalDictionary method as a base for subclasses.
@@ -86,6 +94,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     Abstractions are in place to allow subclasses to map external and internal names
     independently (this type never uses getattr/setattr/hasattr, except for some
     standard fields).
+
+    See `InterfaceObjectIO` for a complete implementation.
     """
 
     # TODO: there should be some better way to customize this if desired (an explicit list)
@@ -122,7 +132,14 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     _ext_primitive_out_ivars_ = frozenset()
     _prefer_oid_ = False
 
-    def get_object_to_update(self, key, value, registry):
+    def find_factory_for_named_value(self, key, value, registry):
+        """
+        Uses `.find_factory_for` to locate a factory.
+
+        This does not take into account the current object (context)
+        or the *key*. It only handles finding factories based on the
+        class or MIME type found within *value*.
+        """
         return find_factory_for(value, registry)
 
     def _ext_all_possible_keys(self):
@@ -318,12 +335,18 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
     Externalizes to a dictionary based on getting the attributes of an
     object defined by an interface. If any attribute has a true value
-    for the tagged value ``_ext_excluded_out``, it will not be considered
-    for reading or writing.
+    for the tagged value ``_ext_excluded_out``, it will not be
+    considered for reading or writing.
 
-    Meant to be used as an adapter, so accepts the object to
-    externalize in the constructor, as well as the interface to use to
-    guide the process. The object is externalized using the
+    This is an implementation of
+    `~nti.externalization.interfaces.IInternalObjectIOFinder`, meaning
+    it can both internalize (update existing objects) and externalize
+    (producing dictionaries), and that it gets to choose the factories
+    used for sub-objects when internalizing.
+
+    This class is meant to be used as an adapter, so it accepts the
+    object to externalize in the constructor, as well as the interface
+    to use to guide the process. The object is externalized using the
     most-derived version of the interface given to the constructor
     that it implements.
 
@@ -332,8 +355,10 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     the ``Class`` key, or a callable
     ``__external_class_name__(interface, object ) -> name.``
 
-    (TODO: In the future extend this to multiple, non-overlapping interfaces, and better
-    interface detection (see :class:`ModuleScopedInterfaceObjectIO` for a limited version of this.)
+    (TODO: In the future extend this to multiple, non-overlapping
+    interfaces, and better interface detection (see
+    :class:`ModuleScopedInterfaceObjectIO` for a limited version of
+    this.)
     """
 
     _ext_iface_upper_bound = None
@@ -436,8 +461,35 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
 
-    def get_object_to_update(self, key, value, registry):
-        factory = AbstractDynamicObjectIO.get_object_to_update(self, key, value, registry)
+    def find_factory_for_named_value(self, key, value, registry):
+        """
+        If `AbstractDynamicObjectIO.find_factory_for_named_value`
+        cannot find a factory based on examining *value*, then we use
+        the context objects's schema to find a factory.
+
+        If the schema contains an attribute named *key*, it will be
+        queried for the tagged value ``__external_factory__``. If
+        present, this tagged value should be the name of a factory
+        object implementing `.IAnonymousObjectFactory` registered in
+        *registry* (typically registered in the global site).
+
+        The ZCML directive `.IAnonymousObjectFactoryDirective` sets up both the
+        registration and the tagged value.
+
+        This is useful for internalizing data from external sources
+        that does not provide a class or MIME field within the data.
+
+        The most obvious limitation of this is that if the *value* is part
+        of a sequence, it must be a homogeneous sequence. The factory is
+        called with no arguments, so the only way to deal with heterogeneous
+        sequences is to subclass this object and override this method to
+        examine the value itself.
+
+        A second limitation is that the external data key must match
+        the internal schema field name. Again, the only way to
+        remove this limitation is to subclass this object.
+        """
+        factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value, registry)
         if factory is None:
             # Is there a factory on the field?
             try:

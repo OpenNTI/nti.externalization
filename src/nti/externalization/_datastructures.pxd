@@ -50,7 +50,7 @@ cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef _ext_accept_update_key(self, k, ext_self, ext_keys)
     cpdef _ext_accept_external_id(self, ext_self, parsed)
 
-    cpdef get_object_to_update(self, key, value, registry)
+    cpdef find_factory_for_named_value(self, key, value, registry)
     cdef _updateFromExternalObject(self, parsed)
 
 
