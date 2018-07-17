@@ -6,6 +6,12 @@
 1.0.0a3 (unreleased)
 ====================
 
+- Updating objects that use ``createFieldProperties`` or otherwise
+  have ``FieldProperty`` objects in their type is at least 10% faster
+  thanks to avoiding double-validation due to a small monkey-patch on
+  ``FieldProperty``. See `issue 67
+  <https://github.com/NextThought/nti.externalization/issues/67>`_.
+
 - Proxies around objects that implement ``toExternalObject`` are
   allowed again; the proxied object's ``toExternalObject`` will be called.
 

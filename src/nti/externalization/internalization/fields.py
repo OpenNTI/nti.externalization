@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# pylint:disable=protected-access
 
 # stdlib imports
 import sys
@@ -25,6 +26,12 @@ from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import ValidationError
 from zope.schema.interfaces import WrongContainedType
 from zope.schema.interfaces import WrongType
+
+from zope.schema.fieldproperty import FieldProperty
+from zope.schema.fieldproperty import NO_VALUE
+from zope.schema.fieldproperty import FieldUpdatedEvent
+
+from zope.event import notify
 
 IField_providedBy = IField.providedBy
 
@@ -78,11 +85,51 @@ class FieldSet(object):
         self.ext_self = ext_self
         # Don't denormalize field.set; there's a tiny
         # chance we won't actually be called.
+        # The field must already be bound to ext_self, and
+        # the value must already be valid.
         self.field = field
         self.value = value
 
     def __call__(self):
-        self.field.set(self.ext_self, self.value)
+        # We monkey-patch FieldProperty so we can avoid double
+        # validation, which can be quite expensive in benchmarks.
+        # (See below.)
+
+        # The object we're updating is either newly created or
+        # otherwise local to this thread, so there shouldn't be any
+        # race conditions here. We also generally don't expect to be used
+        # with objects that have limited __slots__ and no __dict__
+        self.ext_self._v_bound_field_already_valid = self.field
+        try:
+            self.field.set(self.ext_self, self.value)
+        finally:
+            del self.ext_self._v_bound_field_already_valid
+
+
+_FieldProperty_orig_set = FieldProperty.__set__
+
+def _FieldProperty__set__valid(self, inst, value):
+    valid_field = getattr(inst, '_v_bound_field_already_valid', None)
+    if valid_field is not None:
+        # Skip the validation, but do everything else just like
+        # FieldProperty does.
+        oldvalue = self.queryValue(inst, NO_VALUE)
+        inst.__dict__[self._FieldProperty__name] = value
+        notify(FieldUpdatedEvent(inst, valid_field, oldvalue, value))
+    else:
+        _FieldProperty_orig_set(self, inst, value)
+
+_FieldProperty__set__valid.orig_func = _FieldProperty_orig_set
+
+# Detect the case that we're in Cython compiled code, where
+# we've already replaced the __set__ function with our own.
+if FieldProperty.__set__.__name__ == _FieldProperty__set__valid.__name__: # pragma: no cover
+    _FieldProperty_orig_set = FieldProperty.__set__.orig_func
+    _FieldProperty__set__valid.org_func = _FieldProperty_orig_set
+
+FieldProperty.__set__ = _FieldProperty__set__valid
+
+
 
 class CannotConvertSequenceError(TypeError):
     """
