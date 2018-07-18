@@ -361,7 +361,9 @@ class TestUpdateFromExternaObject(CleanUp,
     def test_update_sequence_of_primitives_persistent_contained(self):
         from persistent import Persistent
         ext = [1, 2, 3]
-        contained = Persistent()
+        class O(Persistent):
+            pass
+        contained = O()
         result = self._callFUT(contained, ext)
         assert_that(result, is_(same_instance(ext)))
         assert_that(result, is_([1, 2, 3]))
@@ -405,6 +407,7 @@ class TestUpdateFromExternaObject(CleanUp,
         external = {}
 
         class Obj(Persistent):
+            updated = False
             def updateFromExternalObject(self, ext):
                 self.updated = True
 
