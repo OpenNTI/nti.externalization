@@ -92,14 +92,14 @@ class ObjectFactory(Factory):
 class MimeObjectFactory(ObjectFactory):
     """
     Default implementation of
-    :class:`nti.externalization.interfaces.IMimeObjectFactory`.
+    :class:`~nti.externalization.interfaces.IMimeObjectFactory`.
     """
 
 @interface.implementer(IClassObjectFactory)
 class ClassObjectFactory(ObjectFactory):
     """
     Default implementation of
-    :class:`nti.externalization.interfaces.IClassObjectFactory`.
+    :class:`~nti.externalization.interfaces.IClassObjectFactory`.
     """
 
 
@@ -107,7 +107,7 @@ class ClassObjectFactory(ObjectFactory):
 class AnonymousObjectFactory(ObjectFactory):
     """
     Default implementation of
-    :class:`nti.externalization.interfaces.IAnonymousObjectFactory`.
+    :class:`~nti.externalization.interfaces.IAnonymousObjectFactory`.
 
     .. versionadded:: 1.0a3
     """
