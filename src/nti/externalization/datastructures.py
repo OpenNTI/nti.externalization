@@ -414,7 +414,10 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         return getattr(ext_self, k)
 
     def _ext_setattr(self, ext_self, k, value):
-        validate_named_field_value(ext_self, self._iface, k, value)()
+        try:
+            validate_named_field_value(ext_self, self._iface, k, value)()
+        except:
+            raise Exception("Failed to set", ext_self, k, value)
 
     def _ext_accept_external_id(self, ext_self, parsed):
         """

@@ -9,8 +9,13 @@ from __future__ import print_function
 
 from zope import interface
 
+from zope.schema.fieldproperty import createFieldProperties
+
 from nti.externalization.datastructures import ExternalizableInstanceDict
+
 from nti.schema.fieldproperty import createDirectFieldProperties
+from nti.schema.schema import SchemaConfigured
+from nti.schema.eqhash import EqHash
 
 from . import interfaces
 
@@ -31,3 +36,20 @@ class DerivedWithOneTextField(object):
 @interface.implementer(interfaces.IHasListOfDerived)
 class HasListOfDerived(object):
     createDirectFieldProperties(interfaces.IHasListOfDerived)
+
+
+@interface.implementer(interfaces.IAddress)
+@EqHash('full_name', 'street_address_1', 'postal_code')
+class Address(SchemaConfigured):
+    createDirectFieldProperties(interfaces.IAddress)
+
+@interface.implementer(interfaces.IAddresses)
+@EqHash('home', 'work')
+class Addresses(SchemaConfigured):
+    createDirectFieldProperties(interfaces.IAddresses)
+
+
+@interface.implementer(interfaces.IUserProfile)
+@EqHash('addresses', 'alias', 'phones', 'realname')
+class UserProfile(SchemaConfigured):
+    createFieldProperties(interfaces.IUserProfile)
