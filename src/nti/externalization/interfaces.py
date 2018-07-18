@@ -25,11 +25,11 @@ from zope.location import ILocation
 from ._base_interfaces import LocatedExternalDict
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
+from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
 
-from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 MINIMAL_SYNTHETIC_EXTERNAL_KEYS = MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 
 class IInternalObjectExternalizer(interface.Interface):
@@ -241,6 +241,25 @@ class IClassObjectFactory(IFactory):
     """
 
 
+class IAnonymousObjectFactory(IFactory):
+    """
+    A factory for external data that doesn't identify its object type.
+
+    This data is not produced by this library but comes from external
+    sources.
+
+    When these are registered as factories (utilities) care must be
+    taken to avoid name clashes (since there are no "natural" unique
+    names).
+
+    See the ZCML directive
+    :class:`~nti.externalization.zcml.IAnonymousObjectFactoryDirective`
+    for a simple way to do this.
+
+    .. versionadded:: 1.0a3
+    """
+
+
 class IExternalizedObjectFactoryFinder(interface.Interface):
     """
     An adapter from an externalized object to something that can find
@@ -268,6 +287,49 @@ class IExternalReferenceResolver(interface.Interface):
         Resolve the external reference and return it.
         """
 
+class INamedExternalizedObjectFactoryFinder(interface.Interface):
+    """
+    An object that can find factories for particular named
+    external objects.
+
+    This is registered as an adapter for particular internal
+    objects, so that internal object, and any schema it implements,
+    can be used to choose the factory for nested objects being
+    updated into it.
+    """
+
+    def find_factory_for_named_value(name, value, registry):
+        """
+        Find a factory for the external object *value* when it
+        is the value with the name *name*.
+
+        This function has three key pieces of information to work with.
+
+        First, it is an adapter from an internal object, so it knows
+        the ultimate destination object (the context) where the results of the
+        factory will be set.
+
+        Second, it knows the incoming name of the external value.
+
+        Third, it knows the actual incoming external value.
+
+        For example, if the external data looked like ``{'key': 'value'}``
+        a call to ``update_from_external_object(internal_object, data)``
+        would conceptually result in a call that looked like this::
+
+            adapter = INamedExternalizedObjectFactoryFinder(internal_object)
+            factory = adapter.find_factory_for_named_value('key', 'value')
+
+        When the value for the external data is a mutable sequence,
+        this function will be called once for each item in the sequence.
+        So external data of ``{'key': [1, 2, 3]}`` would result in calls
+        ``('key', 1)``, ``('key', 2)`` and ``('key', 3)``.
+
+        This function can return actual factories that produce fresh
+        objects, or it can return the current object assigned to the ultimate
+        attribute in the context to update that exact object in place.
+        This can be beneficial for persistent objects.
+        """
 
 class IInternalObjectUpdater(interface.Interface):
     """
@@ -308,7 +370,16 @@ class IInternalObjectUpdater(interface.Interface):
 class IInternalObjectIO(IInternalObjectExternalizer, IInternalObjectUpdater):
     """
     A single object responsible for both reading and writing internal objects
-    in external forms.
+    in external forms. This is convenient for keeping code organized.
+    """
+
+class IInternalObjectIOFinder(INamedExternalizedObjectFactoryFinder,
+                              IInternalObjectIO):
+    """
+    Like `IInternalObjectIO`, but this object also gets the chance to find factories
+    for objects.
+
+    The class `~.InterfaceObjectIO` implements this interface.
     """
 
 class IObjectWillUpdateFromExternalEvent(IObjectEvent):

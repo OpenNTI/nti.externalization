@@ -13,19 +13,22 @@ from __future__ import print_function
 # stdlib imports
 try:
     from collections.abc import MutableSequence
-    from collections.abc import MutableMapping
 except ImportError:
     from collections import MutableSequence
     from collections import MutableMapping
+else: # pragma: no cover
+    from collections.abc import MutableMapping
 import inspect
 import warnings
 
 from persistent.interfaces import IPersistent
 from six import iteritems
 from zope import component
+from zope import interface
 
 from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization.interfaces import IInternalObjectUpdater
+from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
 
 from .factories import find_factory_for
 from .events import _notifyModified
@@ -172,11 +175,21 @@ def _obj_has_usable_updateFromExternalObject(obj):
 try:
     from zope.testing import cleanup # pylint:disable=ungrouped-imports
 except ImportError: # pragma: no cover
-    raise
+    pass
 else:
     cleanup.addCleanUp(_argspec_cache.clear)
     cleanup.addCleanUp(_usable_updateFromExternalObject_cache.clear)
 
+
+class DefaultInternalObjectFactoryFinder(object):
+
+    def find_factory_for_named_value(self, name, value, registry):
+        return find_factory_for(value, registry)
+
+
+interface.classImplements(DefaultInternalObjectFactoryFinder, INamedExternalizedObjectFactoryFinder)
+
+_default_factory_finder = DefaultInternalObjectFactoryFinder()
 
 def update_from_external_object(containedObject, externalObject,
                                 registry=component, context=None,
@@ -214,6 +227,8 @@ def update_from_external_object(containedObject, externalObject,
         None in the case of a sequence and ``x`` is the external
         object. Deprecated.
     :return: *containedObject* after updates from *externalObject*
+
+    .. seealso:: `~.INamedExternalizedObjectFactoryFinder`
 
     .. versionchanged:: 1.0.0a2
        Remove the ``object_hook`` parameter.
@@ -254,9 +269,13 @@ def update_from_external_object(containedObject, externalObject,
 
     assert isinstance(externalObject, MutableMapping)
 
+    updater = registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder,
+                                    u'', _default_factory_finder)
+    find_factory_for_named_value = updater.find_factory_for_named_value
+
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
-    external_keys = list()
+    external_keys = []
     for k, v in iteritems(externalObject):
         external_keys.append(k)
         if isinstance(v, PRIMITIVES):
@@ -267,29 +286,38 @@ def update_from_external_object(containedObject, externalObject,
 
         if isinstance(v, MutableSequence):
             # Update the sequence in-place
-            # XXX: This is not actually updating it.
-            # We need to slice externalObject[k[:]]
             __traceback_info__ = k, v
-            v = _recall(k, (), v, kwargs)
-            externalObject[k] = v
+            for index, item in enumerate(v):
+                factory = find_factory_for_named_value(k, item, registry)
+                if factory is not None:
+                    # TODO: Add wrappers when we create the factories in ZCML
+                    # so we can always pass the argument
+                    new_obj = (factory(v)
+                               if getattr(factory, '__external_factory_wants_arg__', False)
+                               else factory())
+                    v[index] = _recall(k, new_obj, item, kwargs)
         else:
-            factory = find_factory_for(v, registry=registry)
+            factory = find_factory_for_named_value(k, v, registry)
             if factory is not None:
-                externalObject[k] = _recall(k, factory(), v, kwargs)
+                new_obj = (factory(v)
+                           if getattr(factory, '__external_factory_wants_arg__', False)
+                           else factory())
+                externalObject[k] = _recall(k, new_obj, v, kwargs)
 
-    updater = None
+
     if _obj_has_usable_updateFromExternalObject(containedObject):
         # legacy support. The __ext_ignore_updateFromExternalObject__
         # allows a transition to an adapter without changing
         # existing callers and without triggering infinite recursion
         updater = containedObject
     else:
-        if require_updater:
-            get = registry.getAdapter
-        else:
-            get = registry.queryAdapter
+        if not IInternalObjectUpdater.providedBy(updater):
+            if require_updater:
+                get = registry.getAdapter
+            else:
+                get = registry.queryAdapter
 
-        updater = get(containedObject, IInternalObjectUpdater)
+            updater = get(containedObject, IInternalObjectUpdater)
 
     if updater is not None:
         # Let the updater resolve externals too

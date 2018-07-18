@@ -141,8 +141,23 @@ def find_factory_for_class_name(class_name):
 
 def find_factory_for(externalized_object, registry=component):
     """
-    Given a :class:`IExternalizedObject`, locate and return a factory
-    to produce a Python object to hold its contents.
+    find_factory_for(externalized_object, registry=<zope.component>) -> factory
+
+    Given a
+    :class:`~nti.externalization.interfaces.IExternalizedObject`,
+    locate and return a factory to produce a Python object to hold its
+    contents.
+
+    If there is a
+    :class:`~nti.externalization.interfaces.IExternalizedObjectFactoryFinder`
+    adapter registered for the externalized object, we return the
+    results of its ``find_factory`` method. Note that since
+    externalized objects are typically simple lists or dicts, such
+    adapters have the capability to hijack all factory finding,
+    probably unintentionally.
+
+    Otherwise, we examine the contents of the object itself to find a
+    registered factory based on MIME type (preferably) or class name.
     """
     factory_finder = registry.queryAdapter(
         externalized_object,
@@ -150,7 +165,9 @@ def find_factory_for(externalized_object, registry=component):
     if factory_finder is not None:
         return factory_finder.find_factory(externalized_object)
 
-
+    # We do it this way instead of using
+    # ``default_externalized_object_factory_finder`` as the default in
+    # queryAdapter so cython can optimize the call.
     return _find_factory_for_mime_or_class(externalized_object)
 
 

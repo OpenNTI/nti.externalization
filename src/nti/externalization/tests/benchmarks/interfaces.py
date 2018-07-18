@@ -226,16 +226,14 @@ class IAddress(IRootInterface):
     taggedValue('__external_class_name__',
                 'Address')
 
-class IAddresses(IRootInterface):
-    home = Object(IAddress)
-    work = Object(IAddress)
-    taggedValue('__external_class_name__',
-                'Addresses')
-
 
 class IUserContactProfile(Interface):
 
-    addresses = Object(IAddresses)
+    addresses = Dict(title=u"A mapping of address objects.",
+                     key_type=DecodingValidTextLine(title=u"Adresss key"),
+                     value_type=Object(IAddress),
+                     min_length=0,
+                     required=False)
 
     phones = Dict(title=u"A mapping of phone numbers objects.",
                   key_type=ValidTextLine(title=u"Phone key"),

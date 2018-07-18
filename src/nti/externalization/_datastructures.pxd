@@ -13,10 +13,14 @@ from nti.externalization.__base_interfaces cimport get_standard_internal_fields
 from nti.externalization.__base_interfaces cimport StandardInternalFields as SIF
 
 from nti.externalization.internalization._fields cimport validate_named_field_value
+from nti.externalization.internalization._factories cimport find_factory_for
 
 from nti.externalization.__interface_cache cimport cache_for
 
-cdef IInternalObjectIO
+
+
+cdef IInternalObjectIOFinder
+cdef IAnonymousObjectFactory
 cdef SEF StandardExternalFields
 cdef SIF StandardInternalFields
 cdef validate_named_field_value
@@ -45,6 +49,9 @@ cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef _ext_primitive_keys(self)
     cpdef _ext_accept_update_key(self, k, ext_self, ext_keys)
     cpdef _ext_accept_external_id(self, ext_self, parsed)
+
+    cpdef find_factory_for_named_value(self, key, value, registry)
+    cdef _updateFromExternalObject(self, parsed)
 
 
 cdef class ExternalizableInstanceDict(AbstractDynamicObjectIO):

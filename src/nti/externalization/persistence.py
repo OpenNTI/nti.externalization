@@ -16,7 +16,7 @@ except ImportError:
 
 try:
     from itertools import izip
-except ImportError:
+except ImportError: # pragma: no cover
     izip = zip
 
 import persistent

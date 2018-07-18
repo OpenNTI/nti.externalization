@@ -376,8 +376,7 @@ class TestUpdateFromExternaObject(CleanUp,
         assert_that(result, is_(same_instance(self)))
 
         assert_that(ext, is_({'a': 1, 'b': b, 'c': {}}))
-        # This should change.
-        assert_that(ext['b'], is_not(same_instance(b)))
+        assert_that(ext['b'], is_(same_instance(b)))
 
     def test_update_mapping_with_update_on_contained_object(self):
         class ContainedObject(object):
@@ -584,7 +583,7 @@ class TestValidateFieldValue(CleanUp,
     def test_wrong_contained_type_object_field_adapts(self):
         from zope.schema import Object
         from zope.schema import List
-        from zope.schema.interfaces import WrongContainedType
+
 
         class IThing(interface.Interface):
             pass
@@ -602,12 +601,40 @@ class TestValidateFieldValue(CleanUp,
         setter()
         assert_that(bag, has_property('field', contains(is_(O))))
 
+    def test_wrong_contained_type_object_field_adapts_fails(self):
+        from zope.schema.interfaces import WrongContainedType
+        from zope.schema import Object
+        from zope.schema import List
+
+
+        class IThing(interface.Interface):
+            pass
+
+        field = List(value_type=Object(IThing), __name__='field')
+
         class N(object):
             def __conform__(self, iface):
                 raise TypeError()
 
         with self.assertRaises(WrongContainedType):
             self._callFUT(field, [N()])
+
+    def test_wrong_contained_type_no_args(self):
+        # In this case we don't know what to do
+        from zope.schema.interfaces import WrongContainedType
+
+        class Field(object):
+            __name__ = 'thing'
+
+            def validate(self, value):
+                raise WrongContainedType
+
+            def bind(self, _):
+                return self
+
+        with self.assertRaises(WrongContainedType):
+            self._callFUT(Field(), [object()])
+
 
     def test_wrong_contained_type_field_fromObject(self):
         from zope.schema import Object

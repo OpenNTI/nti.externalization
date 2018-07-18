@@ -14,10 +14,18 @@ from zope.component.factory import Factory
 
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IMimeObjectFactory
+from nti.externalization.interfaces import IAnonymousObjectFactory
 
 _builtin_callable = callable
 
 # pylint: disable=redefined-builtin, protected-access
+
+__all__ = [
+    'ObjectFactory',
+    'MimeObjectFactory',
+    'ClassObjectFactory',
+    'AnonymousObjectFactory',
+]
 
 class ObjectFactory(Factory):
     """
@@ -47,6 +55,8 @@ class ObjectFactory(Factory):
      >>> print(factory.description)
      A Description
     """
+
+    __external_factory_wants_arg__ = False
 
     #: The default callable argument, if none is given to the
     #: constructor.
@@ -90,4 +100,14 @@ class ClassObjectFactory(ObjectFactory):
     """
     Default implementation of
     :class:`nti.externalization.interfaces.IClassObjectFactory`.
+    """
+
+
+@interface.implementer(IAnonymousObjectFactory)
+class AnonymousObjectFactory(ObjectFactory):
+    """
+    Default implementation of
+    :class:`nti.externalization.interfaces.IAnonymousObjectFactory`.
+
+    .. versionadded:: 1.0a3
     """

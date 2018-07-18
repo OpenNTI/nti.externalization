@@ -13,7 +13,7 @@ from __future__ import print_function
 # pylint:disable=protected-access
 
 # stdlib imports
-import sys
+from sys import exc_info as get_exc_info
 
 from six import text_type
 from six import reraise
@@ -34,6 +34,7 @@ from zope.schema.fieldproperty import FieldUpdatedEvent
 from zope.event import notify
 
 IField_providedBy = IField.providedBy
+IFromUnicode_providedBy = IFromUnicode.providedBy
 
 __all__ = [
     'validate_field_value',
@@ -168,6 +169,102 @@ def _all_SchemaNotProvided(sequence):
             return False # pragma: no cover
     return True
 
+###
+# Fixup functions for various validation errors.
+# Because these are called as separate functions *after* the
+# exception is caught, the fact that they each take a reference to the
+# exception's traceback does not introduce cycles. (Also it helps
+# that these are compiled with Cython, which doesn't use frame objects
+# in the traceback.) So we don't bother with the usual try/finally: del
+###
+
+def _handle_SchemaNotProvided(field_name, field, value):
+    # The object doesn't implement the required interface.
+    # Can we adapt the provided object to the desired interface?
+    # First, capture the details so we can reraise if needed
+    exc_info = get_exc_info()
+    if not exc_info[1].args:  # zope.schema doesn't fill in the details, which sucks
+        exc_info[1].args = (field_name, field.schema)
+
+    try:
+        value = field.schema(value)
+        field.validate(value)
+        return value
+    except (LookupError, TypeError, ValidationError, AttributeError):
+        # Nope. TypeError (or AttrError - Variant) means we couldn't adapt,
+        # and a validation error means we could adapt, but it still wasn't
+        # right. Raise the original SchemaValidationError.
+        reraise(*exc_info)
+
+def _handle_WrongType(field_name, field, value):
+    # Like SchemaNotProvided, but for a primitive type,
+    # most commonly a date
+    # Can we adapt?
+    exc_info = get_exc_info()
+
+    if len(exc_info[1].args) != 3: # pragma: no cover
+        reraise(*exc_info)
+
+    exp_type = exc_info[1].args[1]
+    implemented_by_type = list(implementedBy(exp_type))
+    # If the type unambiguously implements an interface (one interface)
+    # that's our target. IDate does this
+    if len(implemented_by_type) != 1:
+        reraise(*exc_info)
+
+    schema = implemented_by_type[0]
+
+    try:
+        return schema(value)
+    except (LookupError, TypeError):
+        # No registered adapter, darn
+        raise reraise(*exc_info)
+    except ValidationError as e:
+        # Found an adapter, but it does its own validation,
+        # and that validation failed (eg, IDate below)
+        # This is still a more useful error than WrongType,
+        # so go with it after ensuring it has a field
+        e.field = field
+        raise
+
+
+def _handle_WrongContainedType(field_name, field, value):
+    # We failed to set a sequence. This would be of simple (non externalized)
+    # types.
+    # Try to adapt each value to what the sequence wants, just as above,
+    # if the error is one that may be solved via simple adaptation
+    # TODO: This is also thrown from IObject fields when validating the
+    # fields of the object
+    exc_info = get_exc_info()
+
+    if not exc_info[1].args or not _all_SchemaNotProvided(exc_info[1].args[0]):
+        reraise(*exc_info)
+
+    # IObject provides `schema`, which is an interface, so we can adapt
+    # using it. Some other things do not, for example nti.schema.field.Variant
+    # They might provide a `fromObject` function to do the conversion
+    # The field may be able to handle the whole thing by itself or we may need
+    # to do the individual objects
+
+    try:
+        value = _adapt_sequence(field, value)
+    except TypeError:
+        # TypeError means we couldn't adapt, in which case we want
+        # to raise the original error. If we could adapt,
+        # but the converter does its own validation (e.g., fromObject)
+        # then we want to let that validation error rise
+        raise reraise(*exc_info)
+
+    # Now try to validate the converted value
+    try:
+        field.validate(value)
+    except ValidationError:
+        # Nope. TypeError means we couldn't adapt, and a
+        # validation error means we could adapt, but it still wasn't
+        # right. Raise the original SchemaValidationError.
+        raise reraise(*exc_info)
+
+    return value
 
 def validate_field_value(self, field_name, field, value):
     """
@@ -186,106 +283,21 @@ def validate_field_value(self, field_name, field, value):
     :return: A callable of no arguments to call to actually set the value (necessary
             in case the value had to be adapted).
     """
-    # XXX: Simplify this
-    # pylint:disable=too-many-branches
     __traceback_info__ = field_name, value
     field = field.bind(self)
     try:
-        if isinstance(value, text_type) and IFromUnicode.providedBy(field):
+        if isinstance(value, text_type) and IFromUnicode_providedBy(field):
             value = field.fromUnicode(value)  # implies validation
         else:
             field.validate(value)
-    except SchemaNotProvided as e:
-        # The object doesn't implement the required interface.
-        # Can we adapt the provided object to the desired interface?
-        # First, capture the details so we can reraise if needed
-        exc_info = sys.exc_info()
-        if not e.args:  # zope.schema doesn't fill in the details, which sucks
-            e.args = (field_name, field.schema)
-
-        try:
-            value = field.schema(value)
-            field.validate(value)
-        except (LookupError, TypeError, ValidationError, AttributeError):
-            # Nope. TypeError (or AttrError - Variant) means we couldn't adapt,
-            # and a validation error means we could adapt, but it still wasn't
-            # right. Raise the original SchemaValidationError.
-            reraise(*exc_info)
-        finally:
-            del exc_info
-    except WrongType as e:
-        # Like SchemaNotProvided, but for a primitive type,
-        # most commonly a date
-        # Can we adapt?
-        if len(e.args) != 3: # pragma: no cover
-            raise
-        exc_info = sys.exc_info()
-        exp_type = e.args[1]
-        # If the type unambiguously implements an interface (one interface)
-        # that's our target. IDate does this
-        if len(list(implementedBy(exp_type))) != 1:
-            try:
-                raise # pylint:disable=misplaced-bare-raise
-            finally:
-                del exc_info
-        schema = list(implementedBy(exp_type))[0]
-        try:
-            value = schema(value)
-        except (LookupError, TypeError):
-            # No registered adapter, darn
-            raise reraise(*exc_info)
-        except ValidationError as e:
-            # Found an adapter, but it does its own validation,
-            # and that validation failed (eg, IDate below)
-            # This is still a more useful error than WrongType,
-            # so go with it after ensuring it has a field
-            e.field = field
-            raise
-        finally:
-            del exc_info
-
+    except SchemaNotProvided:
+        value = _handle_SchemaNotProvided(field_name, field, value)
+    except WrongType:
+        value = _handle_WrongType(field_name, field, value)
         # Lets try again with the adapted value
         return validate_field_value(self, field_name, field, value)
-
-    except WrongContainedType as e:
-        # We failed to set a sequence. This would be of simple (non externalized)
-        # types.
-        # Try to adapt each value to what the sequence wants, just as above,
-        # if the error is one that may be solved via simple adaptation
-        # TODO: This is also thrown from IObject fields when validating the
-        # fields of the object
-        if not e.args or not _all_SchemaNotProvided(e.args[0]):
-            raise # pragma: no cover
-        exc_info = sys.exc_info()
-        # IObject provides `schema`, which is an interface, so we can adapt
-        # using it. Some other things do not, for example nti.schema.field.Variant
-        # They might provide a `fromObject` function to do the conversion
-        # The field may be able to handle the whole thing by itself or we may need
-        # to do the individual objects
-
-        try:
-            value = _adapt_sequence(field, value)
-        except TypeError:
-            # TypeError means we couldn't adapt, in which case we want
-            # to raise the original error. If we could adapt,
-            # but the converter does its own validation (e.g., fromObject)
-            # then we want to let that validation error rise
-            try:
-                raise reraise(*exc_info)
-            finally:
-                del exc_info
-
-
-        # Now try to validate the converted value
-        try:
-            field.validate(value)
-        except ValidationError:
-            # Nope. TypeError means we couldn't adapt, and a
-            # validation error means we could adapt, but it still wasn't
-            # right. Raise the original SchemaValidationError.
-            raise reraise(*exc_info)
-        finally:
-            del exc_info
+    except WrongContainedType:
+        value = _handle_WrongContainedType(field_name, field, value)
 
     if (field.readonly
             and field.query(self) is None

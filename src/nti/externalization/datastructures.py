@@ -25,7 +25,8 @@ from zope.schema.interfaces import SchemaNotProvided
 
 from nti.schema.interfaces import find_most_derived_interface
 
-from .interfaces import IInternalObjectIO
+from .interfaces import IInternalObjectIOFinder
+from .interfaces import IAnonymousObjectFactory
 from .interfaces import StandardInternalFields
 
 # Things imported from cython with matching cimport
@@ -36,6 +37,7 @@ from .externalization.dictionary import internal_to_standard_external_dictionary
 from .externalization.externalizer import to_external_object as _toExternalObject
 
 from .internalization import validate_named_field_value
+from .internalization.factories import find_factory_for
 from .representation import make_repr
 
 from ._base_interfaces import get_standard_external_fields
@@ -47,6 +49,14 @@ from ._interface_cache import cache_for
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
 
+__all__ = [
+    'ExternalizableDictionaryMixin',
+    'AbstractDynamicObjectIO',
+    'ExternalizableInstanceDict',
+    'InterfaceObjectIO',
+    'ModuleScopedInterfaceObjectIO',
+]
+
 class ExternalizableDictionaryMixin(object):
     """
     Implements a toExternalDictionary method as a base for subclasses.
@@ -55,9 +65,6 @@ class ExternalizableDictionaryMixin(object):
     #: If true, then when asked for the standard dictionary, we will instead
     #: produce the *minimal* dictionary. See :func:`~to_minimal_standard_external_dictionary`
     __external_use_minimal_base__ = False
-
-    def __init__(self, *args):
-        super(ExternalizableDictionaryMixin, self).__init__(*args)
 
     def _ext_replacement(self):
         return self
@@ -87,6 +94,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     Abstractions are in place to allow subclasses to map external and internal names
     independently (this type never uses getattr/setattr/hasattr, except for some
     standard fields).
+
+    See `InterfaceObjectIO` for a complete implementation.
     """
 
     # TODO: there should be some better way to customize this if desired (an explicit list)
@@ -123,6 +132,15 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     _ext_primitive_out_ivars_ = frozenset()
     _prefer_oid_ = False
 
+    def find_factory_for_named_value(self, key, value, registry):
+        """
+        Uses `.find_factory_for` to locate a factory.
+
+        This does not take into account the current object (context)
+        or the *key*. It only handles finding factories based on the
+        class or MIME type found within *value*.
+        """
+        return find_factory_for(value, registry)
 
     def _ext_all_possible_keys(self):
         """
@@ -239,6 +257,9 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         return False  # false by default
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
+        return self._updateFromExternalObject(parsed)
+
+    def _updateFromExternalObject(self, parsed):
         updated = False
 
         ext_self = self._ext_replacement()
@@ -270,7 +291,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         return updated
 
-interface.classImplements(AbstractDynamicObjectIO, IInternalObjectIO)
+interface.classImplements(AbstractDynamicObjectIO, IInternalObjectIOFinder)
 
 
 class ExternalizableInstanceDict(AbstractDynamicObjectIO):
@@ -314,12 +335,18 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
     Externalizes to a dictionary based on getting the attributes of an
     object defined by an interface. If any attribute has a true value
-    for the tagged value ``_ext_excluded_out``, it will not be considered
-    for reading or writing.
+    for the tagged value ``_ext_excluded_out``, it will not be
+    considered for reading or writing.
 
-    Meant to be used as an adapter, so accepts the object to
-    externalize in the constructor, as well as the interface to use to
-    guide the process. The object is externalized using the
+    This is an implementation of
+    `~nti.externalization.interfaces.IInternalObjectIOFinder`, meaning
+    it can both internalize (update existing objects) and externalize
+    (producing dictionaries), and that it gets to choose the factories
+    used for sub-objects when internalizing.
+
+    This class is meant to be used as an adapter, so it accepts the
+    object to externalize in the constructor, as well as the interface
+    to use to guide the process. The object is externalized using the
     most-derived version of the interface given to the constructor
     that it implements.
 
@@ -328,8 +355,10 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     the ``Class`` key, or a callable
     ``__external_class_name__(interface, object ) -> name.``
 
-    (TODO: In the future extend this to multiple, non-overlapping interfaces, and better
-    interface detection (see :class:`ModuleScopedInterfaceObjectIO` for a limited version of this.)
+    (TODO: In the future extend this to multiple, non-overlapping
+    interfaces, and better interface detection (see
+    :class:`ModuleScopedInterfaceObjectIO` for a limited version of
+    this.)
     """
 
     _ext_iface_upper_bound = None
@@ -346,7 +375,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             schema will be validated after an object has been updated with
             :meth:`update_from_external_object`, not just the keys that were assigned.
         """
-        super(InterfaceObjectIO, self).__init__()
+        AbstractDynamicObjectIO.__init__(self)
         self._ext_self = ext_self
         # Cache all of this data that we use. It's required often and, if not quite a bottleneck,
         # does show up in the profiling data
@@ -360,7 +389,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
         if not cache.ext_primitive_out_ivars:
             keys = self._ext_find_primitive_keys()
-            cache.ext_primitive_out_ivars = self._ext_primitive_out_ivars_.union(keys)
+            cache.ext_primitive_out_ivars = self._ext_primitive_out_ivars_ | keys
         self._ext_primitive_out_ivars_ = cache.ext_primitive_out_ivars
 
         self.validate_after_update = validate_after_update
@@ -432,8 +461,64 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
 
+    def find_factory_for_named_value(self, key, value, registry):
+        """
+        If `AbstractDynamicObjectIO.find_factory_for_named_value`
+        cannot find a factory based on examining *value*, then we use
+        the context objects's schema to find a factory.
+
+        If the schema contains an attribute named *key*, it will be
+        queried for the tagged value ``__external_factory__``. If
+        present, this tagged value should be the name of a factory
+        object implementing `.IAnonymousObjectFactory` registered in
+        *registry* (typically registered in the global site).
+
+        The ZCML directive `.IAnonymousObjectFactoryDirective` sets up both the
+        registration and the tagged value.
+
+        This is useful for internalizing data from external sources
+        that does not provide a class or MIME field within the data.
+
+        The most obvious limitation of this is that if the *value* is part
+        of a sequence, it must be a homogeneous sequence. The factory is
+        called with no arguments, so the only way to deal with heterogeneous
+        sequences is to subclass this object and override this method to
+        examine the value itself.
+
+        A second limitation is that the external data key must match
+        the internal schema field name. Again, the only way to
+        remove this limitation is to subclass this object.
+        """
+        factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value, registry)
+        if factory is None:
+            # Is there a factory on the field?
+            try:
+                field = self._iface[key]
+                # See zcml.py:anonymousObjectFactoryDirective.
+                # This *should* be a string giving the dottedname of a factory utility.
+                # For test purposes we also allow it to be an actual object.
+
+                # TODO: If this becomes a bottleneck, the ZCML could
+                # have an argument global=False to allow setting the type
+                # directly instead of a string; the user would have to
+                # *know* that no sites would ever need a different value.
+            except KeyError:
+                pass
+            else:
+                factory = field.queryTaggedValue('__external_factory__')
+                # When it is a string, we require the factory to exist.
+                # Anything else is a programming error.
+                if isinstance(factory, str):
+                    factory = registry.getUtility(IAnonymousObjectFactory, factory)
+            # TODO: If there is no factory found, check to see if the
+            # schema field is a Dict with a complex value type, and if
+            # so, automatically update it in place? This currently
+            # requires the user use a ZCML directive for each such
+            # dict field.
+        return factory
+
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
-        result = AbstractDynamicObjectIO.updateFromExternalObject(self, parsed)
+        result = AbstractDynamicObjectIO._updateFromExternalObject(self, parsed)
         # If we make it this far, then validate the object.
 
         # TODO: Should probably just make sure that there are no /new/

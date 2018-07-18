@@ -29,6 +29,17 @@
 - ``update_from_external_object`` caches certain information about the
   types of the updater objects, making it 8-25% faster.
 
+- ``update_from_external_object`` mutates sequences contained in a
+  dict in-place instead of overwriting with a new list.
+
+- Add support for finding factories for incoming data which do not
+  specify a MIME type or class field based on the key they are
+  assigned to. This aids in consuming data produced by foreign systems
+  or using ``Dict`` schema fields that require modelled
+  values. See `issue 51
+  <https://github.com/NextThought/nti.externalization/issues/51>`_ and
+  `PR 68
+  <https://github.com/NextThought/nti.externalization/pull/68>`_.
 
 1.0.0a2 (2018-07-05)
 ====================

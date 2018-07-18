@@ -9,7 +9,6 @@ from __future__ import print_function
 import sys
 import unittest
 
-import fudge
 from zope import interface
 from zope.testing.cleanup import CleanUp
 
@@ -399,6 +398,34 @@ class TestInterfaceObjectIO(CleanUp,
             pass
 
         inst.updateFromExternalObject({'ivar': Required()})
+
+    def test_find_factory_for_named_value(self):
+        from zope import component
+        from zope.schema import Int
+        class I(interface.Interface):
+            field = Int()
+
+        @interface.implementer(I)
+        class O(object):
+            pass
+
+        inst = self._makeOne(O(), iface_upper_bound=I)
+
+        # Key not in schema: not an error (XXX should it be?)
+        assert_that(inst.find_factory_for_named_value('missing', {}, component),
+                    is_(none()))
+
+        # object that's not-string: not an error (XXX: should it be? we don't
+        # test for 'callable' for performance)
+        I['field'].setTaggedValue('__external_factory__', self)
+
+        assert_that(inst.find_factory_for_named_value('field', {}, component),
+                    is_(self))
+
+        # string object is looked up as a utility
+        I['field'].setTaggedValue('__external_factory__', 'some factory')
+        with self.assertRaises(component.ComponentLookupError):
+            inst.find_factory_for_named_value('field', {}, component)
 
 
 class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):
