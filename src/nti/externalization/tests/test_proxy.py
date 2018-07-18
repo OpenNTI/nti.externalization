@@ -74,3 +74,13 @@ class TestProxy(unittest.TestCase):
                 wrapped = wrapper(wrapped)
 
         assert_that(removeAllProxies(wrapped), is_(same_instance(obj)))
+
+def test_suite():
+    import doctest
+    from unittest import defaultTestLoader
+    suite = defaultTestLoader.loadTestsFromName(__name__)
+
+    return unittest.TestSuite([
+        suite,
+        doctest.DocTestSuite('nti.externalization.proxy'),
+    ])
