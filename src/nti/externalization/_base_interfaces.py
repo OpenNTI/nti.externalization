@@ -81,6 +81,8 @@ class StandardExternalFields(object):
     keys used in external mappings.
 
     These are text (unicode).
+
+    Not all external objects will have all possible keys.
     """
     __slots__ = (
         'ID',
@@ -104,20 +106,38 @@ class StandardExternalFields(object):
     )
 
     def __init__(self):
+        #: An id
         self.ID = u'ID'
+        #: An identifier specific to this exact object instance
         self.OID = u'OID'
+        #: A hyperlink to reach this object
         self.HREF = u'href'
+        #: An integer uniquely identifying the object in some scope
         self.INTID = u'INTID'
+        #: A structured identifier similar to a hyperlink
         self.NTIID = u'NTIID'
+        #: The name of the creator of the object
         self.CREATOR = u'Creator'
+        #: The name of the container holding the object
         self.CONTAINER_ID = u'ContainerId'
+        #: The floating point value giving the Unix epoch time
+        #: of the object's creation
         self.CREATED_TIME = u'CreatedTime'
+        #: The floating point value giving the Unix epoch time
+        #: of the last modification of the object
         self.LAST_MODIFIED = u'Last Modified'
+        #: The class of the object
         self.CLASS = u'Class'
+        #: A dictionary mapping "rel" to more hrefs.
         self.LINKS = u'Links'
+        #: The MIME type of this object
         self.MIMETYPE = u'MimeType'
+        #: A list or dictionary of external objects contained within
+        #: this object
         self.ITEMS = u'Items'
+        #: A counter
         self.TOTAL = u'Total'
+        #: The total number of items contained in this object
         self.ITEM_COUNT = u'ItemCount'
 
         self._ALL_ATTR_NAMES = frozenset((s for s in StandardExternalFields.__slots__
@@ -179,12 +199,19 @@ class StandardInternalFields(object):
     )
 
     def __init__(self):
+        #: An object ID
         self.ID = 'id'
+        #: An object's structured ID
         self.NTIID = 'ntiid'
+        #: An object that created this object
         self.CREATOR = 'creator'
+        #: The Unix timestamp of the creation
         self.CREATED_TIME = 'createdTime'
+        #: The ID of the container of this object
         self.CONTAINER_ID = 'containerId'
+        #: The Unix timestamp of the last modification of this object
         self.LAST_MODIFIED = 'lastModified'
+
         self.LAST_MODIFIEDU = 'LastModified'
 
 

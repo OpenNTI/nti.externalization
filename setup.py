@@ -170,7 +170,7 @@ setup(
         'zope.dottedname',
         'zope.dublincore',
         'zope.event',
-        'zope.hookable',
+        'zope.hookable >= 4.2.0',
         'zope.interface',
         'zope.intid',
         'zope.lifecycleevent',

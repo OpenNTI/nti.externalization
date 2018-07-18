@@ -24,9 +24,13 @@ from nti.externalization.integer_strings import from_external_string
 from nti.externalization.integer_strings import to_external_string
 from nti.externalization.proxy import removeAllProxies
 
+__all__ = [
+    'to_external_oid',
+    'from_external_oid',
+]
 
-def toExternalOID(self, default=None, add_to_connection=False,
-                  add_to_intids=False, use_cache=True):
+def to_external_oid(self, default=None, add_to_connection=False,
+                    add_to_intids=False, use_cache=True):
     """
     For a persistent object, returns its persistent OID in a pasreable
     external format (see :func:`fromExternalOID`). If the object has not been saved, and
@@ -106,12 +110,13 @@ def toExternalOID(self, default=None, add_to_connection=False,
     except (AttributeError, TypeError): # pragma: no cover
         pass
     return oid
-to_external_oid = toExternalOID
+
+toExternalOID = to_external_oid
 
 ParsedOID = collections.namedtuple('ParsedOID', ['oid', 'db_name', 'intid'])
 
 
-def fromExternalOID(ext_oid):
+def from_external_oid(ext_oid):
     """
     Given a string, as produced by :func:`toExternalOID`, parses it into its
     component parts.
@@ -160,4 +165,5 @@ def fromExternalOID(ext_oid):
         intid = None
 
     return ParsedOID(oid_string, name_s, intid)
-from_external_oid = fromExternalOID
+
+fromExternalOID = from_external_oid
