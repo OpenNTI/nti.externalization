@@ -13,9 +13,4 @@
 		modules=".objects"
 		/>
 
-    <ext:anonymousObjectFactoryInPlace
-        for=".interfaces.IUserContactProfile"
-        field="addresses"
-        />
-
 </configure>
