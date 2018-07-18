@@ -15,8 +15,6 @@ import perf
 from zope.configuration import xmlconfig
 
 from nti.externalization.externalization import toExternalObject
-from nti.externalization.interfaces import StandardExternalFields
-from nti.externalization.internalization import update_from_external_object
 
 import nti.externalization.tests.benchmarks
 
@@ -70,18 +68,7 @@ def main(runner=None):
         profile(100, user_profile)
         return
 
-    mt = getattr(user_profile, 'mimeType')
-    assert mt == 'application/vnd.nextthought.benchmarks.userprofile', mt
-
     ext = toExternalObject(user_profile)
-    assert StandardExternalFields.MIMETYPE in ext
-    assert 'home' in ext['addresses'], ext
-    assert 'city' in ext['addresses']['home'], ext
-
-    addr = update_from_external_object(Address(), toExternalObject(home_address))
-    assert addr == home_address
-    prof2 = update_from_external_object(UserProfile(), toExternalObject(user_profile))
-    assert prof2 == user_profile, (prof2, user_profile)
 
     runner = runner or perf.Runner()
     runner.bench_time_func(__name__ + ": toExternalObject",

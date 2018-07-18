@@ -30,7 +30,10 @@ class ConfiguringTestBase(nti.testing.base.ConfiguringTestBase):
 class SharedConfiguringTestLayer(ZopeComponentLayer,
                                  ConfiguringLayerMixin):
 
-    set_up_packages = ('nti.externalization',)
+    set_up_packages = (
+        'nti.externalization',
+        'nti.externalization.tests.benchmarks',
+    )
 
     @classmethod
     def setUp(cls):
