@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Functions for externalizing OIDs.
+Functions for finding and parsing OIDs.
 """
 
 from __future__ import absolute_import
@@ -27,21 +27,36 @@ from nti.externalization.proxy import removeAllProxies
 __all__ = [
     'to_external_oid',
     'from_external_oid',
+    'ParsedOID',
 ]
 
 def to_external_oid(self, default=None, add_to_connection=False,
                     add_to_intids=False, use_cache=True):
+    # Override the signature to *not* document use_cache.
     """
-    For a persistent object, returns its persistent OID in a pasreable
-    external format (see :func:`fromExternalOID`). If the object has not been saved, and
-    `add_to_connection` is `False` (the default) returns the `default`.
+    to_external_oid(self, default=None, add_to_connection=False, add_to_intids=False) -> bytes
 
-    :param add_to_connection: If the object is persistent but not yet added to a
-            connection, setting this to true will attempt to add it to the nearest connection
-            in its containment tree, thus letting it have an OID.
-    :param add_to_intids: If we can obtain an OID for this object, but it does
-            not have an intid, and an intid utility is available, then if this is
-            ``True`` (not the default) we will register it with the utility.
+    For a `persistent object <persistent.Persistent>`, returns its
+    `persistent OID <persistent.interfaces.IPersistent._p_oid>` in a parseable external format (see
+    :func:`.from_external_oid`). This format includes the database name
+    (so it works in a ZODB multi-database) and the integer ID from the
+    closest :class:`zope.intid.interfaces.IIntIds` utility.
+
+    If the object implements a method ``toExternalOID()``, that method
+    will be called and its result (or the *default*) will be returned.
+    This should generally be considered legacy behaviour.
+
+    If the object has not been saved, and *add_to_connection* is
+    `False` (the default) returns the *default*.
+
+    :param bool add_to_connection: If the object is persistent but not
+        yet added to a connection, setting this to true will attempt
+        to add it to the nearest connection in its containment tree,
+        thus letting it have an OID.
+    :param bool add_to_intids: If we can obtain an OID for this
+        object, but it does not have an intid, and an intid utility is
+        available, then if this is `True` (not the default) we will
+        register it with the utility.
 
     :return: A :class:`bytes` string.
     """
@@ -52,6 +67,7 @@ def to_external_oid(self, default=None, add_to_connection=False,
         pass
 
     if use_cache:
+        # XXX: And yet we still set it always.
         try:
             # See comments in to_external_ntiid_oid
             return getattr(self, '_v_to_external_oid')
@@ -113,21 +129,21 @@ def to_external_oid(self, default=None, add_to_connection=False,
 
 toExternalOID = to_external_oid
 
+#: The fields of a parsed OID: ``oid``, ``db_name`` and ``intid``
 ParsedOID = collections.namedtuple('ParsedOID', ['oid', 'db_name', 'intid'])
 
 
 def from_external_oid(ext_oid):
     """
-    Given a string, as produced by :func:`toExternalOID`, parses it into its
-    component parts.
+    Given a byte string, as produced by :func:`.to_external_oid`, parses it
+    into its component parts.
 
+    :param bytes ext_oid: As produced by :func:`to_external_oid`.
+        (Text/unicode is also accepted.)
 
-    :param string ext_oid: As produced by :func:`toExternalOID`.
-
-    :return: A three-tuple: ``(oid, dbname, intid)`` (:class:`ParsedOID`). Only the
-            OID is guaranteed to be present; the other fields may be empty (``db_name``)
-            or `None` (``intid``).
-
+    :return: A three-tuple, :class:`ParsedOID`. Only the OID is
+             guaranteed to be present; the other fields may be empty
+             (``db_name``) or `None` (``intid``).
     """
     # But, for legacy reasons, we accept directly the bytes given
     # in _p_oid, so we have to be careful with our literals here

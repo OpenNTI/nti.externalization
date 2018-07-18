@@ -186,6 +186,7 @@ intersphinx_mapping = {
     'http://zopecomponent.readthedocs.io/en/latest': None,
     'http://zopedublincore.readthedocs.io/en/latest': None,
     'http://zopehookable.readthedocs.io/en/latest': None,
+    'http://zopeintid.readthedocs.io/en/latest/': None,
     'http://zopeproxy.readthedocs.io/en/latest': None,
     'http://zopecontainer.readthedocs.io/en/latest': None,
     'http://zodb.readthedocs.io/en/latest': None,
