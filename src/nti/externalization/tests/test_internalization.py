@@ -355,8 +355,19 @@ class TestUpdateFromExternaObject(CleanUp,
     def test_update_sequence_of_primitives(self):
         ext = [1, 2, 3]
         result = self._callFUT(None, ext)
-        assert_that(result, is_not(same_instance(ext)))
-        assert_that(result, is_(ext))
+        assert_that(result, is_(same_instance(ext)))
+        assert_that(result, is_([1, 2, 3]))
+
+    def test_update_sequence_of_primitives_persistent_contained(self):
+        from persistent import Persistent
+        ext = [1, 2, 3]
+        contained = Persistent()
+        result = self._callFUT(contained, ext)
+        assert_that(result, is_(same_instance(ext)))
+        assert_that(result, is_([1, 2, 3]))
+        assert_that(contained,
+                    has_property('_v_updated_from_external_source',
+                                 is_(same_instance(ext))))
 
     def test_update_empty_mapping_no_required_updater(self):
         ext = {}

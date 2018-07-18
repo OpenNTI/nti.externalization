@@ -32,6 +32,9 @@
 - ``update_from_external_object`` mutates sequences contained in a
   dict in-place instead of overwriting with a new list.
 
+- ``update_from_external_object`` mutates sequences at the top level
+  instead of returning a new list.
+
 - Add support for finding factories for incoming data which do not
   specify a MIME type or class field based on the key they are
   assigned to. This aids in consuming data produced by foreign systems
