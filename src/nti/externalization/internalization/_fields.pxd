@@ -18,11 +18,19 @@ cdef ValidationError
 cdef WrongContainedType
 cdef WrongType
 
+cdef FieldProperty
+cdef NO_VALUE
+cdef FieldUpdatedEvent
+
+cdef notify
+
 # optimizations
 cdef IField_providedBy
 
 
 cdef noop()
+cpdef _FieldProperty__set__valid(self, inst, value)
+cdef _FieldProperty_orig_set
 
 
 @cython.final
