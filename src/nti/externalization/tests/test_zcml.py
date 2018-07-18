@@ -287,6 +287,7 @@ class TestClassObjectFactory(PlacelessSetup,
 class ISchema(interface.Interface):
 
     field = interface.Attribute("This is a field")
+    field2 = interface.Attribute("This is another field")
 
 class IDerived(ISchema):
     pass
@@ -305,6 +306,10 @@ class TestAnonymousObjectFactoryZCML(PlacelessSetup,
                 for="{0}.ISchema"
                 field="field"
              />
+            <ext:anonymousObjectFactoryInPlace
+                for="{0}.ISchema"
+                field="field2"
+             />
         </configure>
     """.format(__name__)
 
@@ -318,6 +323,8 @@ class TestAnonymousObjectFactoryZCML(PlacelessSetup,
 
         assert_that(ISchema['field'].getTaggedValue('__external_factory__'),
                     is_('nti.externalization.tests.test_zcml.ISchema:field'))
+        assert_that(ISchema['field2'].getTaggedValue('__external_factory__'),
+                    is_('nti.externalization.tests.test_zcml.ISchema:field2'))
 
     def test_scan_no_create(self):
         class O(object):
@@ -348,3 +355,15 @@ class TestAnonymousObjectFactoryZCML(PlacelessSetup,
         with self.assertRaisesRegex(xmlconfig.ZopeXMLConfigurationError,
                                     "is not directly part of the interface"):
             xmlconfig.string(zcml)
+
+    def test_in_place(self):
+        class O(object):
+            __external_can_create__ = True
+
+        self._addFactory(O)
+
+        xmlconfig.string(self.SCAN_THIS_MODULE)
+
+        obj = component.createObject('nti.externalization.tests.test_zcml.ISchema:field2',
+                                     self)
+        assert_that(obj, is_(self))

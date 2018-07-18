@@ -20,10 +20,17 @@
 			schema="nti.externalization.zcml.IClassObjectFactoryDirective"
 			handler="nti.externalization.zcml.classObjectFactoryDirective"
 			/>
+
 		<meta:directive
 			name="anonymousObjectFactory"
 			schema="nti.externalization.zcml.IAnonymousObjectFactoryDirective"
 			handler="nti.externalization.zcml.anonymousObjectFactoryDirective"
+			/>
+
+		<meta:directive
+			name="anonymousObjectFactoryInPlace"
+			schema="nti.externalization.zcml.IAnonymousObjectFactoryInPlaceDirective"
+			handler="nti.externalization.zcml.anonymousObjectFactoryInPlaceDirective"
 			/>
 
  	</meta:directives>

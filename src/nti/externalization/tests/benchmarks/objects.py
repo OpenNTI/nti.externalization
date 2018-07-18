@@ -12,6 +12,7 @@ from zope import interface
 from zope.schema.fieldproperty import createFieldProperties
 
 from nti.externalization.datastructures import ExternalizableInstanceDict
+from nti.externalization.representation import WithRepr
 
 from nti.schema.fieldproperty import createDirectFieldProperties
 from nti.schema.schema import SchemaConfigured
@@ -40,16 +41,17 @@ class HasListOfDerived(object):
 
 @interface.implementer(interfaces.IAddress)
 @EqHash('full_name', 'street_address_1', 'postal_code')
+@WithRepr
 class Address(SchemaConfigured):
     createDirectFieldProperties(interfaces.IAddress)
 
-@interface.implementer(interfaces.IAddresses)
-@EqHash('home', 'work')
-class Addresses(SchemaConfigured):
-    createDirectFieldProperties(interfaces.IAddresses)
-
+def addresses_dict(external_data):
+    # Update in place
+    return external_data
+addresses_dict.__external_can_create__ = True
 
 @interface.implementer(interfaces.IUserProfile)
 @EqHash('addresses', 'alias', 'phones', 'realname')
+@WithRepr
 class UserProfile(SchemaConfigured):
     createFieldProperties(interfaces.IUserProfile)

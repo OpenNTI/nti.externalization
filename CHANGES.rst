@@ -34,8 +34,9 @@
 
 - Add support for finding factories for incoming data which do not
   specify a MIME type or class field based on the key they are
-  assigned to. This aids in consuming data produced by foreign
-  systems. See `issue 51
+  assigned to. This aids in consuming data produced by foreign systems
+  or using ``Dict`` schema fields that require modelled
+  values. See `issue 51
   <https://github.com/NextThought/nti.externalization/issues/51>`_ and
   `PR 68
   <https://github.com/NextThought/nti.externalization/pull/68>`_.

@@ -56,6 +56,8 @@ class ObjectFactory(Factory):
      A Description
     """
 
+    __external_factory_wants_arg__ = False
+
     #: The default callable argument, if none is given to the
     #: constructor.
     default_factory = None

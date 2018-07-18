@@ -40,7 +40,9 @@ __all__ = [
     'IRegisterInternalizationMimeFactoriesDirective',
     'IAutoPackageExternalizationDirective',
     'IClassObjectFactoryDirective',
+    'IBaseAnonymousObjectFactoryDirective',
     'IAnonymousObjectFactoryDirective',
+    'IAnonymousObjectFactoryInPlaceDirective',
 ]
 
 
@@ -245,6 +247,12 @@ class IClassObjectFactoryDirective(interface.Interface):
         required=False,
     )
 
+    trusted = Bool(
+        title=u"Ignore any value for ``__external_can_create__`` on the factory.",
+        required=False,
+        default=False,
+    )
+
     title = MessageID(
         title=u"Title",
         description=u"Provides a title for the object.",
@@ -258,13 +266,18 @@ class IClassObjectFactoryDirective(interface.Interface):
     )
 
 
-def classObjectFactoryDirective(_context, factory, name='', title='', description=''):
-
+def _validate_factory(factory, trusted):
     if not callable(factory):
         raise TypeError("Object %r must be callable" % factory)
 
-    if not getattr(factory, '__external_can_create__', False):
+    if not getattr(factory, '__external_can_create__', False) and not trusted:
         raise TypeError("Object %r must set __external_can_create__ to true" % factory)
+
+
+def classObjectFactoryDirective(_context, factory, name='',
+                                trusted=False,
+                                title='', description=''):
+    _validate_factory(factory, trusted)
 
     name = name or getattr(factory, '__external_class_name__', factory.__name__)
 
@@ -274,18 +287,12 @@ def classObjectFactoryDirective(_context, factory, name='', title='', descriptio
                            component=factory,
                            name=name)
 
-
-class IAnonymousObjectFactoryDirective(interface.Interface):
+class IBaseAnonymousObjectFactoryDirective(interface.Interface):
     """
-    This directive registers a single
-    :class:`nti.externaliaztion.interfaces.IAnonymousObjectFactory`
-    for a single field used within a single object.
-    """
+    The common parts of anonymous object factory directives.
 
-    factory = GlobalObject(
-        title=u'The class object that will be created.',
-        required=True,
-    )
+    .. versionadded:: 1.0a3
+    """
 
     for_ = GlobalInterface(
         title=u"The interface that is the *parent* object this will be used for",
@@ -298,6 +305,34 @@ class IAnonymousObjectFactoryDirective(interface.Interface):
         required=True,
     )
 
+class IAnonymousObjectFactoryDirective(IBaseAnonymousObjectFactoryDirective):
+    """
+    This directive registers a single
+    :class:`nti.externaliaztion.interfaces.IAnonymousObjectFactory`
+    for a single field used within a single object.
+
+    .. versionadded:: 1.0a3
+    """
+    factory = GlobalObject(
+        title=u'The class object that will be created.',
+        required=True,
+    )
+
+    pass_external_object_to_factory = Bool(
+        title=(u"Pass the external object to the factory."),
+        description=(u"If true (*not* the default), then, the factory will recieve "
+                     u"one argument, the anonymous external data. "
+                     u'Otherwise, it gets no arguments.'),
+        default=False,
+        required=False,
+    )
+
+    trusted = Bool(
+        title=u"Ignore any value for ``__external_can_create__`` on the factory.",
+        required=False,
+        default=False,
+    )
+
     title = MessageID(
         title=u"Title",
         description=u"Provides a title for the object.",
@@ -311,13 +346,11 @@ class IAnonymousObjectFactoryDirective(interface.Interface):
     )
 
 
-def anonymousObjectFactoryDirective(_context, factory, for_, field, title=u'', description=u''):
-    if not callable(factory):
-        raise TypeError("Object %r must be callable" % factory)
-
-    if not getattr(factory, '__external_can_create__', False):
-        raise TypeError("Object %r must set __external_can_create__ to true" % factory)
-
+def anonymousObjectFactoryDirective(_context, factory, for_, field,
+                                    pass_external_object_to_factory=False,
+                                    trusted=False,
+                                    title=u'', description=u''):
+    _validate_factory(factory, trusted)
 
     field_name = str(field)
     field = for_[field]
@@ -326,6 +359,7 @@ def anonymousObjectFactoryDirective(_context, factory, for_, field, title=u'', d
                         % (field_name, for_, field.interface))
 
     factory = AnonymousObjectFactory(factory, title, description)
+    factory.__external_factory_wants_arg__ = pass_external_object_to_factory
 
     name = '%s.%s:%s' % (for_.__module__, for_.__name__, field_name)
     assert isinstance(name, str)
@@ -338,4 +372,52 @@ def anonymousObjectFactoryDirective(_context, factory, for_, field, title=u'', d
         discriminator=('anonymousObjectFactory', for_, field_name),
         callable=field.setTaggedValue,
         args=('__external_factory__', name)
+    )
+
+
+class IAnonymousObjectFactoryInPlaceDirective(IBaseAnonymousObjectFactoryDirective):
+    """
+    This directive causes the external object itself to be
+    used and updated in place. This is helpful when the
+    object itself is not modelled, but its values are.
+
+    Such data might look like this::
+
+        {'home': {'MimeType': 'Address', ...},
+         'work': {'MimeType': "Address', ...}}
+
+    And it might have a schema field that looks like this:
+
+    .. code-block:: python
+
+        class IAddress(Interface):
+            pass
+
+        class IHasAddresses(Interface):
+
+            addresses = Dict(
+                     title=u"A mapping of address objects.",
+                     key_type=TextLine(title=u"Adresss key"),
+                     value_type=Object(IAddress))
+
+    The ZCML would then look like this:
+
+    .. code-block:: xml
+
+         <ext:anonymoustObjectFactoryInPlace
+              for="IHasAddresses"
+              field="addresses" />
+
+    .. versionadded:: 1.0a3
+
+    """
+
+def _in_place(data):
+    return data
+
+def anonymousObjectFactoryInPlaceDirective(_context, for_, field):
+    anonymousObjectFactoryDirective(
+        _context, _in_place, for_, field,
+        pass_external_object_to_factory=True,
+        trusted=True,
     )

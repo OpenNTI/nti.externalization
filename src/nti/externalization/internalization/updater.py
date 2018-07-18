@@ -290,11 +290,19 @@ def update_from_external_object(containedObject, externalObject,
             for index, item in enumerate(v):
                 factory = find_factory_for_named_value(k, item, registry)
                 if factory is not None:
-                    v[index] = _recall(k, factory(), item, kwargs)
+                    # TODO: Add wrappers when we create the factories in ZCML
+                    # so we can always pass the argument
+                    new_obj = (factory(v)
+                               if getattr(factory, '__external_factory_wants_arg__', False)
+                               else factory())
+                    v[index] = _recall(k, new_obj, item, kwargs)
         else:
             factory = find_factory_for_named_value(k, v, registry)
             if factory is not None:
-                externalObject[k] = _recall(k, factory(), v, kwargs)
+                new_obj = (factory(v)
+                           if getattr(factory, '__external_factory_wants_arg__', False)
+                           else factory())
+                externalObject[k] = _recall(k, new_obj, v, kwargs)
 
 
     if _obj_has_usable_updateFromExternalObject(containedObject):

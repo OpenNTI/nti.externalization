@@ -510,6 +510,11 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 # Anything else is a programming error.
                 if isinstance(factory, str):
                     factory = registry.getUtility(IAnonymousObjectFactory, factory)
+            # TODO: If there is no factory found, check to see if the
+            # schema field is a Dict with a complex value type, and if
+            # so, automatically update it in place? This currently
+            # requires the user use a ZCML directive for each such
+            # dict field.
         return factory
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
