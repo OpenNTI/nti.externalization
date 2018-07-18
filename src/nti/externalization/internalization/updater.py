@@ -21,6 +21,7 @@ else: # pragma: no cover
 import inspect
 import warnings
 
+
 from persistent.interfaces import IPersistent
 from six import iteritems
 from zope import component
@@ -38,6 +39,7 @@ from .externals import resolve_externals
 
 _EMPTY_DICT = {}
 IPersistent_providedBy = IPersistent.providedBy
+IInternalObjectUpdater_providedBy = IInternalObjectUpdater.providedBy
 
 class _RecallArgs(object):
     __slots__ = (
@@ -58,20 +60,6 @@ class _RecallArgs(object):
         self.require_updater = False
         self.notify = True
         self.pre_hook = None
-
-
-def _recall(k, obj, ext_obj, kwargs):
-    # We must manually pass all the args to get the optimized
-    # cython call
-    obj = update_from_external_object(obj, ext_obj,
-                                      registry=kwargs.registry,
-                                      context=kwargs.context,
-                                      require_updater=kwargs.require_updater,
-                                      notify=kwargs.notify,
-                                      pre_hook=kwargs.pre_hook)
-    if IPersistent_providedBy(obj): # pragma: no cover
-        obj._v_updated_from_external_source = ext_obj # pylint:disable=protected-access
-    return obj
 
 ##
 # Note on caching: We do not expect the updater objects to be proxied.
@@ -245,6 +233,10 @@ def update_from_external_object(containedObject, externalObject,
     kwargs.notify = notify
     kwargs.pre_hook = pre_hook
 
+    return _update_from_external_object(containedObject, externalObject, kwargs)
+
+
+def _update_from_external_object(containedObject, externalObject, args):
 
     # Parse any contained objects
     # TODO: We're (deliberately?) not actually updating any contained
@@ -259,18 +251,18 @@ def update_from_external_object(containedObject, externalObject,
     if isinstance(externalObject, MutableSequence):
         tmp = []
         for value in externalObject:
-            if pre_hook is not None: # pragma: no cover
-                pre_hook(None, value)
-            factory = find_factory_for(value, registry=registry)
-            tmp.append(_recall(None, factory(), value, kwargs) if factory is not None else value)
+            if args.pre_hook is not None: # pragma: no cover
+                args.pre_hook(None, value)
+            factory = find_factory_for(value, registry=args.registry)
+            tmp.append(_update_from_external_object(factory(), value, args) if factory is not None else value)
         # XXX: TODO: Should we be assigning this to the slice of externalObject?
         # in-place?
         return tmp
 
     assert isinstance(externalObject, MutableMapping)
 
-    updater = registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder,
-                                    u'', _default_factory_finder)
+    updater = args.registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder,
+                                         u'', _default_factory_finder)
     find_factory_for_named_value = updater.find_factory_for_named_value
 
     # We have to save the list of keys, it's common that they get popped during the update
@@ -281,29 +273,32 @@ def update_from_external_object(containedObject, externalObject,
         if isinstance(v, PRIMITIVES):
             continue
 
-        if pre_hook is not None: # pragma: no cover
-            pre_hook(k, v)
+        if args.pre_hook is not None: # pragma: no cover
+            args.pre_hook(k, v)
 
         if isinstance(v, MutableSequence):
             # Update the sequence in-place
             __traceback_info__ = k, v
             for index, item in enumerate(v):
-                factory = find_factory_for_named_value(k, item, registry)
+                factory = find_factory_for_named_value(k, item, args.registry)
                 if factory is not None:
                     # TODO: Add wrappers when we create the factories in ZCML
                     # so we can always pass the argument
                     new_obj = (factory(v)
                                if getattr(factory, '__external_factory_wants_arg__', False)
                                else factory())
-                    v[index] = _recall(k, new_obj, item, kwargs)
+                    v[index] = _update_from_external_object(new_obj, item, args)
         else:
-            factory = find_factory_for_named_value(k, v, registry)
+            factory = find_factory_for_named_value(k, v, args.registry)
             if factory is not None:
                 new_obj = (factory(v)
                            if getattr(factory, '__external_factory_wants_arg__', False)
                            else factory())
-                externalObject[k] = _recall(k, new_obj, v, kwargs)
+                externalObject[k] = _update_from_external_object(new_obj, v, args)
 
+    if IPersistent_providedBy(containedObject):
+        # pylint:disable=protected-access
+        containedObject._v_updated_from_external_source = externalObject
 
     if _obj_has_usable_updateFromExternalObject(containedObject):
         # legacy support. The __ext_ignore_updateFromExternalObject__
@@ -311,32 +306,32 @@ def update_from_external_object(containedObject, externalObject,
         # existing callers and without triggering infinite recursion
         updater = containedObject
     else:
-        if not IInternalObjectUpdater.providedBy(updater):
-            if require_updater:
-                get = registry.getAdapter
+        if not IInternalObjectUpdater_providedBy(updater):
+            if args.require_updater:
+                get = args.registry.getAdapter
             else:
-                get = registry.queryAdapter
+                get = args.registry.queryAdapter
 
             updater = get(containedObject, IInternalObjectUpdater)
 
     if updater is not None:
         # Let the updater resolve externals too
         resolve_externals(updater, containedObject, externalObject,
-                          registry=registry, context=context)
+                          registry=args.registry, context=args.context)
 
         updated = None
         # The signature may vary.
         arg_kind = _get_update_signature(updater)
         if arg_kind is _UPDATE_ARGS_TWO:
-            updated = updater.updateFromExternalObject(externalObject, context)
+            updated = updater.updateFromExternalObject(externalObject, args.context)
         elif arg_kind is _UPDATE_ARGS_ONE:
             updated = updater.updateFromExternalObject(externalObject)
         else:
             updated = updater.updateFromExternalObject(externalObject,
-                                                       context=context)
+                                                       context=args.context)
 
         # Broadcast a modified event if the object seems to have changed.
-        if notify and (updated is None or updated):
+        if args.notify and (updated is None or updated):
             _notifyModified(containedObject, externalObject,
                             updater, external_keys, _EMPTY_DICT)
 

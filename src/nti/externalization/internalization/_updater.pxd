@@ -21,6 +21,7 @@ cdef INamedExternalizedObjectFactoryFinder
 # optimizations
 
 cdef IPersistent_providedBy
+cdef IInternalObjectUpdater_providedBy
 
 # constants
 cdef tuple PRIMITIVES
@@ -42,7 +43,7 @@ cdef class _RecallArgs(object):
 cdef class DefaultInternalObjectFactoryFinder(object):
     pass
 
-cdef _recall(k, obj, ext_obj, _RecallArgs kwargs)
+cdef _update_from_external_object(containedObject, externalObject, _RecallArgs args)
 
 cpdef update_from_external_object(containedObject,
                                   externalObject,

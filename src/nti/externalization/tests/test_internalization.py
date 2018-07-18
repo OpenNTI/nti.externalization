@@ -389,6 +389,22 @@ class TestUpdateFromExternaObject(CleanUp,
         self._callFUT(contained, {})
         assert_that(contained, has_property('updated', True))
 
+    def test_update_persistent_object(self):
+        from persistent import Persistent
+        external = {}
+
+        class Obj(Persistent):
+            def updateFromExternalObject(self, ext):
+                self.updated = True
+
+        contained = Obj()
+        self._callFUT(contained, external)
+        assert_that(contained, has_property('updated', True))
+        assert_that(contained,
+                    has_property('_v_updated_from_external_source',
+                                 is_(same_instance(external))))
+
+
     def test_update_mapping_with_update_on_contained_object_ignored(self):
 
         class ContainedObjectIgnoreDeprecated(object):
