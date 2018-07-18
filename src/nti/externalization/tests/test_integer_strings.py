@@ -50,3 +50,13 @@ class TestIntStrings(unittest.TestCase):
     def test_bad_value(self):
         assert_that(calling(from_external_string).with_args(''),
                     raises(ValueError, "Improper key"))
+
+def test_suite():
+    import doctest
+    from unittest import defaultTestLoader
+    suite = defaultTestLoader.loadTestsFromName(__name__)
+
+    return unittest.TestSuite([
+        suite,
+        doctest.DocTestSuite('nti.externalization.integer_strings'),
+    ])

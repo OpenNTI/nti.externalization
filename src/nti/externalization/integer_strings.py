@@ -27,6 +27,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__all__ = [
+    'to_external_string',
+    'from_external_string',
+]
+
 # stdlib imports
 import string
 
@@ -62,7 +67,13 @@ _ZERO_MARKER = '@'  # Zero is special
 
 def from_external_string(key):
     """
-    Turn the base [BASE] number [key] into an integer
+    Turn the string in *key* into an integer.
+
+    >>> from_external_string('xkr')
+    6773
+
+    :param str key: A native string, as produced by `to_external_string`.
+       (On Python 2, unicode *keys* are also valid.)
 
     :raises ValueError: If the key is invalid or contains illegal characters.
     :raises UnicodeDecodeError: If the key is a Unicode object, and contains
@@ -94,8 +105,13 @@ def from_external_string(key):
 
 def to_external_string(integer):
     """
-    Turn an integer [integer] into a base [BASE] number
-    in (byte) string representation.
+    Turn an integer into a native string representation.
+
+    >>> to_external_string(123)
+    'xk'
+    >>> to_external_string(123456789)
+    'kVxr5'
+
     """
 
     # we won't step into the while if integer is 0
