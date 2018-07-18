@@ -201,4 +201,5 @@ extlinks = {
 
 autodoc_default_flags = ['members', 'show-inheritance']
 autoclass_content = 'both'
-autodoc_member_order = 'bysource'
+# This causes the order in __all__ to be ignored :(
+# autodoc_member_order = 'bysource'
