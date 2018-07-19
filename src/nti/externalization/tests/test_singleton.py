@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 from nti.externalization.singleton import SingletonDecorator
 from nti.externalization.tests import ExternalizationLayerTest
 
@@ -53,3 +54,16 @@ class TestSingleton(ExternalizationLayerTest):
         assert_that(Z(), is_(same_instance(Z())))
         assert_that(X(), is_not(same_instance(Z())))
         assert_that(Y(), is_not(same_instance(Z())))
+
+
+def test_suite():
+    import unittest
+    import doctest
+    suite = unittest.defaultTestLoader.loadTestsFromName(__name__)
+
+    return unittest.TestSuite([
+        suite,
+        doctest.DocTestSuite(
+            'nti.externalization.singleton',
+        ),
+    ])
