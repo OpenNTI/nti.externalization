@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Support for reading and writing date and time related objects.
+Support for reading, writing and converting date and time related
+objects.
 
-See the :mod:`datetime` module, as well as the :mod:`zope.interface.common.idatetime`
-module for types of objects.
+See the :mod:`datetime` module, as well as the
+:mod:`zope.interface.common.idatetime` module for types of objects.
 
+These are generally meant to be used as zope.interface adapters once
+this package has been configured, but they can be called manually as well.
 """
 
 from __future__ import absolute_import
@@ -20,6 +23,7 @@ import time
 import isodate
 import pytz
 import six
+
 from zope import component
 from zope import interface
 from zope.interface.common.idatetime import IDate
@@ -29,6 +33,20 @@ from zope.interface.common.idatetime import ITimeDelta
 from nti.externalization.interfaces import IInternalObjectExternalizer
 from nti.schema.interfaces import InvalidValue
 
+__all__ = [
+    # IDate
+    'date_to_string',
+    'date_from_string',
+
+    # IDateTime
+    'datetime_to_string',
+    'datetime_from_string',
+    'datetime_from_timestamp',
+
+    # ITimeDelta
+    'duration_to_string',
+    'duration_from_string',
+]
 
 def _parse_with(func, string):
     try:
@@ -42,15 +60,19 @@ _input_type = (str if sys.version_info[0] >= 3 else basestring)
 # what our input type is. All the tests pass on Python 3 with this registered to 'str'.
 @component.adapter(_input_type)
 @interface.implementer(IDate)
-def _date_from_string(string):
+def date_from_string(string):
     """
     This adapter allows any field which comes in as a string is
     IOS8601 format to be transformed into a date. The schema field
-    must be an ``Object`` field with a type of ``IDate``
+    must be an `zope.schema.Object` field with a type of
+    `zope.interface.common.idatetime.IDate`.
 
     If you need a schema field that accepts human input, rather than
     programattic input, you probably want to use a custom field that
     uses :func:`zope.datetime.parse` in its ``fromUnicode`` method.
+
+    >>> IDate('1982-01-31')
+    datetime.date(1982, 1, 31)
     """
     # This:
     #   datetime.date.fromtimestamp( zope.datetime.time( string ) )
@@ -121,10 +143,12 @@ def _as_utc_naive(dt, assume_local=True, local_tzname=None):
 def datetime_from_string(string, assume_local=False, local_tzname=None):
     """
     This adapter allows any field which comes in as a string is
-    IOS8601 format to be transformed into a datetime. The schema field
-    should be an ``Object`` field with a type of ``IDateTime`` or an
-    instance of ``ValidDateTime``. Wrap this with an
-    ``AdaptingFieldProperty``.
+    IOS8601 format to be transformed into a
+    :class:`datetime.datetime`. The schema field should be an
+    `nti.schema.field.Object` field with a type of
+    `zope.interface.common.idatetime.IDateTime` or an instance of
+    `nti.schema.field.ValidDateTime`. Wrap this with an
+    :class:`nti.schema.fieldproperty.AdaptingFieldProperty`.
 
     Datetime values produced by this object will always be in GMT/UTC
     time, and they will always be datetime naive objects.
@@ -133,37 +157,58 @@ def datetime_from_string(string, assume_local=False, local_tzname=None):
     programattic input, you probably want to use a custom field that
     uses :func:`zope.datetime.parse` in its ``fromUnicode`` method.
 
-    :keyword assume_local: If `False`, the default, then when
-            we parse a string that does not include timezone information,
-            we will assume that it is already meant to be in UTC.
-            Otherwise, if set to true, when we parse such a string we
-            will assume that it is meant to be in the \"local\" timezone
-            and adjust accordingly. If the local timezone experiences
-            DST, then the time will be interpreted with the UTC offset
-            *as-of the DST rule in effect on the date parsed*, not
-            the current date, if possible. If not possible, the current
-            rule will be used.
-    :keyword local_tzname: If given, either a string acceptable to
-            :func:`pytz.timezone` to produce a ``tzinfo`` object,
-            or a two-tuple as given from :const:`time.timezone`. If not given,
-            local timezone will be determined automatically.
+    When used as an adapter, no parameters are accepted.
+
+    >>> IDateTime('1982-01-31T00:00:00Z')
+    datetime.datetime(1982, 1, 31, 0, 0)
+
+    :param bool assume_local: If `False`, the default, then when we
+        parse a string that does not include timezone information, we
+        will assume that it is already meant to be in UTC. Otherwise,
+        if set to true, when we parse such a string we will assume
+        that it is meant to be in the \"local\" timezone and adjust
+        accordingly. If the local timezone experiences DST, then the
+        time will be interpreted with the UTC offset *as-of the DST
+        rule in effect on the date parsed*, not the current date, if
+        possible. If not possible, the current rule will be used.
+    :param str local_tzname: If given, either a string acceptable to
+        :func:`pytz.timezone` to produce a ``tzinfo`` object, or a
+        two-tuple as given from :const:`time.timezone`. If not given,
+        local timezone will be determined automatically.
     """
     dt = _parse_with(isodate.parse_datetime, string)
     return _as_utc_naive(dt, assume_local=assume_local, local_tzname=local_tzname)
 
 
 @component.adapter(int)
-@component.adapter(float)
 @interface.implementer(IDateTime)
 def datetime_from_timestamp(value):
+    """
+    Produce a :class:`datetime.datetime` from a UTC timestamp.
+
+    This is a registered adapter for both integers and floats.
+
+    >>> IDateTime(123456)
+    datetime.datetime(1970, 1, 2, 10, 17, 36)
+    >>> IDateTime(654321.0)
+    datetime.datetime(1970, 1, 8, 13, 45, 21)
+    """
     return datetime.utcfromtimestamp(value)
 
 
 @component.adapter(IDate)
 @interface.implementer(IInternalObjectExternalizer)
-class _date_to_string(object):
+class date_to_string(object):
     """
     Produce an IOS8601 string from a date.
+
+    Registered as an adapter from `zope.interface.common.idatetime.IDate`
+    to `~nti.externalization.interfaces.IInternalObjectExternalizer`.
+
+    >>> import datetime
+    >>> from nti.externalization.externalization import to_external_object
+    >>> to_external_object(datetime.date(1982, 1, 31))
+    '1982-01-31'
     """
 
     def __init__(self, date):
@@ -175,9 +220,18 @@ class _date_to_string(object):
 
 @component.adapter(IDateTime)
 @interface.implementer(IInternalObjectExternalizer)
-class _datetime_to_string(object):
+class datetime_to_string(object):
     """
-    Produce an IOS8601 string from a datetime
+    Produce an IOS8601 string from a datetime.
+
+    Registered as an adapter from `zope.interface.common.idatetime.IDateTime`
+    to `~nti.externalization.interfaces.IInternalObjectExternalizer`.
+
+    >>> import datetime
+    >>> from nti.externalization import to_external_object
+    >>> to_external_object(datetime.datetime(1982, 1, 31))
+    '1982-01-31T00:00:00Z'
+
     """
 
     def __init__(self, date):
@@ -193,7 +247,7 @@ class _datetime_to_string(object):
 
 @component.adapter(ITimeDelta)
 @interface.implementer(IInternalObjectExternalizer)
-class _duration_to_string(object):
+class duration_to_string(object):
     """
     Produce an IOS8601 format duration from a :class:`datetime.timedelta`
     object.
@@ -202,6 +256,14 @@ class _duration_to_string(object):
     duration they accept is weeks) and internally they normalize
     everything to days and smaller. Thus, the format produced by this
     transformation will never have a field larger than days.
+
+    Registered as an adapter from `zope.interface.common.idatetime.ITimeDelta`
+    to `~nti.externalization.interfaces.IInternalObjectExternalizer`.
+
+    >>> import datetime
+    >>> from nti.externalization import to_external_object
+    >>> to_external_object(datetime.timedelta(weeks=16))
+    'P112D'
     """
 
     def __init__(self, date):
@@ -209,3 +271,15 @@ class _duration_to_string(object):
 
     def toExternalObject(self, **unused_kwargs):
         return isodate.duration_isoformat(self.date)
+
+@component.adapter(_input_type)
+@interface.implementer(ITimeDelta)
+def duration_from_string(value):
+    """
+    Produce a :class:`datetime.timedelta` from a ISO8601 format duration
+    string.
+
+    >>> ITimeDelta('P112D')
+    datetime.timedelta(112)
+    """
+    return isodate.parse_duration(value)

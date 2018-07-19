@@ -186,8 +186,10 @@ intersphinx_mapping = {
     'http://ntizodb.readthedocs.io/en/latest/': None,
     'http://persistent.readthedocs.io/en/latest': None,
     'http://zodb.readthedocs.io/en/latest': None,
+
     'http://zopecomponent.readthedocs.io/en/latest': None,
     'http://zopecontainer.readthedocs.io/en/latest': None,
+    'http://zopedatetime.readthedocs.io/en/latest': None,
     'http://zopedublincore.readthedocs.io/en/latest': None,
     'http://zopehookable.readthedocs.io/en/latest': None,
     'http://zopeinterface.readthedocs.io/en/latest': None,
