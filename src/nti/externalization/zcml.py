@@ -1,8 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Directives to be used in ZCML; helpers for registering factories
-for mime types.
+Directives to be used in ZCML.
+
+
+These directives are all in the ``http://nextthought.com/ntp/ext`` namespace,
+and are loaded using the ``meta.zcml`` file.
+
+Example (non-sensical) of all the directives:
+
+.. code-block:: xml
+
+    <configure xmlns:ext="http://nextthought.com/ntp/ext">
+        <include package="nti.externalization" file="meta.zcml" />
+
+        <ext:registerMimeFactories module="the.module" />
+
+        <ext:registerAutoPackageIO
+            root_interfaces="other_module.interfaces.IExtRoot"
+            modules="other_module.factories"
+            iobase="other_module.externalization.IOBase"
+            register_legacy_search_module="yes" />
+
+        <ext:classObjectFactory
+            factory="third_module.Factory"
+            name="AName" />
+
+        <ext:anonymousObjectFactory
+            factory="module3.Factory"
+            for="interfaces.ISchema"
+            field="field" />
+        <ext:anonymousObjectFactoryInPlace
+            for="interfaces.ISchema"
+            field="field2" />
+    </configure>
 
 """
 
@@ -48,7 +79,19 @@ __all__ = [
 
 class IRegisterInternalizationMimeFactoriesDirective(interface.Interface):
     """
-    The arguments needed for registering factories.
+    Defines the ``ext:registerMimeFactories`` directive.
+
+    Poke through the classes defined in *module*. If a class
+    defines the ``mimeType`` attribute and can be created externally,
+    (because it defines ``__external_can_create__`` to be true), registers
+    a factory utility under the ``mimeType`` name. (For backwards compatibility,
+    ``mime_type`` is accepted if there is no ``mimeType``.)
+
+    Factories are discovered using `.find_factories_in_module`.
+
+    See :func:`nti.externalization.internalization.find_factory_for`
+    for how factories are used.
+
     """
 
     module = GlobalObject(
@@ -58,17 +101,6 @@ class IRegisterInternalizationMimeFactoriesDirective(interface.Interface):
 
 
 def registerMimeFactories(_context, module):
-    """
-    Poke through the classes defined in `module`. If a class
-    defines the ``mimeType`` attribute and can be created externally,
-    (because it defines ``__external_can_create__`` to be true), registers
-    a factory utility under the ``mimeType`` name. (For backwards compatibility,
-    ``mime_type`` is accepted if there is no ``mimeType``.)
-
-    See :func:`nti.externalization.internalization.find_factory_for`.
-
-    :param module module: The module to inspect.
-    """
     for object_name, value in find_factories_in_module(module, case_sensitive=True):
         __traceback_info__ = object_name, value
 
@@ -95,8 +127,10 @@ def registerMimeFactories(_context, module):
 
 class IAutoPackageExternalizationDirective(interface.Interface):
     """
+    Defines the ``ext:registerAutoPackageIO`` directive.
+
     This directive combines the effects of
-    :class:`.IRegisterInternalizationMimeFactoriesDirective` with that
+    `IRegisterInternalizationMimeFactoriesDirective` with that
     of :mod:`.autopackage`, removing all need to repeat root
     interfaces and module names.
 
@@ -105,7 +139,12 @@ class IAutoPackageExternalizationDirective(interface.Interface):
     registered as the :class:`~nti.externalization.interfaces.IInternalObjectIO` adapter for all of
     the *root_interface* objects, and the *modules* (or
     *factory_modules*) will be searched for object factories via
-    :func:`registerMimeFactories`.
+    `IRegisterInternalizationMimeFactoriesDirective`.
+
+    .. versionchanged:: 1.0
+       Add the *register_legacy_search_module* keyword argument, defaulting to
+       False. Previously legacy search modules would always be registered, but
+       now you must explicitly ask for it.
     """
 
     root_interfaces = Tokens(
@@ -145,15 +184,6 @@ class IAutoPackageExternalizationDirective(interface.Interface):
 def autoPackageExternalization(_context, root_interfaces, modules,
                                factory_modules=None, iobase=None,
                                register_legacy_search_module=False):
-    """
-    Implement the :class:`IAutoPackageExternalizationDirective` directive.
-
-    .. versionchanged:: 1.0
-       Add the *register_legacy_search_module* keyword argument, defaulting to
-       False. Previously legacy search modules would always be registered, but
-       now you must explicitly ask for it.
-    """
-
     ext_module_name = root_interfaces[0].__module__
     package_name = ext_module_name.rsplit('.', 1)[0]
 
@@ -229,6 +259,8 @@ def autoPackageExternalization(_context, root_interfaces, modules,
 
 class IClassObjectFactoryDirective(interface.Interface):
     """
+    Defines the ``ext:classObjectFactory`` directive.
+
     This directive registers a single
     :class:`nti.externalization.interfaces.IClassObjectFactory`.
 
@@ -237,6 +269,7 @@ class IClassObjectFactoryDirective(interface.Interface):
 
     factory = GlobalObject(
         title=u'The class object that will be created.',
+        description=u"This must define the ``__external_can_create__`` attribute to be true.",
         required=True
     )
 
@@ -307,6 +340,8 @@ class IBaseAnonymousObjectFactoryDirective(interface.Interface):
 
 class IAnonymousObjectFactoryDirective(IBaseAnonymousObjectFactoryDirective):
     """
+    Defines the ``ext:anonymousObjectFactory`` directive.
+
     This directive registers a single
     :class:`nti.externaliaztion.interfaces.IAnonymousObjectFactory`
     for a single field used within a single object.
@@ -377,6 +412,8 @@ def anonymousObjectFactoryDirective(_context, factory, for_, field,
 
 class IAnonymousObjectFactoryInPlaceDirective(IBaseAnonymousObjectFactoryDirective):
     """
+    Defines the ``anonymousObjectFactoryInPlace`` directive.
+
     This directive causes the external object itself to be
     used and updated in place. This is helpful when the
     object itself is not modelled, but its values are.
