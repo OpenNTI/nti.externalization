@@ -8,6 +8,11 @@ Introduction and Basics
 .. toctree::
    :maxdepth: 2
 
+   basics
+   schemas
+   externalization
+   internalization
+   glossary
    changelog
 
 

@@ -183,6 +183,7 @@ intersphinx_mapping = {
     "http://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
     #'https://ntiwref.readthedocs.io/en/latest': None,
     'http://docs.python.org/': None,
+    'http://ntischema.readthedocs.io/en/latest/': None,
     'http://ntizodb.readthedocs.io/en/latest/': None,
     'http://persistent.readthedocs.io/en/latest': None,
     'http://zodb.readthedocs.io/en/latest': None,
@@ -195,6 +196,7 @@ intersphinx_mapping = {
     'http://zopeinterface.readthedocs.io/en/latest': None,
     'http://zopeintid.readthedocs.io/en/latest/': None,
     'http://zopeproxy.readthedocs.io/en/latest': None,
+    'http://zopeschema.readthedocs.io/en/latest/': None,
 }
 
 extlinks = {
