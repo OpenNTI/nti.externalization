@@ -279,7 +279,7 @@ def duration_from_string(value):
     Produce a :class:`datetime.timedelta` from a ISO8601 format duration
     string.
 
-    >>> ITimeDelta('P112D')
-    datetime.timedelta(112)
+    >>> ITimeDelta('P0D')
+    datetime.timedelta(0)
     """
     return isodate.parse_duration(value)
