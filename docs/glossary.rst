@@ -22,7 +22,8 @@
    external object
 
        A dictionary with string keys, and values that are strings,
-       numbers, lists of external objects, or external objects.
+       numbers (including booleans), None, lists of external objects,
+       or external objects.
 
        In other words, a simplified interchange format capable of
        being represented by many programming languages and text
