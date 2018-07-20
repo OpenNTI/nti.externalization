@@ -536,6 +536,38 @@ class TestUpdateFromExternaObject(CleanUp,
         assert_that(ext_wrapper, has_entry('a', is_(TrivialFactory)))
 
 
+class TestNewFromExternalObject(CleanUp,
+                                unittest.TestCase):
+
+    def _callFUT(self, external_object):
+        return INT.new_from_external_object(external_object)
+
+    def test_no_factory(self):
+        from zope.interface.interfaces import ComponentLookupError
+        with self.assertRaises(ComponentLookupError):
+            self._callFUT({})
+
+    def test_new_mapping_with_registered_factory(self):
+        ext = {'MimeType': 'mime'}
+        ext_wrapper = {'a': ext, 'MimeType': 'type'}
+
+        class TrivialFactory(object):
+
+            def __init__(self, ctx):
+                pass
+
+            def __call__(self):
+                return self
+
+        component.provideAdapter(TrivialFactory,
+                                 provides=IMimeObjectFactory,
+                                 adapts=(object,))
+
+        self._callFUT(ext_wrapper)
+
+        assert_that(ext_wrapper, has_entry('a', is_(TrivialFactory)))
+
+
 class TestValidateFieldValue(CleanUp,
                              unittest.TestCase):
 
