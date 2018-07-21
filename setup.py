@@ -161,6 +161,7 @@ setup(
         'PyYAML',
         'pytz',
         'simplejson',
+        'transaction >= 2.2',
         'six >= 1.11.0', # for the reference cycle fix in reraise()
         'ZODB',
         'zope.component',

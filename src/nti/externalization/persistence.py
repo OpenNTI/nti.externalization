@@ -18,6 +18,7 @@ try:
     from itertools import izip
 except ImportError: # pragma: no cover
     izip = zip
+import warnings
 
 import persistent
 from persistent.list import PersistentList
@@ -251,10 +252,25 @@ def NoPickle(cls):
     objects do not get pickled and thus avoiding
     ZODB backward compatibility concerns.
 
-    .. warning:: If you subclass something that used this
-            decorator, you should override ``__reduce_ex__``
-            (or both it and ``__reduce__``).
+    .. warning::
+        Subclasses of such decorated classes are
+        also not capable of being pickled, without
+        appropriate overrides of ``__reduce_ex__`` and
+        ``__getstate__``. A "working" subclass, but only
+        for ZODB, looks like this:
 
+            @NoPickle
+            class Root(object):
+                pass
+
+            class CanPickle(Persistent, Root):
+                pass
+
+    .. warning::
+       This decorator emits a warning when it is used
+       directly on a ``Persistent`` subclass, as that rather
+       defeats the point (but it is still allowed for
+       backwards compatibility).
     """
 
     msg = "Not allowed to pickle %s" % cls
@@ -262,9 +278,16 @@ def NoPickle(cls):
     def __reduce_ex__(self, protocol=0):
         raise TypeError(msg)
 
-    __reduce__ = __reduce_ex__
+    for meth in '__reduce_ex__', '__reduce__', '__getstate__':
+        if vars(cls).get(meth) is not None:
+            warnings.warn(RuntimeWarning("Using @NoPickle an a class that implements " + meth),
+                          stacklevel=2)
+        setattr(cls, meth, __reduce_ex__)
 
-    cls.__reduce__ = __reduce__
-    cls.__reduce_ex__ = __reduce_ex__
+    if issubclass(cls, persistent.Persistent):
+        warnings.warn(RuntimeWarning("Using @NoPickle an a Persistent subclass"),
+                      stacklevel=2)
+
+
 
     return cls

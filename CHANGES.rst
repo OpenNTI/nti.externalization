@@ -6,6 +6,15 @@
 1.0.0a3 (unreleased)
 ====================
 
+- The ``@NoPickle`` decorator also works with ``Persistent``
+  subclasses (and may or may not work with multiple-inheritance
+  subclasses of ``Persistent``, depending on the MRO,
+  but that's always been the case for regular objects). A
+  ``Persistent`` subclass being decorated with ``@NoPickle`` doesn't
+  make much sense, so a ``RuntimeWarning`` is issued. A warning is
+  also issued if the class directly implements one of the pickle
+  protocol methods.
+
 - Updating objects that use ``createFieldProperties`` or otherwise
   have ``FieldProperty`` objects in their type is at least 10% faster
   thanks to avoiding double-validation due to a small monkey-patch on

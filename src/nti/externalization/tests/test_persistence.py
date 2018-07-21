@@ -7,6 +7,7 @@ from __future__ import print_function
 
 # stdlib imports
 import unittest
+import warnings
 
 import persistent
 from persistent import Persistent
@@ -17,6 +18,7 @@ from nti.externalization.persistence import PersistentExternalizableDictionary
 from nti.externalization.persistence import PersistentExternalizableWeakList
 from nti.externalization.persistence import getPersistentState
 from nti.externalization.persistence import setPersistentStateChanged
+from nti.externalization.persistence import NoPickle
 from nti.externalization.tests import ExternalizationLayerTest
 
 from hamcrest import assert_that
@@ -24,6 +26,7 @@ from hamcrest import calling
 from hamcrest import is_
 from hamcrest import is_not
 from hamcrest import raises
+from hamcrest import has_length
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -186,3 +189,134 @@ class TestWeakRef(unittest.TestCase):
         wref = PWeakRef(P())
 
         assert_that(wref.toExternalOID(), is_(b'abc'))
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+
+    @NoPickle
+    class GlobalPersistentNoPickle(Persistent):
+        pass
+
+class GlobalSubclassPersistentNoPickle(GlobalPersistentNoPickle):
+    pass
+
+@NoPickle
+class GlobalNoPickle(object):
+    pass
+
+class GlobalSubclassNoPickle(GlobalNoPickle):
+    pass
+
+class GlobalNoPicklePersistentMixin1(GlobalNoPickle,
+                                     Persistent):
+    pass
+
+class GlobalNoPicklePersistentMixin2(Persistent,
+                                     GlobalNoPickle):
+    pass
+
+class GlobalNoPicklePersistentMixin3(GlobalSubclassNoPickle,
+                                     Persistent):
+    pass
+
+class TestNoPickle(unittest.TestCase):
+
+    def _persist_zodb(self, obj):
+        from ZODB import DB
+        from ZODB.MappingStorage import MappingStorage
+        import transaction
+
+        db = DB(MappingStorage())
+        conn = db.open()
+        try:
+            conn.root.key = obj
+
+            transaction.commit()
+        finally:
+            conn.close()
+            db.close()
+            transaction.abort()
+
+    def _persist_pickle(self, obj):
+        import pickle
+        pickle.dumps(obj)
+
+    def _persist_cpickle(self, obj):
+        try:
+            import cPickle
+        except ImportError: # pragma: no cover
+            # Python 3
+            raise TypeError("Not allowed to pickle")
+        else:
+            cPickle.dumps(obj)
+
+    def _all_persists_fail(self, factory):
+
+        for meth in (self._persist_zodb,
+                     self._persist_pickle,
+                     self._persist_cpickle):
+            __traceback_info__ = meth
+            assert_that(calling(meth).with_args(factory()),
+                        raises(TypeError, "Not allowed to pickle"))
+
+    def test_plain_object(self):
+        self._all_persists_fail(GlobalNoPickle)
+
+    def test_subclass_plain_object(self):
+        self._all_persists_fail(GlobalSubclassNoPickle)
+
+    def test_persistent(self):
+        self._all_persists_fail(GlobalPersistentNoPickle)
+
+    def test_subclass_persistent(self):
+        self._all_persists_fail(GlobalSubclassPersistentNoPickle)
+
+    def test_persistent_mixin1(self):
+        self._all_persists_fail(GlobalNoPicklePersistentMixin1)
+
+    def test_persistent_mixin2(self):
+        # Putting Persistent first works for zodb.
+        factory = GlobalNoPicklePersistentMixin2
+        self._persist_zodb(factory())
+        # But plain pickle still fails
+        with self.assertRaises(TypeError):
+            self._persist_pickle(factory())
+
+
+    def test_persistent_mixin3(self):
+        self._all_persists_fail(GlobalNoPicklePersistentMixin3)
+
+    def _check_emits_warning(self, kind):
+        with warnings.catch_warnings(record=True) as w:
+            NoPickle(kind)
+
+        assert_that(w, has_length(1))
+        assert_that(w[0].message, is_(RuntimeWarning))
+        self.assertIn("Using @NoPickle",
+                      str(w[0].message))
+
+    def test_persistent_emits_warning(self):
+        class P(Persistent):
+            pass
+        self._check_emits_warning(P)
+
+    def test_getstate_emits_warning(self):
+        class P(object):
+            def __getstate__(self):
+                "Does nothing"
+
+        self._check_emits_warning(P)
+
+    def test_reduce_emits_warning(self):
+        class P(object):
+            def __reduce__(self):
+                "Does nothing"
+
+        self._check_emits_warning(P)
+
+    def test_reduce_ex_emits_warning(self):
+        class P(object):
+            def __reduce_ex__(self):
+                "Does nothing"
+
+        self._check_emits_warning(P)
