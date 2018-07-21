@@ -18,6 +18,7 @@ try:
     from itertools import izip
 except ImportError: # pragma: no cover
     izip = zip
+import warnings
 
 import persistent
 from persistent.list import PersistentList
@@ -277,14 +278,16 @@ def NoPickle(cls):
     def __reduce_ex__(self, protocol=0):
         raise TypeError(msg)
 
-
-    cls.__reduce_ex__ = __reduce_ex__
-    cls.__reduce__ = __reduce_ex__
-    cls.__getstate__ = __reduce_ex__
+    for meth in '__reduce_ex__', '__reduce__', '__getstate__':
+        if vars(cls).get(meth) is not None:
+            warnings.warn(RuntimeWarning("Using @NoPickle an a class that implements " + meth),
+                          stacklevel=2)
+        setattr(cls, meth, __reduce_ex__)
 
     if issubclass(cls, persistent.Persistent):
-        import warnings
         warnings.warn(RuntimeWarning("Using @NoPickle an a Persistent subclass"),
                       stacklevel=2)
+
+
 
     return cls

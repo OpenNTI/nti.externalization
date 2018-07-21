@@ -11,7 +11,9 @@
   subclasses of ``Persistent``, depending on the MRO,
   but that's always been the case for regular objects). A
   ``Persistent`` subclass being decorated with ``@NoPickle`` doesn't
-  make much sense, so a ``RuntimeWarning`` is issued.
+  make much sense, so a ``RuntimeWarning`` is issued. A warning is
+  also issued if the class directly implements one of the pickle
+  protocol methods.
 
 - Updating objects that use ``createFieldProperties`` or otherwise
   have ``FieldProperty`` objects in their type is at least 10% faster

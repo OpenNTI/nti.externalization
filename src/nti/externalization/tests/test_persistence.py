@@ -286,13 +286,37 @@ class TestNoPickle(unittest.TestCase):
     def test_persistent_mixin3(self):
         self._all_persists_fail(GlobalNoPicklePersistentMixin3)
 
-    def test_persistent_emits_warning(self):
+    def _check_emits_warning(self, kind):
         with warnings.catch_warnings(record=True) as w:
-            class P(Persistent):
-                pass
-            NoPickle(P)
+            NoPickle(kind)
 
         assert_that(w, has_length(1))
         assert_that(w[0].message, is_(RuntimeWarning))
         self.assertIn("Using @NoPickle",
                       str(w[0].message))
+
+    def test_persistent_emits_warning(self):
+        class P(Persistent):
+            pass
+        self._check_emits_warning(P)
+
+    def test_getstate_emits_warning(self):
+        class P(object):
+            def __getstate__(self):
+                "Does nothing"
+
+        self._check_emits_warning(P)
+
+    def test_reduce_emits_warning(self):
+        class P(object):
+            def __reduce__(self):
+                "Does nothing"
+
+        self._check_emits_warning(P)
+
+    def test_reduce_ex_emits_warning(self):
+        class P(object):
+            def __reduce_ex__(self):
+                "Does nothing"
+
+        self._check_emits_warning(P)
