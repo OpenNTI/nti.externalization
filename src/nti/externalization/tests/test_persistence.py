@@ -7,6 +7,7 @@ from __future__ import print_function
 
 # stdlib imports
 import unittest
+import warnings
 
 import persistent
 from persistent import Persistent
@@ -189,9 +190,12 @@ class TestWeakRef(unittest.TestCase):
 
         assert_that(wref.toExternalOID(), is_(b'abc'))
 
-@NoPickle
-class GlobalPersistentNoPickle(Persistent):
-    pass
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+
+    @NoPickle
+    class GlobalPersistentNoPickle(Persistent):
+        pass
 
 class GlobalSubclassPersistentNoPickle(GlobalPersistentNoPickle):
     pass
@@ -240,7 +244,7 @@ class TestNoPickle(unittest.TestCase):
     def _persist_cpickle(self, obj):
         try:
             import cPickle
-        except ImportError:
+        except ImportError: # pragma: no cover
             # Python 3
             raise TypeError("Not allowed to pickle")
         else:
@@ -271,17 +275,24 @@ class TestNoPickle(unittest.TestCase):
         self._all_persists_fail(GlobalNoPicklePersistentMixin1)
 
     def test_persistent_mixin2(self):
-        self._all_persists_fail(GlobalNoPicklePersistentMixin2)
+        # Putting Persistent first works for zodb.
+        factory = GlobalNoPicklePersistentMixin2
+        self._persist_zodb(factory())
+        # But plain pickle still fails
+        with self.assertRaises(TypeError):
+            self._persist_pickle(factory())
+
 
     def test_persistent_mixin3(self):
         self._all_persists_fail(GlobalNoPicklePersistentMixin3)
 
     def test_persistent_emits_warning(self):
-        import warnings
         with warnings.catch_warnings(record=True) as w:
             class P(Persistent):
                 pass
             NoPickle(P)
 
         assert_that(w, has_length(1))
-        # XXX Fill in details
+        assert_that(w[0].message, is_(RuntimeWarning))
+        self.assertIn("Using @NoPickle",
+                      str(w[0].message))
