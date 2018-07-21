@@ -17,6 +17,7 @@ from nti.externalization.persistence import PersistentExternalizableDictionary
 from nti.externalization.persistence import PersistentExternalizableWeakList
 from nti.externalization.persistence import getPersistentState
 from nti.externalization.persistence import setPersistentStateChanged
+from nti.externalization.persistence import NoPickle
 from nti.externalization.tests import ExternalizationLayerTest
 
 from hamcrest import assert_that
@@ -24,6 +25,7 @@ from hamcrest import calling
 from hamcrest import is_
 from hamcrest import is_not
 from hamcrest import raises
+from hamcrest import has_length
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -186,3 +188,100 @@ class TestWeakRef(unittest.TestCase):
         wref = PWeakRef(P())
 
         assert_that(wref.toExternalOID(), is_(b'abc'))
+
+@NoPickle
+class GlobalPersistentNoPickle(Persistent):
+    pass
+
+class GlobalSubclassPersistentNoPickle(GlobalPersistentNoPickle):
+    pass
+
+@NoPickle
+class GlobalNoPickle(object):
+    pass
+
+class GlobalSubclassNoPickle(GlobalNoPickle):
+    pass
+
+class GlobalNoPicklePersistentMixin1(GlobalNoPickle,
+                                     Persistent):
+    pass
+
+class GlobalNoPicklePersistentMixin2(Persistent,
+                                     GlobalNoPickle):
+    pass
+
+class GlobalNoPicklePersistentMixin3(GlobalSubclassNoPickle,
+                                     Persistent):
+    pass
+
+class TestNoPickle(unittest.TestCase):
+
+    def _persist_zodb(self, obj):
+        from ZODB import DB
+        from ZODB.MappingStorage import MappingStorage
+        import transaction
+
+        db = DB(MappingStorage())
+        conn = db.open()
+        try:
+            conn.root.key = obj
+
+            transaction.commit()
+        finally:
+            conn.close()
+            db.close()
+            transaction.abort()
+
+    def _persist_pickle(self, obj):
+        import pickle
+        pickle.dumps(obj)
+
+    def _persist_cpickle(self, obj):
+        try:
+            import cPickle
+        except ImportError:
+            # Python 3
+            raise TypeError("Not allowed to pickle")
+        else:
+            cPickle.dumps(obj)
+
+    def _all_persists_fail(self, factory):
+
+        for meth in (self._persist_zodb,
+                     self._persist_pickle,
+                     self._persist_cpickle):
+            __traceback_info__ = meth
+            assert_that(calling(meth).with_args(factory()),
+                        raises(TypeError, "Not allowed to pickle"))
+
+    def test_plain_object(self):
+        self._all_persists_fail(GlobalNoPickle)
+
+    def test_subclass_plain_object(self):
+        self._all_persists_fail(GlobalSubclassNoPickle)
+
+    def test_persistent(self):
+        self._all_persists_fail(GlobalPersistentNoPickle)
+
+    def test_subclass_persistent(self):
+        self._all_persists_fail(GlobalSubclassPersistentNoPickle)
+
+    def test_persistent_mixin1(self):
+        self._all_persists_fail(GlobalNoPicklePersistentMixin1)
+
+    def test_persistent_mixin2(self):
+        self._all_persists_fail(GlobalNoPicklePersistentMixin2)
+
+    def test_persistent_mixin3(self):
+        self._all_persists_fail(GlobalNoPicklePersistentMixin3)
+
+    def test_persistent_emits_warning(self):
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            class P(Persistent):
+                pass
+            NoPickle(P)
+
+        assert_that(w, has_length(1))
+        # XXX Fill in details
