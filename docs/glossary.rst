@@ -15,9 +15,10 @@
 
    internal object
 
-       A Python object in the application domain. This may be a
-       complex object consisting of multiple nested objects. It may
-       use inheritance. It will implement one or more :term:`schema`.
+       A Python object in the application domain (sometimes known as a
+       "model" object). This may be a complex object consisting of
+       multiple nested objects. It may use inheritance. It will
+       implement one or more :term:`schema`.
 
    external object
 

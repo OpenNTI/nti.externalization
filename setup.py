@@ -17,6 +17,7 @@ TESTS_REQUIRE = [
     'fudge',
     'nti.testing',
     'zope.testrunner',
+    'manuel',
 ]
 
 
