@@ -1,3 +1,8 @@
 =================
  Internalization
 =================
+
+.. _factories:
+
+Factories
+=========

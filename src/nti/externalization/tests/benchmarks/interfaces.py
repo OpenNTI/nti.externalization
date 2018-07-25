@@ -7,15 +7,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import re
-
 from zope.interface import Interface
 from zope.interface import taggedValue
 
 from zope.schema import List
 from zope.schema import Object
-from zope.schema import URI
-
 
 from nti.schema.field import TextLine
 
@@ -63,3 +59,8 @@ class IHasListOfDerived(IRootInterface):
 
     taggedValue('__external_class_name__',
                 'HasListOfDerived')
+
+for _ in __all__:
+    # For documentation purposes, we have profileinterfaces separate.
+    # But only one interfaces module is recognized by ext:registerAutoPackageIO
+    globals()[_].__module__ = IHasListOfDerived.__module__

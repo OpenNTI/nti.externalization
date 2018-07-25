@@ -381,6 +381,81 @@ Finally, the ZCML file contains one directive that ties everything together:
    :language: xml
 
 
+If we configure this file, we can create and update addresses. We'll
+do so through their container object, the ``UserProfile``, thus
+demonstrating that nested schemas and objects are possible.
+
    >>> import nti.externalization.tests.benchmarks
-   >>> xmlconfig.file('configure.zcml', nti.externalization.tests.benchmarks)
+   >>> _ = xmlconfig.file('configure.zcml', nti.externalization.tests.benchmarks)
    >>> from nti.externalization.tests.benchmarks.objects import Address
+   >>> from nti.externalization.tests.benchmarks.objects import UserProfile
+   >>> home_address = Address(
+   ...     full_name=u'Steve Jobs',
+   ...     street_address_1=u'1313 Mockingbird Lane',
+   ...     city=u'Salem',
+   ...     state=u'MA',
+   ...     postal_code=u'6666',
+   ...     country=u'USA',
+   ... )
+   >>> work_address = Address(
+   ...     full_name=u'Apple',
+   ...     street_address_1=u'1 Infinite Loop',
+   ...     city=u'Cupertino',
+   ...     state=u'CA',
+   ...     postal_code=u'55555',
+   ...     country=u'USA',
+   ...  )
+   >>> user_profile = UserProfile(
+   ...     addresses={u'home': home_address, u'work': work_address},
+   ...     phones={u'home': u'405-555-1212', u'work': u'405-555-2323'},
+   ...     contact_emails={u'home': u'steve.jobs@gmail.com', u'work': u'steve@apple.com'},
+   ...     avatarURL='http://apple.com/steve.png',
+   ...     backgroundURL='https://apple.com/bg.jpeg',
+   ...     alias=u'Steve',
+   ...     realname=u'Steve Jobs',
+   ... )
+   >>> external = to_external_object(user_profile)
+   >>> pprint(external)
+   {u'Class': 'UserProfile',
+     u'MimeType': 'application/vnd.nextthought.benchmarks.userprofile',
+     'addresses': {u'home': {u'Class': 'Address',
+                             u'MimeType': 'application/vnd.nextthought.benchmarks.address',
+                             'city': u'Salem',
+                             'country': u'USA',
+                             'full_name': u'Steve Jobs',
+                             'postal_code': u'6666',
+                             'state': u'MA',
+                             'street_address_1': u'1313 Mockingbird Lane',
+                             'street_address_2': None},
+                   u'work': {u'Class': 'Address',
+                             u'MimeType': 'application/vnd.nextthought.benchmarks.address',
+                             'city': u'Cupertino',
+                             'country': u'USA',
+                             'full_name': u'Apple',
+                             'postal_code': u'55555',
+                             'state': u'CA',
+                             'street_address_1': u'1 Infinite Loop',
+                             'street_address_2': None}},
+     'alias': u'Steve',
+     'avatarURL': 'http://apple.com/steve.png',
+     'backgroundURL': 'https://apple.com/bg.jpeg',
+     'contact_emails': {u'home': u'steve.jobs@gmail.com',
+                        u'work': u'steve@apple.com'},
+     'phones': {u'home': u'405-555-1212', u'work': u'405-555-2323'},
+     'realname': u'Steve Jobs'}
+
+
+Let's make a change to the work address:
+
+    >>> external['addresses'][u'work']['street_address_1'] = u'One Apple Park Way'
+    >>> _ = update_from_external_object(user_profile, external)
+    >>> user_profile.addresses['work'].street_address_1
+    u'One Apple Park Way'
+
+Importantly, note that, by default, the nested objects are created
+fresh and *not* mutated.
+
+    >>> user_profile.addresses['work'] is work_address
+    False
+
+This is described in more detail in :ref:`factories`.

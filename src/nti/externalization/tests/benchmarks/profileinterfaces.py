@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Interfaces for objects we will benchmark with.
-
+A rich user profile.
 """
 from __future__ import absolute_import
 from __future__ import division
