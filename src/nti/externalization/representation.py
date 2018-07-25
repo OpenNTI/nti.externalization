@@ -49,7 +49,7 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
         :const:`.EXT_REPR_JSON` or
         :const:`.EXT_REPR_YAML`, or the
         name of some other utility that implements
-        `nti.externalization.interfaces..IExternalObjectRepresenter`
+        `~nti.externalization.interfaces.IExternalObjectRepresenter`
     """
     # It would seem nice to be able to do this in one step during
     # the externalization process itself, but we would wind up traversing

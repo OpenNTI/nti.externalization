@@ -463,3 +463,39 @@ fresh and *not* mutated.
     False
 
 This is described in more detail in :ref:`factories`.
+
+Representations
+===============
+
+Being able to get a Python dictionary from an object, and update an
+object given a Python dictionary, is nice, but it doesn't go all the
+way toward solving the goals of this package, interoperating with
+remote clients using a text (or byte) based stream.
+
+For that, we have the :mod:`nti.externalization.representation`
+module, and its key interface
+`~nti.externalization.interfaces.IExternalObjectIO`.
+
+A *representation* is a format that can serialize Python dictionaries
+to text, and given that text, produce a Python dictionary. This
+package provides two representations by default, JSON and YAML. These
+are named utilities providing ``IExternalObjectIO``. The function
+`nti.externalization.to_external_representation` is a shortcut for dumping to a string:
+
+    >>> from nti.externalization import to_external_representation
+    >>> from nti.externalization.interfaces import EXT_REPR_JSON, EXT_REPR_YAML
+    >>> to_external_representation(address, EXT_REPR_JSON)
+    '{"Class": "Address", "city": "Cupertino",...
+    >>> to_external_representation(address, EXT_REPR_YAML)
+    "{Class: Address, city: Cupertino, country: USA,...
+
+Loading from a string doesn't have a shortcut, we need to use the
+utility:
+
+    >>> from nti.externalization.interfaces import IExternalObjectIO
+    >>> external = to_external_object(address)
+    >>> yaml_io = component.getUtility(IExternalObjectIO, EXT_REPR_YAML)
+    >>> ext_yaml_str = yaml_io.dump(external)
+    >>> external_from_yaml = yaml_io.load(ext_yaml_str)
+    >>> external_from_yaml == external
+    True
