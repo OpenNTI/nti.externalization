@@ -53,6 +53,12 @@
   `PR 68
   <https://github.com/NextThought/nti.externalization/pull/68>`_.
 
+- Schemas that use ``InterfaceObjectIO`` (including through the ZCML
+  directive ``registerAutoPackageIO``) can use ``Dict`` fields more
+  easily on internalization (externalization has always worked): They
+  automatically internalize their values by treating the ``Dict`` as
+  anonymous external data.
+
 1.0.0a2 (2018-07-05)
 ====================
 

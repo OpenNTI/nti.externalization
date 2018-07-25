@@ -28,6 +28,8 @@ cdef make_repr
 cdef isSyntheticKey
 cdef find_most_derived_interface
 cdef NotGiven
+cdef IDict_providedBy
+cdef _anonymous_dict_factory
 
 cdef class ExternalizableDictionaryMixin(object):
     # This is a mixin used with other C base classes (E.g., persistent)

@@ -22,6 +22,7 @@ from six import iteritems
 from zope import interface
 from zope import schema
 from zope.schema.interfaces import SchemaNotProvided
+from zope.schema.interfaces import IDict
 
 from nti.schema.interfaces import find_most_derived_interface
 
@@ -39,6 +40,7 @@ from .externalization.externalizer import to_external_object as _toExternalObjec
 from .internalization import validate_named_field_value
 from .internalization.factories import find_factory_for
 from .representation import make_repr
+from .factory import AnonymousObjectFactory
 
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
@@ -48,6 +50,7 @@ from ._interface_cache import cache_for
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
+IDict_providedBy = IDict.providedBy
 
 __all__ = [
     'ExternalizableDictionaryMixin',
@@ -330,6 +333,8 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
 
 _primitives = six.string_types + (numbers.Number, bool)
 
+_anonymous_dict_factory = AnonymousObjectFactory(lambda x: x)
+_anonymous_dict_factory.__external_factory_wants_arg__ = True
 
 class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
@@ -510,11 +515,14 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 # Anything else is a programming error.
                 if isinstance(factory, str):
                     factory = registry.getUtility(IAnonymousObjectFactory, factory)
-            # TODO: If there is no factory found, check to see if the
-            # schema field is a Dict with a complex value type, and if
-            # so, automatically update it in place? This currently
-            # requires the user use a ZCML directive for each such
-            # dict field.
+
+                if factory is None and IDict_providedBy(field) and isinstance(value, dict):
+                    # If is no factory found, check to see if the
+                    # schema field is a Dict with a complex value type, and if
+                    # so, automatically update it in place. The alternative
+                    # requires the user to use a ZCML directive for each such
+                    # dict field.
+                    factory = _anonymous_dict_factory
         return factory
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
