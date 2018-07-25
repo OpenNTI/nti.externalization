@@ -60,6 +60,8 @@ class TestBenchmarkObjects(ExternalizationLayerTest):
         assert_that(mt, is_('application/vnd.nextthought.benchmarks.userprofile'))
 
         ext = toExternalObject(user_profile)
+        import pprint
+        pprint.pprint(ext)
         assert_that(ext, has_key(StandardExternalFields.MIMETYPE))
         assert_that(ext['addresses'], has_key('home'))
         assert_that(ext['addresses']['home'], has_key("city"))

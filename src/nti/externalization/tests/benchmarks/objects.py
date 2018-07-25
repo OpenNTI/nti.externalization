@@ -45,11 +45,6 @@ class HasListOfDerived(object):
 class Address(SchemaConfigured):
     createDirectFieldProperties(interfaces.IAddress)
 
-def addresses_dict(external_data):
-    # Update in place
-    return external_data
-addresses_dict.__external_can_create__ = True
-
 @interface.implementer(interfaces.IUserProfile)
 @EqHash('addresses', 'alias', 'phones', 'realname')
 @WithRepr

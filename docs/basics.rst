@@ -94,11 +94,11 @@ We can define an object that we want to externalize:
    but they are not. See https://github.com/NextThought/nti.externalization/issues/54
 
 And we can externalize it with
-`~nti.externalization.to_external_object` (we sort it here to be sure
-we get consistent output):
+`~nti.externalization.to_external_object`:
 
-  >>> sorted(to_external_object(InternalObject()).items())
-  [('A Letter', 'a'), ('The Number', 42)]
+  >>> from pprint import pprint
+  >>> pprint(to_external_object(InternalObject()))
+  {'A Letter': 'a', 'The Number': 42}
 
 If we want to update it, we need to write the corresponding method:
 
@@ -134,3 +134,253 @@ enough, but it doesn't come anywhere close to meeting our motivations:
    can communicate. There's nothing automatic about it.
 
 Let's see how this package helps us address each of those concerns in turn.
+
+
+Adapters and Configuration
+==========================
+
+This package makes heavy use of the `Zope Component Architecture`_ to
+abstract away details and separate concerns. Most commonly this is
+configured using `ZCML <mod:zope.configuration>`_, and this package
+ships with a ``configure.zcml`` that you should load:
+
+  >>> from zope.configuration import xmlconfig
+  >>> import nti.externalization
+  >>> xmlconfig.file('configure.zcml', nti.externalization)
+  <zope.configuration.config.ConfigurationMachine ...>
+
+The ``toExternalObject`` method is defined by the
+`nti.externalization.interfaces.IInternalObjectExternalizer`
+interface, and the ``updateFromExternalObject`` method is defined by
+`nti.externalization.interfaces.IInternalObjectUpdater` interface.
+Because it is common that one object both reads and writes the
+external representation, the two interfaces are joined together in
+`nti.externalization.interfaces.IInternalObjectIO`. Let's create a new
+internal object:
+
+.. code-block:: python
+
+   class InternalObject(object):
+       def __init__(self, id=''):
+           self._field1 = 'a'
+           self._field2 = 42
+           self._id = id
+
+       def __repr__(self):
+           return '<%s %r letter=%r number=%d>' % (
+               self.__class__.__name__, self._id, self._field1, self._field2)
+
+
+Now we will write an ``IInternalObjectIO`` adapter for it:
+
+.. code-block:: python
+
+   from zope.interface import implementer
+   from zope.component import adapter
+
+   from nti.externalization.interfaces import IInternalObjectIO
+
+   @implementer(IInternalObjectIO)
+   @adapter(InternalObject)
+   class InternalObjectIO(object):
+       def __init__(self, context):
+           self.context = context
+
+       def toExternalObject(self, **kwargs):
+          return {'Letter': self.context._field1, 'Number': self.context._field2}
+
+       def updateFromExternalObject(self, external_object, context=None):
+            self.context._field1 = external_object['Letter']
+            self.context._field2 = external_object['Number']
+
+
+We can register the adapter (normally this would be done in ZCML) and
+use it:
+
+.. code-block:: xml
+
+   <configure xmlns="http://namespaces.zope.org/zope">
+       <include package="nti.externalization" />
+       <adapter factory=".InternalObjectIO" />
+   </configure>
+
+Because we don't have a Python package to put this ZCML in, we'll
+register it manually.
+
+  >>> from zope import component
+  >>> component.provideAdapter(InternalObjectIO)
+  >>> internal = InternalObject('original')
+  >>> internal
+  <InternalObject 'original' letter='a' number=42>
+  >>> pprint(to_external_object(internal))
+  {'Letter': 'a', 'Number': 42}
+  >>> update_from_external_object(internal, {'Letter': 'b', 'Number': 3})
+  <InternalObject 'original' letter='b' number=3>
+
+By using adapters like this, we can separate out externalization from
+our core logic. Of course, that's still a lot of manual code to write.
+
+
+Using Schemas for Validation and Automatic Externalization
+==========================================================
+
+Most application objects will implement one or more interfaces. When
+those interfaces contain attributes from :mod:`zope.schema.field` or
+:mod:`nti.schema.field`, they are also called schemas. This package can
+automate the entire externalization process, including validation,
+based on the schemas an object implements.
+
+Let's start by writing a simple schema.
+
+.. code-block:: python
+
+    from zope.interface import Interface
+    from zope.interface import taggedValue
+
+    from nti.schema.field import ValidTextLine
+
+    class IAddress(Interface):
+
+        full_name = ValidTextLine(title=u"First name", required=True)
+
+        street_address_1 = ValidTextLine(title=u"Street line 1",
+                                         max_length=75, required=True)
+
+        street_address_2 = ValidTextLine(title=u"Street line 2",
+                                         required=False, max_length=75)
+
+        city = ValidTextLine(title=u"City name", required=True)
+
+        state = ValidTextLine(title=u"State name",
+                              required=False, max_length=10)
+
+        postal_code = ValidTextLine(title=u"Postal code",
+                                    required=False, max_length=30)
+
+        country = ValidTextLine(title=u"Nation name", required=True)
+
+And now an implementation of that interface.
+
+.. code-block:: python
+
+   from nti.schema.fieldproperty import createDirectFieldProperties
+   from nti.schema.schema import SchemaConfigured
+
+   @implementer(IAddress)
+   class Address(SchemaConfigured):
+        createDirectFieldProperties(IAddress)
+
+Externalizing based on the schema is done with `.InterfaceObjectIO`.
+We'll create a subclass to configure it.
+
+.. code-block:: python
+
+   from nti.externalization.datastructures import InterfaceObjectIO
+
+   @adapter(IAddress)
+   class AddressIO(InterfaceObjectIO):
+       _ext_iface_upper_bound = IAddress
+
+
+Now we can register and use it as before:
+
+
+   >>> component.provideAdapter(AddressIO)
+   >>> address = Address(full_name=u'Steve Jobs',
+   ...    street_address_1=u'One Infinite Loop',
+   ...    city=u'Cupertino',
+   ...    state=u'CA',
+   ...    postal_code=u'95014',
+   ...    country=u'USA')
+   >>> external = to_external_object(address)
+   >>> pprint(external)
+   {u'Class': 'Address',
+     'city': u'Cupertino',
+     'country': u'USA',
+     'full_name': u'Steve Jobs',
+     'postal_code': u'95014',
+     'state': u'CA',
+     'street_address_1': u'One Infinite Loop',
+     'street_address_2': None}
+
+Oops, One Infinte Loop was Apple's old address. They've since moved
+into `their new headquarters`_:
+
+   >>> external['street_address_1'] = u'One Apple Park Way'
+   >>> _ = update_from_external_object(address, external)
+   >>> address.street_address_1
+   'One Apple Park Way'
+
+Notice that our schema declared a number of constraints. For instance,
+the ``full_name`` is required, and the ``state`` cannot be longer than
+ten characters. Let's see what happens when we try to violate these
+conditions:
+
+   >>> external['state'] = u'Commonwealth of Massachusetts'
+   >>> update_from_external_object(address, external)
+   Traceback (most recent call last):
+   ...
+   TooLong: ('State is too long.', 'state', u'Commonwealth of Massachusetts')
+   >>> external['state'] = u'CA'
+   >>> external['full_name'] = None
+   >>> update_from_external_object(address, external)
+   Traceback (most recent call last):
+   ...
+   zope.schema._bootstrapinterfaces.RequiredMissing: full_name
+
+Much better! We get validation of our constraints and we didn't have
+to write much code. But, we still had to write *some* code, one class
+for each object we're externalizing. Can we do better?
+
+.. _Zope Component Architecture: http://muthukadan.net/docs/zca.html
+.. _their new headquarters: https://appleinsider.com/articles/18/02/16/apple-park-now-apples-official-corporate-address
+
+
+autoPackageIO
+=============
+
+The answer is yes, we can do much better, with the
+:class:`ext:registerAutoPackageIO
+<nti.externalization.zcml.IAutoPackageExternalizationDirective>`
+ZCML directive.
+
+The above example schema is taken from the tests distributed with this
+package in ``nti.externalization.tests.benchmarks``. That package
+provides the schema (as shown above), an implementation of it, and
+the ZCML file that pulls it all together with one directive.
+
+
+Here's the schema, along with several other schema to define a rich
+user profile, in ``interfaces.py``:
+
+.. literalinclude:: ../src/nti/externalization/tests/benchmarks/profileinterfaces.py
+   :language: python
+
+They are implemented in ``objects.py`` very simply (as above):
+
+.. ignore-next-block
+
+.. code-block:: python
+
+   @interface.implementer(interfaces.IAddress)
+   @EqHash('full_name', 'street_address_1', 'postal_code')
+   @WithRepr
+   class Address(SchemaConfigured):
+       createDirectFieldProperties(interfaces.IAddress)
+
+   @interface.implementer(interfaces.IUserProfile)
+   @EqHash('addresses', 'alias', 'phones', 'realname')
+   @WithRepr
+   class UserProfile(SchemaConfigured):
+        createFieldProperties(interfaces.IUserProfile)
+
+
+Finally, the ZCML file contains one directive that ties everything together:
+
+.. literalinclude:: ../src/nti/externalization/tests/benchmarks/profileconfigure.zcml
+   :language: xml
+
+
+   >>> import nti.externalization.tests.benchmarks
+   >>> xmlconfig.file('configure.zcml', nti.externalization.tests.benchmarks)
+   >>> from nti.externalization.tests.benchmarks.objects import Address
