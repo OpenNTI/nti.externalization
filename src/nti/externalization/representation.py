@@ -43,11 +43,11 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
     Transforms (and returns) the *obj* into its external (string)
     representation.
 
-    Uses :func:`nti.externalization.to_external_object`, passing in the *name* and *registry*.
+    Uses :func:`nti.externalization.to_external_object`, passing in the *name*.
 
     :param str ext_format: One of
-        :const:`.EXT_REPR_JSON` or
-        :const:`.EXT_REPR_YAML`, or the
+        `.EXT_REPR_JSON` or
+        `.EXT_REPR_YAML`, or the
         name of some other utility that implements
         `~nti.externalization.interfaces.IExternalObjectRepresenter`
     """
@@ -62,7 +62,7 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
 def to_json_representation(obj):
     """
     A convenience function that calls
-    :func:`to_external_representation` with :data:`EXT_REPR_JSON`.
+    :func:`to_external_representation` with `.EXT_REPR_JSON`.
     """
     return to_external_representation(obj, EXT_REPR_JSON)
 
@@ -195,7 +195,7 @@ def WithRepr(default=object()):
     A class decorator factory to give a ``__repr__`` to
     the object. Useful for persistent objects.
 
-    :keyword default: A callable to be used for the default value.
+    :param default: A callable to be used for the default value.
     """
 
     # If we get one argument that is a type, we were
