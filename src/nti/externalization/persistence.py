@@ -271,11 +271,11 @@ def NoPickle(cls):
     avoiding ZODB backward compatibility concerns.
 
     .. warning::
-        Subclasses of such decorated classes are
-        also not capable of being pickled, without
-        appropriate overrides of ``__reduce_ex__`` and
-        ``__getstate__``. A "working" subclass, but only
-        for ZODB, looks like this:
+       Subclasses of such decorated classes are
+       also not capable of being pickled, without
+       appropriate overrides of ``__reduce_ex__`` and
+       ``__getstate__``. A "working" subclass, but only
+       for ZODB, looks like this::
 
             @NoPickle
             class Root(object):

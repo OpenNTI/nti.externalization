@@ -126,7 +126,8 @@ class StandardExternalFields(object):
         #: The floating point value giving the Unix epoch time
         #: of the last modification of the object
         self.LAST_MODIFIED = u'Last Modified'
-        #: The class of the object
+        #: 'Class': The class of the object. If the object provides
+        #: ``__external_class_name__`` it will be used to populate this.
         self.CLASS = u'Class'
         #: A dictionary mapping "rel" to more hrefs.
         self.LINKS = u'Links'
@@ -199,17 +200,23 @@ class StandardInternalFields(object):
     )
 
     def __init__(self):
-        #: An object ID
+        #: 'id': An object ID
         self.ID = 'id'
-        #: An object's structured ID
+        #: 'ntiid': An object's structured ID.
         self.NTIID = 'ntiid'
-        #: An object that created this object
+        #: 'creator': An object that created this object. This will be converted
+        #: to a text string to fill in `.StandardExternalFields.CREATOR`.
         self.CREATOR = 'creator'
-        #: The Unix timestamp of the creation
+        #: 'createdTime': The Unix timestamp of the creation of this object.
+        #: If no value can be found, we will attempt to adapt to `zope.dublincore.interfaces.IDCTimes`
+        #: and use its 'created' attribute. Fills `StandardExternalFields.CREATED_TIME`
         self.CREATED_TIME = 'createdTime'
-        #: The ID of the container of this object
+        #: 'containerId': The ID of the container of this object.
+        #: Fills `StandardExternalFields.CONTAINER_ID`.
         self.CONTAINER_ID = 'containerId'
-        #: The Unix timestamp of the last modification of this object
+        #: 'lastModified': The Unix timestamp of the last modification of this object.
+        #: If no value can be found, we will attempt to adapt to `zope.dublincore.interfaces.IDCTimes`
+        #: and use its 'modified' attribute. Fills `.StandardExternalFields.LAST_MODIFIED`
         self.LAST_MODIFIED = 'lastModified'
 
         self.LAST_MODIFIEDU = 'LastModified'

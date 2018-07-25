@@ -84,23 +84,31 @@ def to_standard_external_dictionary(
         useCache=NotGiven,
         **kwargs
 ):
-    """
+    """to_standard_external_dictionary(self, mergeFrom=None, decorate=True, request=NotGiven)
+
     Returns a dictionary representing the standard externalization of
-    the object. This impl takes care of the standard attributes
-    including OID (from
-    :attr:`~persistent.interfaces.IPersistent._p_oid`) and ID (from
-    ``self.id`` if defined) and Creator (from ``self.creator``).
+    the object. This function takes care of many of the standard external fields:
+
+    * External identifiers like `.StandardExternalFields.OID` and `.StandardExternalFields.NTIID`
+      using `.set_external_identifiers`.
+    * The `.StandardExternalFields.CREATOR`.
+    * The `.StandardExternalFields.LAST_MODIFIED`.
+    * The `.StandardExternalFields.CREATED_TIME`.
+    * The `.StandardExternalFields.CONTAINER_ID`.
+    * The `.StandardExternalFields.CLASS` and `.StandardExternalFields.MIMETYPE`.
 
     If the object has any
     :class:`~nti.externalization.interfaces.IExternalMappingDecorator`
     subscribers registered for it, they will be called to decorate the
-    result of this method before it returns ( *unless* `decorate` is
+    result of this method before it returns (**unless** *decorate* is
     set to False; only do this if you know what you are doing! )
 
-    :param dict mergeFrom: For convenience, if ``mergeFrom`` is not
+    :keyword dict mergeFrom:
+        For convenience, if *mergeFrom* is not
         None, then those values will be added to the dictionary
-        created by this method. The keys and values in ``mergeFrom``
+        created by this method. The keys and values in *mergeFrom*
         should already be external.
+    :returns: A `.LocatedExternalDict`.
 
    .. versionchanged:: 1.0a1
       Arbitrary keyword arguments not used by this function are deprecated
@@ -125,7 +133,7 @@ def to_standard_external_dictionary(
 
 def to_minimal_standard_external_dictionary(self, mergeFrom=None):
     """
-    Does no decoration. Useful for non-'object' types. `self` should have a `mime_type` field.
+    Does no decoration. Useful for non-'object' types. *self* should have a *mime_type* field.
     """
 
     result = make_external_dict()

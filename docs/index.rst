@@ -12,6 +12,7 @@ Introduction and Basics
    schemas
    externalization
    internalization
+   special_attributes
    glossary
    changelog
 

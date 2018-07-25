@@ -1,0 +1,24 @@
+====================
+ Special Attributes
+====================
+
+This document covers some of the special attributes used by this
+module.
+
+When we discuss interfaces or the contents of attributes, we are
+referring to `tagged values <zope.interface.taggedValue>`.
+
+* ``__external_class_name__``
+
+Used an a class or interface to determine the value of the ``Class``
+standard external value. Usually this is a string, but when using
+`.InterfaceObjectIO` (including ``ext:registerAutoPackageIO``) it can
+be a callable.
+
+.. seealso:: `.AutoPackageSearchingScopedInterfaceObjectIO._ap_compute_external_class_name_from_interface_and_instance`
+   and `.AutoPackageSearchingScopedInterfaceObjectIO._ap_find_factories`
+
+* ``__external_can_create__``
+
+This boolean value is set to true on factory functions (e.g.,
+classes). ``ext:registerAutoPackageIO`` sets it to true automatically.

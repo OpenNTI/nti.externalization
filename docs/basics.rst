@@ -335,9 +335,10 @@ for each object we're externalizing. Can we do better?
 .. _Zope Component Architecture: http://muthukadan.net/docs/zca.html
 .. _their new headquarters: https://appleinsider.com/articles/18/02/16/apple-park-now-apples-official-corporate-address
 
+.. _autoPackageIO:
 
-autoPackageIO
-=============
+autoPackageIO: Handing responsibility to the framework
+======================================================
 
 The answer is yes, we can do much better, with the
 :class:`ext:registerAutoPackageIO
@@ -444,6 +445,9 @@ demonstrating that nested schemas and objects are possible.
      'phones': {u'home': u'405-555-1212', u'work': u'405-555-2323'},
      'realname': u'Steve Jobs'}
 
+Notice that there are some additional bits of data in the external
+form that are not specified in the interface. Here, that's ``Class``
+and ``MimeType``. These are two of the :ref:`standard_fields`.
 
 Let's make a change to the work address:
 

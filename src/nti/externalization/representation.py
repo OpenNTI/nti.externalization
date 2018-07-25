@@ -41,7 +41,7 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
     Transforms (and returns) the *obj* into its external (string)
     representation.
 
-    Uses :func:`.to_external_object`, passing in the *name* and *registry*.
+    Uses :func:`nti.externalization.to_external_object`, passing in the *name* and *registry*.
 
     :param str ext_format: One of
         :const:`.EXT_REPR_JSON` or
