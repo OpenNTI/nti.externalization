@@ -38,6 +38,8 @@ __all__ = [
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
                                name=_NotGiven, registry=component):
     """
+    to_external_representation(obj, ext_format='json', name=NotGiven) -> str
+
     Transforms (and returns) the *obj* into its external (string)
     representation.
 

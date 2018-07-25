@@ -129,3 +129,10 @@ from the object schema), and it is always before
 this, but it's best to stick to ``IExternalObjectDecorator``.
 
 .. _subscription adapters: http://muthukadan.net/docs/zca.html#subscription-adapter
+
+Dublin Core Metadata
+--------------------
+
+Decorators for :mod:`zope.dublincore` metadata are installed for all
+objects by default. See :mod:`nti.externalization.dublincore` for more
+information.

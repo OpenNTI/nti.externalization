@@ -95,7 +95,8 @@ def to_standard_external_dictionary(
     * The `.StandardExternalFields.LAST_MODIFIED`.
     * The `.StandardExternalFields.CREATED_TIME`.
     * The `.StandardExternalFields.CONTAINER_ID`.
-    * The `.StandardExternalFields.CLASS` and `.StandardExternalFields.MIMETYPE`.
+    * The `.StandardExternalFields.CLASS` and `.StandardExternalFields.MIMETYPE`
+      (from the ``mimeType`` attribute of the object).
 
     If the object has any
     :class:`~nti.externalization.interfaces.IExternalMappingDecorator`

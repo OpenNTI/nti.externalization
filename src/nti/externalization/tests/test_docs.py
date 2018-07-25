@@ -41,6 +41,7 @@ def test_suite():
     files_to_test = (
         'basics.rst',
         'externalization.rst',
+        'internalization.rst',
     )
     paths = [os.path.join(docs, f) for f in files_to_test]
     kwargs = {'tearDown': lambda _: cleanup.cleanUp}
