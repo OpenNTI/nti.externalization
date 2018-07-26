@@ -167,6 +167,9 @@ class IAutoPackageExternalizationDirective(interface.Interface):
     iobase = GlobalObject(
         title=(u"If given, a base class that will be used. "
                u"You can customize aspects of externalization that way."),
+        description=(u"This class should descend from `object`, and it should implement "
+                     u"the extension methods documented to customize "
+                     u"`.AutoPackageSearchingScopedInterfaceObjectIO`."),
         required=False)
 
     register_legacy_search_module = Bool(

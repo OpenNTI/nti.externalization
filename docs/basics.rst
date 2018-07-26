@@ -345,11 +345,17 @@ The answer is yes, we can do much better, with the
 <nti.externalization.zcml.IAutoPackageExternalizationDirective>`
 ZCML directive.
 
+.. note::
+   ``ext:registerAutoPackageIO`` is biased for a conventional setup of
+   a single package: one or more root interfaces in ``interfaces.py``,
+   one or more modules defining factories (classes) implementing those
+   interfaces. To an extent this can be changed using the ``iobase``
+   argument.
+
 The above example schema is taken from the tests distributed with this
 package in ``nti.externalization.tests.benchmarks``. That package
 provides the schema (as shown above), an implementation of it, and
 the ZCML file that pulls it all together with one directive.
-
 
 Here's the schema, along with several other schema to define a rich
 user profile, in ``interfaces.py``:

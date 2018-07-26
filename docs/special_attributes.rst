@@ -22,3 +22,25 @@ be a callable.
 
 This boolean value is set to true on factory functions (e.g.,
 classes). ``ext:registerAutoPackageIO`` sets it to true automatically.
+
+* ``mimeType``
+
+Part of the :class:`zope.mimetype.interfaces.IContentTypeAware`
+interface. This is read from :ref:`factories` when creating factory
+registrations. It also forms one of the :ref:`standard external fields
+<standard_fields>`.
+
+
+* ``_ext_excluded_out``
+
+A tagged value on individual attributes of an interface to prevent
+them from being externalized. See `.InterfaceObjectIO`.
+
+* ``__external_factory_wants_arg__``
+
+(Provisional). Attribute of a :ref:`factory <factories>`. When creating
+sub-objects and invoking a factory, should we pass the external object
+to the factory? If not true or not set, the factory receives no
+arguments.
+
+.. versionadded:: 1.0a3
