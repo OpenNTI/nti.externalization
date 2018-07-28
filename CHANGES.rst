@@ -6,7 +6,10 @@
 1.0.0a4 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Make ``InterfaceObjectIO._ext_self`` readable from Python, even
+  though that is not documented (and may change again in the future).
+  Document the intended API, ``_ext_replacement()``. See `issue 73
+  <https://github.com/NextThought/nti.externalization/issues/73>`_.
 
 
 1.0.0a3 (2018-07-28)

@@ -70,6 +70,11 @@ class ExternalizableDictionaryMixin(object):
     __external_use_minimal_base__ = False
 
     def _ext_replacement(self):
+        """
+        Return the object that we are externalizing.
+
+        This class returns ``self``, but subclasses will typically override this.
+        """
         return self
 
     def _ext_standard_external_dictionary(self, replacement, mergeFrom=None, **kwargs):
@@ -338,10 +343,10 @@ _anonymous_dict_factory.__external_factory_wants_arg__ = True
 
 class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
-    Externalizes to a dictionary based on getting the attributes of an
-    object defined by an interface. If any attribute has a true value
-    for the tagged value ``_ext_excluded_out``, it will not be
-    considered for reading or writing.
+    Externalizes the *context* to a dictionary based on getting the
+    attributes of an object defined by an interface. If any attribute
+    has a true value for the tagged value ``_ext_excluded_out``, it
+    will not be considered for reading or writing.
 
     This is an implementation of
     `~nti.externalization.interfaces.IInternalObjectIOFinder`, meaning
@@ -364,11 +369,13 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     interfaces, and better interface detection (see
     :class:`ModuleScopedInterfaceObjectIO` for a limited version of
     this.)
+
+    This class overrides `_ext_replacement` to return the *context*.
     """
 
     _ext_iface_upper_bound = None
 
-    def __init__(self, ext_self, iface_upper_bound=None, validate_after_update=True):
+    def __init__(self, context, iface_upper_bound=None, validate_after_update=True):
         """
         :param iface_upper_bound: The upper bound on the schema to use
             to externalize `ext_self`; we will use the most derived sub-interface
@@ -381,13 +388,13 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             :meth:`update_from_external_object`, not just the keys that were assigned.
         """
         AbstractDynamicObjectIO.__init__(self)
-        self._ext_self = ext_self
+        self._ext_self = context
         # Cache all of this data that we use. It's required often and, if not quite a bottleneck,
         # does show up in the profiling data
-        cache = cache_for(self, ext_self)
+        cache = cache_for(self, context)
         if cache.iface is None:
             cache.iface = self._ext_find_schema(
-                ext_self,
+                context,
                 iface_upper_bound if iface_upper_bound is not None else self._ext_iface_upper_bound
             )
         self._iface = cache.iface
