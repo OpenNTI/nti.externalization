@@ -42,7 +42,8 @@ cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
     cpdef _ext_all_possible_keys(self)
     cpdef _ext_setattr(self, ext_self, k, value)
-    cpdef _ext_getattr(self, ext_self, k)
+    cpdef _ext_getattr(self, ext_self, k, default=*)
+    cpdef _ext_replacement_getattr(self, k, default=*)
 
     @cython.locals(
         k=str # cython can optimize k.startswith('constantstring')

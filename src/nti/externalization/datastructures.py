@@ -159,12 +159,27 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     def _ext_setattr(self, ext_self, k, value):
         raise NotImplementedError()
 
-    def _ext_getattr(self, ext_self, k):
+    def _ext_getattr(self, ext_self, k, default=NotGiven):
         """
-        Return the attribute of the `ext_self` object with the external name `k`.
-        If the attribute does not exist, should raise (typically :exc:`AttributeError`)
+        _ext_getattr(object, name[, default]) -> value
+
+        Return the attribute of the *ext_self* object with the internal name *name*.
+        If the attribute does not exist, should raise (typically :exc:`AttributeError`),
+        unless *default* is given, in which case it returns that.
+
+        .. versionchanged:: 1.0a4
+            Add the *default* argument.
         """
         raise NotImplementedError()
+
+    def _ext_replacement_getattr(self, name, default=NotGiven):
+        """
+        Like `_ext_getattr`, but automatically fills in `_ext_replacement`
+        for the *ext_self* argument.
+
+        .. versionadded:: 1.0a4
+        """
+        return self._ext_getattr(self._ext_replacement(), name, default)
 
     def _ext_keys(self):
         """
@@ -320,11 +335,13 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     def _ext_all_possible_keys(self):
         return frozenset(self._ext_replacement().__dict__.keys())
 
-    def _ext_getattr(self, ext_self, k):
-        return getattr(ext_self, k)
+    def _ext_getattr(self, ext_self, k, default=NotGiven):
+        if default is NotGiven:
+            return getattr(ext_self, k)
+        return getattr(ext_self, k, default)
 
-    def _ext_setattr(self, ext_self, k, v):
-        setattr(ext_self, k, v)
+    def _ext_setattr(self, ext_self, k, value):
+        setattr(ext_self, k, value)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
         return (
@@ -450,9 +467,11 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             ])
         return cache.ext_all_possible_keys
 
-    def _ext_getattr(self, ext_self, k):
+    def _ext_getattr(self, ext_self, k, default=NotGiven):
         # TODO: Should this be directed through IField.get?
-        return getattr(ext_self, k)
+        if default is NotGiven:
+            return getattr(ext_self, k)
+        return getattr(ext_self, k, default)
 
     def _ext_setattr(self, ext_self, k, value):
         validate_named_field_value(ext_self, self._iface, k, value)()

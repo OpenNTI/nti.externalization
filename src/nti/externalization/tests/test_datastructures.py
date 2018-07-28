@@ -28,9 +28,31 @@ from hamcrest import none
 # pylint: disable=inherit-non-class,attribute-defined-outside-init,abstract-method
 # pylint:disable=no-value-for-parameter,too-many-function-args
 
-class TestAbstractDynamicObjectIO(ExternalizationLayerTest):
+class CommonTestMixins(object):
 
-    def _makeOne(self):
+    def _makeOne(self, context=None):
+        raise NotImplementedError()
+
+    def test_ext_getattr_default(self):
+        io = self._makeOne()
+        assert_that(io._ext_getattr(self, 'no_such_attribute', None),
+                    is_(none()))
+
+    def test_ext_getattr_no_default(self):
+        io = self._makeOne()
+        get = io._ext_getattr
+        with self.assertRaises(AttributeError):
+            get(self, 'no_such_attribute')
+
+    def test_ext_replacement_getattr_default(self):
+        io = self._makeOne()
+        assert_that(io._ext_replacement_getattr('no_such_attribute', None),
+                    is_(none()))
+
+class TestAbstractDynamicObjectIO(CommonTestMixins,
+                                  ExternalizationLayerTest):
+
+    def _makeOne(self, context=None):
         from nti.externalization.datastructures import AbstractDynamicObjectIO
         class IO(AbstractDynamicObjectIO):
             _ext_setattr = staticmethod(setattr)
@@ -139,14 +161,15 @@ class TestAbstractDynamicObjectIO(ExternalizationLayerTest):
         assert_that(inst, has_property('id', 'id'))
 
 class TestInterfaceObjectIO(CleanUp,
+                            CommonTestMixins,
                             unittest.TestCase):
 
     def _getTargetClass(self):
         from nti.externalization.datastructures import InterfaceObjectIO
         return InterfaceObjectIO
 
-    def _makeOne(self, ext_self, *args, **kwargs):
-        return self._getTargetClass()(ext_self, *args, **kwargs)
+    def _makeOne(self, context=None, iface_upper_bound=interface.Interface):
+        return self._getTargetClass()(context, iface_upper_bound=iface_upper_bound)
 
     def test_find_primitive_keys_dne(self):
         ext_self = self
@@ -479,3 +502,15 @@ class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):
 
         io = IO(Consistent())
         assert_that(io, has_property('_iface', IGrandChild))
+
+
+class TestExternalizableInstanceDict(CommonTestMixins,
+                                     unittest.TestCase):
+
+    def _makeOne(self, context=None):
+        from nti.externalization.datastructures import ExternalizableInstanceDict
+        class FUT(ExternalizableInstanceDict):
+            def _ext_replacement(self):
+                return context
+
+        return FUT()
