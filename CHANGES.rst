@@ -11,6 +11,10 @@
   Document the intended API, ``_ext_replacement()``. See `issue 73
   <https://github.com/NextThought/nti.externalization/issues/73>`_.
 
+- Make ``AbstractDynamicObjectIO._ext_getattr`` handle a default
+  value, and add ``_ext_replacement_getattr``  for when it will only
+  be called once. See `issue 73
+  <https://github.com/NextThought/nti.externalization/issues/73>`_.
 
 1.0.0a3 (2018-07-28)
 ====================
