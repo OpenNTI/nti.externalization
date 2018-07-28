@@ -612,6 +612,10 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         # If we have a graph that is not a tree, though, it may not be.
         # In that case, we are not suitable for use with this object
         for iface in self._ext_schemas_to_consider(ext_self):
+            if iface is most_derived:
+                # Support interfaces that have their __module__ changed
+                # dynamically (e.g., test_benchmarks)
+                continue
             if not most_derived.isOrExtends(iface):
                 raise TypeError(
                     "Most derived interface %s does not extend %s; non-tree interface structure. "

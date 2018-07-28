@@ -1,0 +1,13 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:ext="http://nextthought.com/ntp/ext">
+
+    <include package="zope.component" />
+
+    <include package="nti.externalization" file="meta.zcml" />
+    <include package="nti.externalization" />
+
+    <ext:registerAutoPackageIO
+        root_interfaces=".interfaces.IRootInterface"
+        modules=".objects"
+        />
+</configure>

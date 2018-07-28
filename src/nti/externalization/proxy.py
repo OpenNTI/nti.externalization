@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Utilities for working with various kinds of transparent proxies.
+Support for working with transparent proxies.
 
+There are times during the externalization process (such as when
+computing `object identifiers <nti.externalization.oids>`) that we
+need to be working with the "real" object, stripped of any security or
+other proxes placed around it. This module provides `removeAllProxies` for that purpose.
+
+It is extensible with `registerProxyUnwrapper`.
 """
 
 from __future__ import absolute_import
@@ -10,6 +16,11 @@ from __future__ import division
 from __future__ import print_function
 
 from zope.dottedname import resolve as dottedname
+
+__all__ = [
+    'removeAllProxies',
+    'registerProxyUnwrapper',
+]
 
 _unwrappers = []
 
@@ -36,6 +47,19 @@ def removeAllProxies(proxy):
     This module may know about :mod:`zope.proxy`,
     :mod:`zope.container.contained`, and :mod:`Acquisition`,
     if they are installed.
+
+    >>> from zope.container.contained import ContainedProxy
+    >>> obj = object()
+    >>> proxy = ContainedProxy(obj)
+    >>> proxy == obj
+    True
+    >>> proxy is obj
+    False
+    >>> removeAllProxies(obj) is obj
+    True
+    >>> removeAllProxies(proxy) is obj
+    True
+
 
     .. versionchanged:: 1.0
        The default proxy unwrappers are all optional and will only

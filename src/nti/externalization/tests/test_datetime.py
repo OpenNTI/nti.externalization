@@ -16,7 +16,11 @@ import unittest
 from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
 
-from nti.externalization.datetime import _datetime_to_string
+from zope.configuration import xmlconfig
+from zope.testing import cleanup
+
+import nti.externalization
+from nti.externalization.datetime import datetime_to_string
 from nti.externalization.datetime import datetime_from_string
 from nti.externalization.tests import ExternalizationLayerTest
 from nti.externalization.tests import externalizes
@@ -60,7 +64,7 @@ class TestDatetime(ExternalizationLayerTest):
         assert_that(IDateTime('1992-01-31T00:00Z'),
                     has_property('tzinfo', none()))
         # Round trips
-        assert_that(_datetime_to_string(IDateTime('1992-01-31T00:00Z')).toExternalObject(),
+        assert_that(datetime_to_string(IDateTime('1992-01-31T00:00Z')).toExternalObject(),
                     is_('1992-01-31T00:00:00Z'))
 
     def test_native_timezone_conversion(self):
@@ -126,3 +130,24 @@ class TestTzinfo(unittest.TestCase):
             time.tzset()
             zone = _local_tzinfo('dne')
             assert_that(zone, is_(pytz.timezone('Etc/GMT+5')))
+
+
+def doctest_setUp(_):
+    xmlconfig.file('configure.zcml', nti.externalization)
+
+def doctest_tearDown(_):
+    cleanup.cleanUp()
+
+def test_suite():
+    import doctest
+    from unittest import defaultTestLoader
+    suite = defaultTestLoader.loadTestsFromName(__name__)
+
+    return unittest.TestSuite([
+        suite,
+        doctest.DocTestSuite(
+            'nti.externalization.datetime',
+            setUp=doctest_setUp,
+            tearDown=doctest_tearDown,
+        ),
+    ])

@@ -3,7 +3,7 @@
 Extension points for integrating with other applications,
 frameworks, and libraries.
 
-The normal extension point for this package is :mod:`zope.component`
+The normal extension mechanisms for this package are :mod:`zope.component`
 and :mod:`zope.interface`. The particular extension points found here
 are different for two reasons:
 
@@ -28,25 +28,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from zope.hookable import hookable as _base_hookable
+from zope.hookable import hookable
 
 from ._compat import to_unicode
 from .oids import to_external_oid
 from .interfaces import StandardExternalFields
 
-class _hookable(_base_hookable):
-    # zope.hookable doesn't expose docstrings, so we need to do it
-    # manually.
-    # NOTE: You must manually list these with ..autofunction:: in the api
-    # document.
-    __doc__ = property(lambda self: self.original.__doc__)
-    # Unless the first line of the docstring for the function looks like
-    # a signature, we get a warning without these properties.
-    __bases__ = property(lambda _: ())
-    __dict__ = property(lambda _: None)
+__all__ = [
+    'get_current_request',
+    'set_external_identifiers',
+]
 
-
-@_hookable
+@hookable
 def get_current_request():
     """
     get_current_request() -> request
@@ -84,9 +77,22 @@ _StandardExternalFields_NTIID = StandardExternalFields.NTIID
 del StandardExternalFields
 
 
-@_hookable
+@hookable
 def set_external_identifiers(self, result):
-    # XXX: Document me
+    """
+    set_external_identifiers(self, result) -> None
+
+    Place the stable external identifiers for *self* in the dictionary
+    *result*.
+
+    By default, this function uses the result of `.to_external_oid` as
+    the value to put in *result*, under the keys
+    `~nti.externalization._base_interfaces.StandardExternalFields.OID`
+    as well as `~nti.externalization._base_interfaces.StandardExternalFields.NTIID`.
+
+    This is called from `to_standard_external_dictionary`, a default
+    part of producing the external dictionary for all objects.
+    """
     ntiid = oid = to_unicode(to_external_oid(self))
     if ntiid:
         result[_StandardExternalFields_OID] = oid

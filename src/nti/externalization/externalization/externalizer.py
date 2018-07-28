@@ -36,7 +36,7 @@ from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization._threadlocal import ThreadLocalManager
 from nti.externalization.extension_points import get_current_request
 
-from nti.externalization.interfaces import IExternalObject
+from nti.externalization.interfaces import IInternalObjectExternalizer
 from nti.externalization.interfaces import IExternalObjectDecorator
 from nti.externalization.interfaces import ILocatedExternalSequence
 from nti.externalization.interfaces import INonExternalizableReplacementFactory
@@ -225,12 +225,12 @@ def _externalize_object(obj, state):
     if obj_has_usable_external_object:
         toExternalObject = obj.toExternalObject
     else:
-        adapter = state.registry.queryAdapter(obj, IExternalObject, state.name)
+        adapter = state.registry.queryAdapter(obj, IInternalObjectExternalizer, state.name)
 
         if adapter is None and state.name != '':
             # try for the default, but allow passing name of None to
             # disable (?)
-            adapter = state.registry.queryAdapter(obj, IExternalObject)
+            adapter = state.registry.queryAdapter(obj, IInternalObjectExternalizer)
 
         if adapter is not None:
             toExternalObject = adapter.toExternalObject
@@ -328,31 +328,39 @@ def to_external_object(
         default_non_externalizable_replacer=DefaultNonExternalizableReplacer
 ):
     """
-    Translates the object into a form suitable for
-    external distribution, through some data formatting process. See :const:`SEQUENCE_TYPES`
-    and :const:`MAPPING_TYPES` for details on what we can handle by default.
+    Translates the object into a form suitable for external
+    distribution, through some data formatting process. See
+    :const:`SEQUENCE_TYPES` and :const:`MAPPING_TYPES` for details on
+    what we can handle by default.
 
-    :param string name: The name of the adapter to :class:IExternalObject to look
-        for. Defaults to the empty string (the default adapter). If you provide
-        a name, and an adapter is not found, we will still look for the default name
-        (unless the name you supply is None).
-    :param tuple catch_components: A tuple of exception classes to catch when
-        externalizing sub-objects (e.g., items in a list or dictionary). If one of these
-        exceptions is caught, then `catch_component_action` will be called to raise or replace
+    :param string name: The name of the adapter to
+        :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`
+        to look for. Defaults to the empty string (the default
+        adapter). If you provide a name, and an adapter is not found,
+        we will still look for the default name (unless the name you
+        supply is None).
+    :param tuple catch_components: A tuple of exception classes to
+        catch when externalizing sub-objects (e.g., items in a list or
+        dictionary). If one of these exceptions is caught, then
+        *catch_component_action* will be called to raise or replace
         the value. The default is to catch nothing.
-    :param callable catch_component_action: If given with `catch_components`, a function
-        of two arguments, the object being externalized and the exception raised. May return
-        a different object (already externalized) or re-raise the exception. There is no default,
-        but :func:`catch_replace_action` is a good choice.
-    :param callable default_non_externalizable_replacer: If we are asked to externalize an object
-        and cannot, and there is no
-        :class:`~nti.externalization.interfaces.INonExternalizableReplacer` registered for it,
-        then call this object and use the results.
-    :param request: If given, the request that the object is being externalized on behalf
-        of. If given, then the object decorators will also look for subscribers
-        to the object plus the request (like traversal adapters); this is a good way to
+    :param callable catch_component_action: If given with
+        *catch_components*, a function of two arguments, the object
+        being externalized and the exception raised. May return a
+        different object (already externalized) or re-raise the
+        exception. There is no default, but
+        :func:`catch_replace_action` is a good choice.
+    :param callable default_non_externalizable_replacer: If we are
+        asked to externalize an object and cannot, and there is no
+        :class:`~nti.externalization.interfaces.INonExternalizableReplacer`
+        registered for it, then call this object and use the results.
+    :param request: If given, the request that the object is being
+        externalized on behalf of. If given, then the object
+        decorators will also look for subscribers to the object plus
+        the request (like traversal adapters); this is a good way to
         separate out request or user specific code.
-    :param decorate_callback: Callable to be invoked in case there is no decaration
+    :param decorate_callback: Callable to be invoked in case there is
+        no decaration
     """
 
     # Catch the primitives up here, quickly. This catches

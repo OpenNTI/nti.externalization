@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Classes and functions for dealing with persistence in an external context.
+Classes and functions for dealing with persistence (and pickling) in an external
+context.
+
+.. note::
+    Importing this module monkey-patches the class `persistent.wref.WeakRef`
+    to directly implement ``toExternalObject()`` and ``toExternalOID()``.
+    It's not clear why we don't simply register class adapters for those things,
+    but we don't.
+
 """
 
 from __future__ import absolute_import
@@ -37,6 +45,14 @@ from nti.externalization.proxy import removeAllProxies
 # disable: accessing protected members
 # pylint: disable=W0212
 
+__all__ = [
+    'getPersistentState',
+    'setPersistentStateChanged',
+    'PersistentExternalizableDictionary',
+    'PersistentExternalizableList',
+    'PersistentExternalizableWeakList',
+    'NoPickle',
+]
 
 def getPersistentState(obj):
     """
@@ -148,9 +164,10 @@ class PersistentExternalizableList(PersistentList):
 
     def values(self):
         """
-        For compatibility with :mod:`zope.generations.utility`, this object
-        defines a `values` method which does nothing but return itself. That
-        makes these objects transparent and suitable for migrations.
+        For compatibility with :mod:`zope.generations.utility`, this
+        object defines a `values` method which does nothing but return
+        itself. That makes these objects transparent and suitable for
+        migrations.
         """
         return self
 
@@ -217,7 +234,8 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
         # Note that the builtin list only accepts other lists,
         # but the UserList from which we are descended accepts
         # any iterable.
-        result = super(PersistentExternalizableWeakList, self).__iadd__([self.__wrap(PWeakRef(o)) for o in other])
+        result = super(PersistentExternalizableWeakList, self).__iadd__(
+            [self.__wrap(PWeakRef(o)) for o in other])
         return result
 
     def __imul__(self, n):
@@ -242,22 +260,22 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
         return super(PersistentExternalizableWeakList, self).count(self.__wrap(PWeakRef(item)))
 
     def index(self, item, *args):
-        return super(PersistentExternalizableWeakList, self).index(self.__wrap(PWeakRef(item)), *args)
+        return super(PersistentExternalizableWeakList, self).index(
+            self.__wrap(PWeakRef(item)), *args)
 
 
 def NoPickle(cls):
     """
-    A class decorator that prevents an object
-    from being pickled. Useful for ensuring certain
-    objects do not get pickled and thus avoiding
-    ZODB backward compatibility concerns.
+    A class decorator that prevents an object from being pickled.
+    Useful for ensuring certain objects do not get pickled and thus
+    avoiding ZODB backward compatibility concerns.
 
     .. warning::
-        Subclasses of such decorated classes are
-        also not capable of being pickled, without
-        appropriate overrides of ``__reduce_ex__`` and
-        ``__getstate__``. A "working" subclass, but only
-        for ZODB, looks like this:
+       Subclasses of such decorated classes are
+       also not capable of being pickled, without
+       appropriate overrides of ``__reduce_ex__`` and
+       ``__getstate__``. A "working" subclass, but only
+       for ZODB, looks like this::
 
             @NoPickle
             class Root(object):

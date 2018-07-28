@@ -185,6 +185,8 @@ def update_from_external_object(containedObject, externalObject,
                                 notify=True,
                                 pre_hook=None):
     """
+    update_from_external_object(containedObject, externalObject, context=None, require_updater=False, notify=True)
+
     Central method for updating objects from external values.
 
     :param containedObject: The object to update.
@@ -195,9 +197,9 @@ def update_from_external_object(containedObject, externalObject,
     :param require_updater: If True (not the default) an exception
         will be raised if no implementation of
         :class:`~nti.externalization.interfaces.IInternalObjectUpdater`
-        can be found for the `containedObject.`
+        can be found for the *containedObject.*
     :keyword bool notify: If ``True`` (the default), then if the updater
-        for the `containedObject` either has no preference (returns
+        for the *containedObject* either has no preference (returns
         None) or indicates that the object has changed, then an
         :class:`~nti.externalization.interfaces.IObjectModifiedFromExternalEvent`
         will be fired. This may be a recursive process so a top-level

@@ -59,6 +59,9 @@
   automatically internalize their values by treating the ``Dict`` as
   anonymous external data.
 
+- Strings can automatically be adapted into ``ITimeDelta`` objects.
+
+
 1.0.0a2 (2018-07-05)
 ====================
 

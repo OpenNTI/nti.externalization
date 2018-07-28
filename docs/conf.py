@@ -180,17 +180,24 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'http://docs.python.org/': None,
+    "http://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
     #'https://ntiwref.readthedocs.io/en/latest': None,
+    'http://docs.python.org/': None,
+    'http://ntischema.readthedocs.io/en/latest/': None,
+    'http://ntizodb.readthedocs.io/en/latest/': None,
     'http://persistent.readthedocs.io/en/latest': None,
+    'http://zodb.readthedocs.io/en/latest': None,
+
     'http://zopecomponent.readthedocs.io/en/latest': None,
+    'http://zopecontainer.readthedocs.io/en/latest': None,
+    'http://zopedatetime.readthedocs.io/en/latest': None,
     'http://zopedublincore.readthedocs.io/en/latest': None,
     'http://zopehookable.readthedocs.io/en/latest': None,
+    'http://zopeinterface.readthedocs.io/en/latest': None,
+    'http://zopeintid.readthedocs.io/en/latest/': None,
+    'http://zopemimetype.readthedocs.io/en/latest/': None,
     'http://zopeproxy.readthedocs.io/en/latest': None,
-    'http://zopecontainer.readthedocs.io/en/latest': None,
-    'http://zodb.readthedocs.io/en/latest': None,
-    "http://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
-    'http://ntizodb.readthedocs.io/en/latest/': None,
+    'http://zopeschema.readthedocs.io/en/latest/': None,
 }
 
 extlinks = {
@@ -201,4 +208,5 @@ extlinks = {
 
 autodoc_default_flags = ['members', 'show-inheritance']
 autoclass_content = 'both'
-autodoc_member_order = 'bysource'
+# This causes the order in __all__ to be ignored :(
+# autodoc_member_order = 'bysource'

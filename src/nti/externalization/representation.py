@@ -3,6 +3,10 @@
 """
 External representation support.
 
+The provided implementations of
+`~nti.externalization.interfaces.IExternalObjectIO` live here. We
+provide and register two, one for `JSON <.EXT_REPR_JSON>` and one for
+`YAML <.EXT_REPR_YAML>`.
 """
 
 from __future__ import absolute_import
@@ -22,17 +26,30 @@ from .interfaces import EXT_REPR_YAML
 from .interfaces import IExternalObjectIO
 from .interfaces import IExternalObjectRepresenter
 
+__all__ = [
+    'to_external_representation',
+    'to_json_representation',
+    'WithRepr',
+]
+
 # Driver functions
 
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
                                name=_NotGiven, registry=component):
     """
-    Transforms (and returns) the `obj` into its external (string)
+    to_external_representation(obj, ext_format='json', name=NotGiven) -> str
+
+    Transforms (and returns) the *obj* into its external (string)
     representation.
 
-    :param ext_format: One of :const:`nti.externalization.interfaces.EXT_REPR_JSON` or
-        :const:`nti.externalization.interfaces.EXT_REPR_YAML`.
+    Uses :func:`nti.externalization.to_external_object`, passing in the *name*.
+
+    :param str ext_format: One of
+        `.EXT_REPR_JSON` or
+        `.EXT_REPR_YAML`, or the
+        name of some other utility that implements
+        `~nti.externalization.interfaces.IExternalObjectRepresenter`
     """
     # It would seem nice to be able to do this in one step during
     # the externalization process itself, but we would wind up traversing
@@ -45,14 +62,12 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
 def to_json_representation(obj):
     """
     A convenience function that calls
-
-    :func:`to_external_representation` with :data:`EXT_REPR_JSON`.
+    :func:`to_external_representation` with `.EXT_REPR_JSON`.
     """
     return to_external_representation(obj, EXT_REPR_JSON)
 
 
 # JSON
-
 
 def _second_pass_to_external_object(obj):
     result = toExternalObject(obj, name='second-pass')
@@ -79,9 +94,9 @@ class JsonRepresenter(object):
         links.)
         """
         if fp:
-            simplejson.dump(obj, fp, **self._DUMP_ARGS)
-        else:
-            return simplejson.dumps(obj, **self._DUMP_ARGS)
+            return simplejson.dump(obj, fp, **self._DUMP_ARGS)
+
+        return simplejson.dumps(obj, **self._DUMP_ARGS)
 
     def load(self, stream):
         # We need all string values to be unicode objects. simplejson is different from
@@ -180,7 +195,7 @@ def WithRepr(default=object()):
     A class decorator factory to give a ``__repr__`` to
     the object. Useful for persistent objects.
 
-    :keyword default: A callable to be used for the default value.
+    :param default: A callable to be used for the default value.
     """
 
     # If we get one argument that is a type, we were

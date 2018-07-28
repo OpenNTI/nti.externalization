@@ -1,7 +1,24 @@
 # cython: auto_pickle=False,embedsignature=True,always_allow_keywords=False
 # -*- coding: utf-8 -*-
 """
-Support for singleton objects that are used as external object decorators.
+Support for fast, memory efficient singleton objects.
+
+Why is this here? The externalization system can use lots of objects
+as it goes through its process. Many of those objects are adapters
+(for example, the decorator objectes), meaning a factory callable is
+called to (create and) return an object (given a particular context,
+and possibly request).
+
+But the API of many adapter objects accept all the information they
+need to have in the functions defined in the interface. That is, the
+constructor does nothing useful with the context (and request). The
+objects are stateless, and so constructing a new one for each adapter
+invocation can be a waste of time and memory.
+
+By either using the `SingletonMetaclass` as your metaclass, or
+subclassing `Singleton`, that cost is paid only once, replacing a call
+to a constructor and an object allocation with a faster call to return
+a constant object.
 """
 
 from __future__ import absolute_import
@@ -9,6 +26,11 @@ from __future__ import division
 from __future__ import print_function
 
 # This was originally based on code from sympy.core.singleton
+
+__all__ = [
+    'SingletonMetaclass',
+    'Singleton',
+]
 
 class SingletonMetaclass(type):
     """
@@ -39,6 +61,24 @@ class SingletonMetaclass(type):
 
     The original constructor is also cached to allow subclasses to access it
     and have their own instance.
+
+    >>> class TopSingleton(Singleton):
+    ...    def __init__(self):
+    ...        print("I am never called")
+    >>> inst = TopSingleton()
+    >>> isinstance(inst, TopSingleton)
+    True
+    >>> TopSingleton() is inst
+    True
+    >>> class DerivedSingelton(TopSingleton):
+    ...     pass
+    >>> derived = DerivedSingelton()
+    >>> isinstance(derived, DerivedSingelton)
+    True
+    >>> DerivedSingelton() is derived
+    True
+    >>> derived is inst
+    False
     """
 
     def __new__(mcs, name, bases, cls_dict):

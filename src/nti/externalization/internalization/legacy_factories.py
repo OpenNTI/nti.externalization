@@ -161,6 +161,24 @@ def register_factories_from_module(module):
 
 def find_factories_in_module(module,
                              case_sensitive=False):
+    """
+    Look through the `vars` of *module* to find any eligible factory
+    functions.
+
+    An eligible factory is a callable object with a True value for
+    the attribute ``__external_can_create__``.
+
+    If *module* is really a module, then only objects that
+    are defined in that module will be found. Otherwise (*module* is
+    some namespace object) any callable object is acceptable.
+
+    :param bool case_sensitive: If False (the default), then the results will
+        have each factory twice, once with its found name, and once
+        with its name lower cased.
+    :return: An iterable of found (name, factory).
+    """
+    # It's not totally clear why this is in legacy_factories;
+    # it's used from modern stuff like ext:registerAutoPackageIO
     result = []
     mod_name = module.__name__
     # If we're dealing with a namespace object, such as what

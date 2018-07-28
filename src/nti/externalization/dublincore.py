@@ -9,6 +9,9 @@ of :mod:`zope.dublincore.interfaces`.
    defined meanings we don't control. We are currently doing this by simply prefixing
    them with 'DC' for ease of access in JavaScript.
 
+These objects are typically used as decorators, registered
+from ZCML.
+
 """
 
 from __future__ import absolute_import
@@ -24,6 +27,10 @@ from nti.externalization.interfaces import IExternalMappingDecorator
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.singleton import Singleton
 
+__all__ = [
+    'DCExtendedExternalMappingDecorator',
+    'DCDescriptivePropertiesExternalMappingDecorator',
+]
 
 # Note that its fairly common for things to claim to implement these interfaces,
 # but only provide a subset of the properties. (mostly due to programming errors).
@@ -32,11 +39,17 @@ from nti.externalization.singleton import Singleton
 @interface.implementer(IExternalMappingDecorator)
 class DCExtendedExternalMappingDecorator(Singleton):
     """
-    Adds the extended properties of dublincore to external objects
-    as defined by :class:`zope.dublincore.interfaces.IDCExtended`.
+    Adds the extended properties of dublincore to external objects as
+    defined by :class:`zope.dublincore.interfaces.IDCExtended`.
 
-    .. note:: We are currently only mapping 'Creator' since that's
-       the only field that ever gets populated.
+    .. note::
+
+        We are currently only mapping 'Creator' since that's the
+        only field that ever gets populated.
+
+    Implements
+    `~nti.externalization.interfaces.IExternalMappingDecorator` for
+    :class:`zope.dublincore.interfaces.IDCExtended` objects.
     """
 
     def decorateExternalMapping(self, original, external):
@@ -53,6 +66,9 @@ class DCDescriptivePropertiesExternalMappingDecorator(Singleton):
     """
     Supports the 'DCTitle' and 'DCDescription' fields, as defined in
     :class:`zope.dublincore.interfaces.IDCDescriptiveProperties`.
+
+    Implements
+    `~nti.externalization.interfaces.IExternalMappingDecorator`.
     """
 
     def decorateExternalMapping(self, original, external):
