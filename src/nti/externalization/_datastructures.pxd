@@ -60,7 +60,7 @@ cdef class ExternalizableInstanceDict(AbstractDynamicObjectIO):
     pass
 
 cdef class InterfaceObjectIO(AbstractDynamicObjectIO):
-    cdef _ext_self
+    cdef readonly _ext_self
     cdef readonly _iface
     cdef readonly bint validate_after_update
     # The dict is necessary because we assign to _ext_primitive_out_ivars,
