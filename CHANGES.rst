@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a3 (unreleased)
+1.0.0a3 (2018-07-28)
 ====================
 
 - The ``@NoPickle`` decorator also works with ``Persistent``
