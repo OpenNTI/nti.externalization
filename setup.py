@@ -134,6 +134,7 @@ setup(
     license='Apache',
     keywords='externalization',
     classifiers=[
+        'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
