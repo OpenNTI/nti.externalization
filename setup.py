@@ -183,7 +183,7 @@ setup(
         'zope.security',
     ],
     extras_require={
-       'test': TESTS_REQUIRE,
+        'test': TESTS_REQUIRE,
         'docs': [
             'Sphinx',
             'repoze.sphinx.autointerface',
@@ -192,7 +192,6 @@ setup(
         'benchmarks': [
             'perf',
         ],
-
     },
     entry_points=entry_points,
 )
