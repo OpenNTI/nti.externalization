@@ -17,6 +17,8 @@ import unittest
 from hamcrest import is_
 from hamcrest import assert_that
 from hamcrest import has_property as has_attr
+from hamcrest import has_length
+from hamcrest import contains_string
 
 from zope import interface
 from zope import component
@@ -27,7 +29,9 @@ from zope.schema import List
 
 from zope.testing.cleanup import CleanUp
 
+from nti.externalization import interfaces
 from nti.externalization.internalization import update_from_external_object
+from nti.externalization.internalization import updater
 from nti.externalization.datastructures import InterfaceObjectIO
 
 
@@ -212,6 +216,27 @@ class TestExternals(CleanUp,
         assert_that(root, has_attr('field', is_(GlobalMiddleThing)))
         assert_that(root.field, has_attr('nested', is_(GlobalNestedThing)))
         assert_that(root.field, has_attr('nested', has_attr('value', 42)))
+
+
+class TestLookups(CleanUp,
+                  unittest.TestCase):
+
+    def test_InterfaceObjectIO_subclass_registered_as_IInternalObjectIO(self):
+        # We still find it even if it's registered with the legacy interface.
+        import warnings
+
+        class Derived(InterfaceObjectIO):
+            def __init__(self, context): # pylint:disable=super-init-not-called
+                pass
+
+        component.provideAdapter(Derived, (object,), provides=interfaces.IInternalObjectIO)
+
+        with warnings.catch_warnings(record=True) as w:
+            found = updater._find_INamedExternalizedObjectFactoryFinder(self, component)
+
+        assert_that(found, is_(Derived))
+        assert_that(w, has_length(1))
+        assert_that(str(w[0].message), contains_string('was registered as IInternalObjectIO'))
 
 
 class IOBase(object):
