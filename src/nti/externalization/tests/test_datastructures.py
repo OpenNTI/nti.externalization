@@ -574,3 +574,8 @@ class TestExternalizableInstanceDict(CommonTestMixins,
         io = MappingIO(d2)
         io.updateFromExternalObject(d)
         assert_that(d2, is_({}))
+
+        d2.a = 42
+        io.updateFromExternalObject(d)
+        assert_that(d2, is_({}))
+        assert_that(d2, has_property('a', 'b'))

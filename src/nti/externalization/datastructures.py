@@ -156,6 +156,10 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         """
         return find_factory_for(value, registry)
 
+    def _ext_replacement(self):
+        # Redeclare this here for cython
+        return self
+
     def _ext_all_possible_keys(self):
         """
         This method must return a frozenset of native strings.
@@ -368,8 +372,6 @@ class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
             or (self._update_accepts_type_attrs and hasattr(ext_self, k))
         )
 
-    __repr__ = make_repr()
-
 
 class ExternalizableInstanceDict(object):
     """
@@ -384,6 +386,11 @@ class ExternalizableInstanceDict(object):
     .. deprecated:: 1.0a5
        Prefer interfaces.
     """
+    # This class is sometimes subclassed while also subclassing persistent.Persistent,
+    # which doesn't work if it's an extension class with an incompatible layout,
+    # as AbstractDynamicObjectIO is, so we can't subclass that. It's rarely used,
+    # so performance doesn't matter as much.
+
     # pylint:disable=protected-access
     _update_accepts_type_attrs = _ExternalizableInstanceDict._update_accepts_type_attrs
     __external_use_minimal_base__ = _ExternalizableInstanceDict.__external_use_minimal_base__
@@ -414,6 +421,9 @@ class ExternalizableInstanceDict(object):
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
         "See `ExternalizableDictionaryMixin.toExternalDictionary`"
         return self.__make_io().toExternalDictionary(mergeFrom)
+
+    __repr__ = make_repr()
+
 
 interface.classImplements(ExternalizableInstanceDict, IInternalObjectIO)
 
