@@ -133,6 +133,31 @@ def _notifyModified(containedObject, externalObject, updater, external_keys,
 
 def notifyModified(containedObject, externalObject, updater=None, external_keys=None,
                    **kwargs):
+    """
+    Create and send an `~.ObjectModifiedFromExternalEvent` for
+    *containedObject* using `zope.event.notify`.
+
+    The *containedObject* is the subject of the event. The
+    *externalObject* is the dictionary of data that was used to update
+    the *containedObject*.
+
+    *external_keys* is list of keys from *externalObject* that
+    actually changed *containedObject*. If this is not given, we
+    assume that all keys in *externalObject* were changed. Note that
+    these should to correspond to the interface fields of interfaces
+    that the *containedObject* implements in order to properly be able
+    to create and populate the `zope.lifecycleevent` `~zope.lifecycleevent.IAttributes`.
+
+    *updater*, if given, is the `~nti.externalization.interfaces.IInternalObjectUpdater`
+    instance that was used to handle the updates. If this object implements
+    an ``_ext_adjust_modified_event`` method, it will be called to adjust (and return)
+    the event object that will be notified.
+
+    *kwargs* are the keyword arguments passed to the event constructor.
+
+    :return: The event object that was notified.
+    """
+
     return _notifyModified(containedObject, externalObject, updater, external_keys,
                            kwargs)
 

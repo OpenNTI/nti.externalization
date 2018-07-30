@@ -9,6 +9,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 from zope.interface.interfaces import ComponentLookupError
 
 __all__ = [
@@ -20,7 +22,7 @@ __all__ = [
     'default_externalized_object_factory_finder_factory',
     'find_factory_for_class_name',
     'find_factory_for',
-    'notifyModified',
+    'notify_modified',
     'validate_field_value',
     'validate_named_field_value',
 ]
@@ -37,7 +39,7 @@ from .factories import default_externalized_object_factory_finder_factory
 from .factories import find_factory_for_class_name
 from .factories import find_factory_for
 
-from .events import notifyModified
+from .events import notifyModified as notify_modified
 
 from .updater import update_from_external_object
 
@@ -64,3 +66,13 @@ def new_from_external_object(external_object, *args, **kwargs):
     if factory is None:
         raise ComponentLookupError("No factory for object", external_object)
     return update_from_external_object(factory(), external_object, *args, **kwargs)
+
+
+def notifyModified(*args, **kwargs):
+    """
+    A deprecated alias of `notify_modified`.
+
+    .. deprecated:: 1.0a5
+    """
+    warnings.warn("Use notify_modified instead", FutureWarning, stacklevel=2)
+    return notify_modified(*args, **kwargs)
