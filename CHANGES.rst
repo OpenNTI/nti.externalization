@@ -24,6 +24,10 @@
   ``AbstractDynamicIO``, it just implements the same interface (with
   the exception of many of the ``_ext`` methods). This class is deprecated.
 
+- Formally document the ``notify_modified`` member of
+  ``nti.externalization.internalization``. ``notifyModified`` is a
+  deprecated alias.
+
 1.0.0a4 (2018-07-30)
 ====================
 
