@@ -8,6 +8,9 @@
 
 - Nothing changed yet.
 
+- ``ExternalizableInstanceDict`` no longer inherits from
+  ``AbstractDynamicIO``, it just implements the same interface (with
+  the exception of many of the ``_ext`` methods). This class is deprecated.
 
 1.0.0a4 (2018-07-30)
 ====================

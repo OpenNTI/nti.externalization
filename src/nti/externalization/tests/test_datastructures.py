@@ -514,3 +514,16 @@ class TestExternalizableInstanceDict(CommonTestMixins,
                 return context
 
         return FUT()
+
+
+    def test_can_also_subclass_persistent(self):
+        from nti.externalization.datastructures import ExternalizableInstanceDict
+        from persistent import Persistent
+
+        class Base(ExternalizableInstanceDict):
+            pass
+
+        class P(Base, Persistent):
+            pass
+
+        self.assertIsNotNone(P)

@@ -56,9 +56,15 @@ cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef find_factory_for_named_value(self, key, value, registry)
     cdef _updateFromExternalObject(self, parsed)
 
+# cdef class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
+#     cdef dict __dict__
 
-cdef class ExternalizableInstanceDict(AbstractDynamicObjectIO):
-    pass
+
+# This class is sometimes subclassed while also subclassing persistent.Persistent,
+# which doesn't work if it's an extension class, so we can't do that. It's rarely used,
+# so performance doesn't matter as much.
+#cdef class ExternalizableInstanceDict(AbstractDynamicObjectIO):
+#    pass
 
 cdef class InterfaceObjectIO(AbstractDynamicObjectIO):
     cdef readonly _ext_self

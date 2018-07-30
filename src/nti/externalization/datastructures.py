@@ -11,7 +11,7 @@ from __future__ import print_function
 # There are a *lot* of fixme (XXX and the like) in this file.
 # Turn those off in general so we can see through the noise.
 # pylint:disable=fixme
-
+# pylint:disable=keyword-arg-before-vararg
 
 # stdlib imports
 import numbers
@@ -26,6 +26,7 @@ from zope.schema.interfaces import IDict
 
 from nti.schema.interfaces import find_most_derived_interface
 
+from .interfaces import IInternalObjectIO
 from .interfaces import IInternalObjectIOFinder
 from .interfaces import IAnonymousObjectFactory
 from .interfaces import StandardInternalFields
@@ -90,6 +91,11 @@ class ExternalizableDictionaryMixin(object):
             decorate_callback=kwargs.get('decorate_callback', NotGiven))
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
+        """
+        Produce the standard external dictionary for this object.
+
+        Uses `_ext_replacement`.
+        """
         return self._ext_standard_external_dictionary(self._ext_replacement(),
                                                       mergeFrom=mergeFrom,
                                                       **kwargs)
@@ -317,20 +323,33 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 interface.classImplements(AbstractDynamicObjectIO, IInternalObjectIOFinder)
 
 
-class ExternalizableInstanceDict(AbstractDynamicObjectIO):
-    """
-    Externalizes to a dictionary containing the members of ``__dict__``
-    that do not start with an underscore.
-
-    Meant to be used as a super class; also can be used as an external object superclass.
-    """
+class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
 
     # TODO: there should be some better way to customize this if desired (an explicit list)
     # TODO: Play well with __slots__? ZODB supports slots, but doesn't recommend them
     # TODO: This won't evolve well. Need something more sophisticated,
     # probably a meta class.
-
     _update_accepts_type_attrs = False
+
+    def __init__(self, context):
+        self.context = context
+        for name in (
+                '_update_accepts_type_attrs',
+                '__external_use_minimal_base__',
+                '_excluded_in_ivars_',
+                '_excluded_out_ivars_',
+                '_ext_primitive_out_ivars_',
+                '_prefer_oid_'
+        ):
+            try:
+                v = getattr(context, name)
+            except AttributeError:
+                continue
+            else:
+                setattr(self, name, v)
+
+    def _ext_replacement(self):
+        return self.context
 
     def _ext_all_possible_keys(self):
         return frozenset(self._ext_replacement().__dict__.keys())
@@ -345,13 +364,58 @@ class ExternalizableInstanceDict(AbstractDynamicObjectIO):
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
         return (
-            super(ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys)
+            super(_ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys)
             or (self._update_accepts_type_attrs and hasattr(ext_self, k))
         )
 
     __repr__ = make_repr()
 
 
+class ExternalizableInstanceDict(object):
+    """
+    Externalizes to a dictionary containing the members of
+    ``__dict__`` that do not start with an underscore.
+
+    Meant to be used as a super class; also can be used as an external
+    object superclass.
+
+    .. versionchanged:: 1.0a5
+       No longer extends `AbstractDynamicObjectIO`, just delegates to it.
+    .. deprecated:: 1.0a5
+       Prefer interfaces.
+    """
+    # pylint:disable=protected-access
+    _update_accepts_type_attrs = _ExternalizableInstanceDict._update_accepts_type_attrs
+    __external_use_minimal_base__ = _ExternalizableInstanceDict.__external_use_minimal_base__
+    _excluded_out_ivars_ = AbstractDynamicObjectIO._excluded_out_ivars_
+    _excluded_in_ivars_ = AbstractDynamicObjectIO._excluded_in_ivars_
+    _ext_primitive_out_ivars_ = AbstractDynamicObjectIO._ext_primitive_out_ivars_
+    _prefer_oid_ = AbstractDynamicObjectIO._prefer_oid_
+
+    def _ext_replacement(self):
+        "See `ExternalizableDictionaryMixin._ext_replacement`."
+        return self
+
+    def __make_io(self):
+        return _ExternalizableInstanceDict(self._ext_replacement())
+
+    def __getattr__(self, name):
+        # here if we didn't have the attribute. Does our IO?
+        return getattr(self.__make_io(), name)
+
+    def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
+        "See `~.IInternalObjectIO.updateFromExternalObject`"
+        self.__make_io().updateFromExternalObject(parsed)
+
+    def toExternalObject(self, mergeFrom=None, *args, **kwargs):
+        "See `~.IInternalObjectIO.toExternalObject`. Calls `toExternalDictionary`."
+        return self.toExternalDictionary(mergeFrom, *args, **kwargs)
+
+    def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
+        "See `ExternalizableDictionaryMixin.toExternalDictionary`"
+        return self.__make_io().toExternalDictionary(mergeFrom)
+
+interface.classImplements(ExternalizableInstanceDict, IInternalObjectIO)
 
 _primitives = six.string_types + (numbers.Number, bool)
 
