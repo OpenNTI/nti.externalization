@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a4 (unreleased)
+1.0.0a4 (2018-07-30)
 ====================
 
 - Make ``InterfaceObjectIO._ext_self`` readable from Python, even
