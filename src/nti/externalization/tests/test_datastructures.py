@@ -507,9 +507,12 @@ class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):
 class TestExternalizableInstanceDict(CommonTestMixins,
                                      unittest.TestCase):
 
-    def _makeOne(self, context=None):
+    def _getTargetClass(self):
         from nti.externalization.datastructures import ExternalizableInstanceDict
-        class FUT(ExternalizableInstanceDict):
+        return ExternalizableInstanceDict
+
+    def _makeOne(self, context=None):
+        class FUT(self._getTargetClass()):
             def _ext_replacement(self):
                 return context
 
@@ -517,13 +520,57 @@ class TestExternalizableInstanceDict(CommonTestMixins,
 
 
     def test_can_also_subclass_persistent(self):
-        from nti.externalization.datastructures import ExternalizableInstanceDict
         from persistent import Persistent
 
-        class Base(ExternalizableInstanceDict):
+        class Base(self._getTargetClass()):
             pass
 
         class P(Base, Persistent):
             pass
 
         self.assertIsNotNone(P)
+
+
+    def test_dict_only_subclass(self):
+        # Based on a class seen in the wild
+
+        # pylint: disable=arguments-differ
+        class MappingIO(self._getTargetClass()):
+
+            def __init__(self, replacement):
+                super(MappingIO, self).__init__()
+                self.context = replacement
+
+            def _ext_setattr(self, ext_self, k, v):
+                ext_self[k] = v
+
+            def _ext_getattr(self, ext_self, k):
+                return ext_self.get(k)
+
+            def _ext_accept_update_key(self, k, unused_ext_self, unused_ext_keys):
+                return not k.startswith('_')
+
+            def _ext_replacement(self):
+                return self.context
+
+            def toExternalObject(self, *unused_args, **unused_kwargs):
+                return {
+                    k: self._ext_getattr(self.context, k)
+                    for k in self.context if not k.startswith('_')
+                }
+
+        d = {'a': 'b'}
+
+        io = MappingIO(d)
+        assert_that(io.toExternalObject(), is_(d))
+
+        with self.assertRaises(AttributeError):
+            io.updateFromExternalObject({})
+
+        # Dict subclasses can work, but they don't actually get any updates.
+        class DictSubclass(dict):
+            pass
+        d2 = DictSubclass()
+        io = MappingIO(d2)
+        io.updateFromExternalObject(d)
+        assert_that(d2, is_({}))
