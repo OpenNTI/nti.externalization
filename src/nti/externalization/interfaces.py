@@ -398,12 +398,15 @@ class IObjectModifiedFromExternalEvent(IObjectModifiedEvent):
     """
     An object has been updated from an external value.
     """
-    kwargs = interface.Attribute("The key word arguments")
+    kwargs = interface.Attribute("The keyword arguments")
     external_value = interface.Attribute("The external value")
 
 
 @interface.implementer(IObjectModifiedFromExternalEvent)
 class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
+    """
+    Default implementation of `IObjectModifiedFromExternalEvent`.
+    """
 
     kwargs = None
     external_value = None
