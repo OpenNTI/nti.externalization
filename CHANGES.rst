@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a5 (unreleased)
+1.0.0a5 (2018-07-30)
 ====================
 
 - Objects inheriting from ``InterfaceObjectIO`` and registered with
