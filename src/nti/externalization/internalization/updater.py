@@ -29,6 +29,7 @@ from zope import interface
 
 from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization.interfaces import IInternalObjectUpdater
+from nti.externalization.interfaces import IInternalObjectIO
 from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
 
 from .factories import find_factory_for
@@ -287,6 +288,29 @@ def _invoke_updater(containedObject, externalObject,
                         updater, external_keys, _EMPTY_DICT)
 
 
+def _find_INamedExternalizedObjectFactoryFinder(containedObject, registry):
+    updater = registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder)
+    if updater is None:
+        # Ok, check to see if an instance of the old root interface
+        # InternalObjectIO is there and also provides INamedExternalizedObjectFactoryFinder;
+        # if so, there's a bad ZCML registration.
+        updater = registry.queryAdapter(containedObject, IInternalObjectIO)
+        if INamedExternalizedObjectFactoryFinder.providedBy(updater):
+            warnings.warn(
+                "The adapter %r was registered as IInternalObjectIO when it should be "
+                "IInternalObjectIOFinder; a provides= ZCML directive is probably outdated. "
+                "If the object extends InterfacObjectIO, no provides= is usually necessary."
+                % (updater,),
+                UserWarning
+            )
+        else:
+            updater = None
+
+    if updater is None:
+        updater = _default_factory_finder
+    return updater
+
+
 def _update_from_external_object(containedObject, externalObject, args):
 
     # Parse any contained objects
@@ -309,8 +333,8 @@ def _update_from_external_object(containedObject, externalObject, args):
 
     assert isinstance(externalObject, MutableMapping)
 
-    updater = args.registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder,
-                                         u'', _default_factory_finder)
+    updater = _find_INamedExternalizedObjectFactoryFinder(containedObject, args.registry)
+
     find_factory_for_named_value = updater.find_factory_for_named_value
 
     # We have to save the list of keys, it's common that they get popped during the update

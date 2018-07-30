@@ -6,7 +6,13 @@
 1.0.0a5 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Objects inheriting from ``InterfaceObjectIO`` and registered with
+  the component registry (in ZCML) for ``IInternalObjectIO`` can still
+  be found and used as ``INamedExternalizedObjectFactoryFinder``, an
+  interface implemented by ``InterfaceObjectIO`` through
+  ``IInternalObjectIOFinder``. A warning will be issued to update the
+  registration (which generally means removing the ``provides`` line
+  in ZCML).
 
 - ``ExternalizableInstanceDict`` no longer inherits from
   ``AbstractDynamicIO``, it just implements the same interface (with
