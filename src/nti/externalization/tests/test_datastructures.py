@@ -21,6 +21,7 @@ from hamcrest import assert_that
 from hamcrest import has_property
 from hamcrest import is_
 from hamcrest import is_not as does_not
+is_not = does_not
 from hamcrest import none
 
 # disable: accessing protected members, too many methods
@@ -449,6 +450,64 @@ class TestInterfaceObjectIO(CleanUp,
         I['field'].setTaggedValue('__external_factory__', 'some factory')
         with self.assertRaises(component.ComponentLookupError):
             inst.find_factory_for_named_value('field', {}, component)
+
+    def test_no_factory_for_dict_with_no_types(self):
+        from zope.schema import Dict
+        from zope import component
+
+        class I(interface.Interface):
+            field = Dict(title=u'A blank field')
+
+        @interface.implementer(I)
+        class O(object):
+            pass
+
+        inst = self._makeOne(O(), iface_upper_bound=I)
+        factory = inst.find_factory_for_named_value('field', {}, component)
+        assert_that(factory, is_(none()))
+
+    def test_no_factory_for_dict_with_non_object_value(self):
+        from zope.schema import Dict
+        from zope.schema import Object
+        from zope.schema import TextLine
+        from zope import component
+
+        class I(interface.Interface):
+            field = Dict(
+                title=u'A blank field',
+                value_type=TextLine(title=u'text')
+            )
+
+        @interface.implementer(I)
+        class O(object):
+            pass
+
+        inst = self._makeOne(O(), iface_upper_bound=I)
+        factory = inst.find_factory_for_named_value('field', {}, component)
+        assert_that(factory, is_(none()))
+
+    def test_factory_for_dict_with_object_value(self):
+        from zope.schema import Dict
+        from zope.schema import Object
+        from zope import component
+
+        class I2(interface.Interface):
+            pass
+
+        class I(interface.Interface):
+            field = Dict(
+                title=u'A blank field',
+                value_type=Object(I2)
+            )
+
+        @interface.implementer(I)
+        class O(object):
+            pass
+
+        inst = self._makeOne(O(), iface_upper_bound=I)
+        factory = inst.find_factory_for_named_value('field', {}, component)
+        assert_that(factory, is_not(none()))
+
 
 
 class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):

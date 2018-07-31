@@ -23,6 +23,7 @@ from zope import interface
 from zope import schema
 from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import IDict
+from zope.schema.interfaces import IObject
 
 from nti.schema.interfaces import find_most_derived_interface
 
@@ -52,6 +53,7 @@ from ._interface_cache import cache_for
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
 IDict_providedBy = IDict.providedBy
+IObject_providedBy = IObject.providedBy
 
 __all__ = [
     'ExternalizableDictionaryMixin',
@@ -381,10 +383,12 @@ class ExternalizableInstanceDict(object):
     Meant to be used as a super class; also can be used as an external
     object superclass.
 
+    Consider carefully before using this class. Generally, an interface
+    and `InterfaceObjectIO` are better.
+
     .. versionchanged:: 1.0a5
        No longer extends `AbstractDynamicObjectIO`, just delegates to it.
-    .. deprecated:: 1.0a5
-       Prefer interfaces.
+       Most of the `_ext_`` prefixed methods can no longer be overridden.
     """
     # This class is sometimes subclassed while also subclassing persistent.Persistent,
     # which doesn't work if it's an extension class with an incompatible layout,
@@ -593,6 +597,15 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         A second limitation is that the external data key must match
         the internal schema field name. Again, the only way to
         remove this limitation is to subclass this object.
+
+        If no registered factory is found, and the schema field is
+        a `zope.schema.Dict` with a value type of `zope.schema.Object`,
+        then we return a factory which will update the object in place.
+
+        .. versionchanged:: 1.0a6
+           Only return an anonymous factory for ``IDict`` fields when
+           it wants objects for the value.
+
         """
         factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value, registry)
         if factory is None:
@@ -616,7 +629,12 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 if isinstance(factory, str):
                     factory = registry.getUtility(IAnonymousObjectFactory, factory)
 
-                if factory is None and IDict_providedBy(field) and isinstance(value, dict):
+                if (
+                        factory is None
+                        and IDict_providedBy(field)
+                        and isinstance(value, dict)
+                        and IObject_providedBy(field.value_type)
+                ):
                     # If is no factory found, check to see if the
                     # schema field is a Dict with a complex value type, and if
                     # so, automatically update it in place. The alternative
