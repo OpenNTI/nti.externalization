@@ -40,7 +40,7 @@ from .externals import resolve_externals
 
 _EMPTY_DICT = {}
 IPersistent_providedBy = IPersistent.providedBy
-IInternalObjectUpdater_providedBy = IInternalObjectUpdater.providedBy
+
 
 class _RecallArgs(object):
     __slots__ = (
@@ -364,13 +364,16 @@ def _update_from_external_object(containedObject, externalObject, args):
         # existing callers and without triggering infinite recursion
         updater = containedObject
     else:
-        if not IInternalObjectUpdater_providedBy(updater):
-            if args.require_updater:
-                get = args.registry.getAdapter
-            else:
-                get = args.registry.queryAdapter
+        # It's possible for INamedExternalizedObjectFactoryFinder and
+        # IInternalObjectUpdater to be registered at two different levels
+        # of specificity, so we need to look up IInternalObjectUpdater,
+        # not test if it's provided by what we already have.
+        if args.require_updater:
+            get = args.registry.getAdapter
+        else:
+            get = args.registry.queryAdapter
 
-            updater = get(containedObject, IInternalObjectUpdater)
+        updater = get(containedObject, IInternalObjectUpdater)
 
     if updater is not None:
         _invoke_updater(containedObject, externalObject, updater, external_keys, args)

@@ -12,6 +12,13 @@
 - ``StandardExternalFields`` and ``StandardInternalFields`` are
   deprecated aliases in ``nti.externalization.externalization``.
 
+- ``update_from_external_object`` properly handles the case where
+  ``INamedExternalizedObjectFactoryFinder`` and
+  ``IInternalObjectUpdater`` are registered with different levels of
+  specificity, and the finder also implements
+  ``IInternalObjectUpdater``. Before, the finder would, perhaps
+  incorrectly, be used as the updater.
+
 1.0.0a5 (2018-07-30)
 ====================
 

@@ -22,7 +22,7 @@ cdef INamedExternalizedObjectFactoryFinder
 # optimizations
 
 cdef IPersistent_providedBy
-cdef IInternalObjectUpdater_providedBy
+
 
 # constants
 cdef tuple PRIMITIVES
