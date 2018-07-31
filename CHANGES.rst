@@ -6,7 +6,8 @@
 1.0.0a6 (unreleased)
 ====================
 
-- Nothing changed yet.
+- ``InterfaceObjectIO`` only returns an anonymous factory for ``IDict``
+  fields when it wants objects for the value.
 
 
 1.0.0a5 (2018-07-30)

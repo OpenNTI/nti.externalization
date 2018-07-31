@@ -17,8 +17,8 @@ from nti.externalization.internalization._factories cimport find_factory_for
 
 from nti.externalization.__interface_cache cimport cache_for
 
-
-
+cdef IDict
+cdef IObject
 cdef IInternalObjectIOFinder
 cdef IAnonymousObjectFactory
 cdef SEF StandardExternalFields
@@ -29,6 +29,7 @@ cdef isSyntheticKey
 cdef find_most_derived_interface
 cdef NotGiven
 cdef IDict_providedBy
+cdef IObject_providedBy
 cdef _anonymous_dict_factory
 
 cdef class ExternalizableDictionaryMixin(object):
