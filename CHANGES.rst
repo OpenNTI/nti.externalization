@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a6 (unreleased)
+1.0.0a6 (2018-07-31)
 ====================
 
 - ``InterfaceObjectIO`` only returns an anonymous factory for ``IDict``
