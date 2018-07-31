@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a7 (unreleased)
+1.0.0a7 (2018-07-31)
 ====================
 
 - Avoid a ``TypeError`` from ``validate_named_field_value`` when
