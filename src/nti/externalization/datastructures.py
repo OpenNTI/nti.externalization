@@ -501,6 +501,13 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
         self.validate_after_update = validate_after_update
 
+    def __repr__(self):
+        return '<%s.%s for %r at 0x%x>' % (
+            type(self).__module__, type(self).__name__,
+            self.schema,
+            id(self)
+        )
+
     @property
     def schema(self):
         """

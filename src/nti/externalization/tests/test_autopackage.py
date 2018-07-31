@@ -23,6 +23,7 @@ from hamcrest import has_property
 from hamcrest import is_
 from hamcrest import is_not as does_not
 from hamcrest import none
+from hamcrest import contains_string
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -146,3 +147,20 @@ class TestAutoPackageIO(unittest.TestCase):
         assert_that(E, has_property('__external_can_create__', False))
 
         assert_that(E.__dict__, does_not(has_key('__external_can_create__')))
+
+    def test_repr(self):
+        class IExt(interface.Interface):
+            interface.taggedValue('__external_class_name__', 'Ext')
+
+        @interface.implementer(IExt)
+        class E(object):
+            mimeType = 'foo'
+
+        class AP(AutoPackage):
+            def _ext_schemas_to_consider(self, ext_self):
+                return [IExt]
+
+        assert_that(repr(AP(E())),
+                    contains_string('AP for <InterfaceClass'))
+        assert_that(repr(AP(E())),
+                    contains_string('IExt>'))

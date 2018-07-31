@@ -21,8 +21,10 @@ from hamcrest import assert_that
 from hamcrest import has_property
 from hamcrest import is_
 from hamcrest import is_not as does_not
-is_not = does_not
 from hamcrest import none
+from hamcrest import contains_string
+
+is_not = does_not
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -171,6 +173,21 @@ class TestInterfaceObjectIO(CleanUp,
 
     def _makeOne(self, context=None, iface_upper_bound=interface.Interface):
         return self._getTargetClass()(context, iface_upper_bound=iface_upper_bound)
+
+    def test_repr(self):
+        from zope.schema import Float
+        class I(interface.Interface):
+            ivar = Float() # a plain _type is allowed
+
+        @interface.implementer(I)
+        class O(object):
+            pass
+
+        ext_self = O()
+        inst = self._makeOne(ext_self, iface_upper_bound=I)
+
+        assert_that(repr(inst),
+                    contains_string('IO for <InterfaceClass nti.'))
 
     def test_find_primitive_keys_dne(self):
         ext_self = self

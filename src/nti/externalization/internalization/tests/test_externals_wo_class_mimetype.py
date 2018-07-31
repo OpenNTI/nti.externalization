@@ -226,6 +226,11 @@ class TestLookups(CleanUp,
         import warnings
 
         class Derived(InterfaceObjectIO):
+            # We're not calling the super constructor so it's not initialized.
+            # In PURE_PYTHON mode, that means it doesn't get the _iface attribute.
+            # In cython compiled code, though, that attribute is part of the
+            # C struct and initialized to None.
+            _iface = None
             def __init__(self, context): # pylint:disable=super-init-not-called
                 pass
 
@@ -236,7 +241,10 @@ class TestLookups(CleanUp,
 
         assert_that(found, is_(Derived))
         assert_that(w, has_length(1))
-        assert_that(str(w[0].message), contains_string('was registered as IInternalObjectIO'))
+        assert_that(str(w[0].message),
+                    contains_string('was registered as IInternalObjectIO'))
+        assert_that(str(w[0].message),
+                    contains_string('Derived for None at'))
 
 
 class IOBase(object):
