@@ -6,7 +6,8 @@
 1.0.0a7 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Avoid a ``TypeError`` from ``validate_named_field_value`` when
+  external objects have unicode keys.
 
 
 1.0.0a6 (2018-07-31)

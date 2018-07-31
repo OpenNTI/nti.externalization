@@ -273,7 +273,7 @@ def validate_field_value(self, field_name, field, value):
     set. If the value needs to be adapted to the schema type for validation to work,
     this method will attempt that.
 
-    :param string field_name: The name of the field we are setting. This
+    :param str field_name: The name of the field we are setting. This
             implementation currently only uses this for informative purposes.
     :param field: The schema field to use to validate (and set) the value.
     :type field: :class:`zope.schema.interfaces.IField`
@@ -283,7 +283,6 @@ def validate_field_value(self, field_name, field, value):
     :return: A callable of no arguments to call to actually set the value (necessary
             in case the value had to be adapted).
     """
-    __traceback_info__ = field_name, value
     field = field.bind(self)
     try:
         if isinstance(value, text_type) and IFromUnicode_providedBy(field):
@@ -305,7 +304,7 @@ def validate_field_value(self, field_name, field, value):
         if value is not None:
             # First time through we get to set it, but we must bypass
             # the field
-            _do_set = SetattrSet(self, str(field_name), value)
+            _do_set = SetattrSet(self, _as_native_str(field_name), value)
         else:
             _do_set = noop
     else:
@@ -320,18 +319,25 @@ def validate_named_field_value(self, iface, field_name, value):
     validate that the given ``value`` is appropriate to set. See :func:`validate_field_value`
     for details.
 
-    :param string field_name: The name of a field contained in
+    :param str field_name: The name of a field contained in
         `iface`. May name a regular :class:`zope.interface.Attribute`,
         or a :class:`zope.schema.interfaces.IField`; if the latter,
         extra validation will be possible.
 
     :return: A callable of no arguments to call to actually set the value.
     """
+    field_name = _as_native_str(field_name)
     field = iface[field_name]
     if IField_providedBy(field):
         return validate_field_value(self, field_name, field, value)
 
     return SetattrSet(self, field_name, value)
+
+
+def _as_native_str(s):
+    if isinstance(s, str):
+        return s
+    return s.encode('ascii')
 
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
