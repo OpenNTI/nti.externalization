@@ -600,14 +600,17 @@ class TestExternalizableInstanceDict(CommonTestMixins,
                 super(MappingIO, self).__init__()
                 self.context = replacement
 
+            # These are never called since we create an instance
+            # of a different class during update.
+
             def _ext_setattr(self, ext_self, k, v):
-                ext_self[k] = v
+                raise NotImplementedError
+
+            def _ext_accept_update_key(self, k, unused_ext_self, unused_ext_keys):
+                raise NotImplementedError
 
             def _ext_getattr(self, ext_self, k):
                 return ext_self.get(k)
-
-            def _ext_accept_update_key(self, k, unused_ext_self, unused_ext_keys):
-                return not k.startswith('_')
 
             def _ext_replacement(self):
                 return self.context
