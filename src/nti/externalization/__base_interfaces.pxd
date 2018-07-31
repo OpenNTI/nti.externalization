@@ -7,12 +7,15 @@ import cython
 cdef class _NotGiven(object):
     pass
 
+cdef dict_init
+cdef dict_update
 
 cdef class LocatedExternalDict(dict):
     cdef public __name__
     cdef public __parent__
     cdef public __acl__
     cdef public mimeType
+    cdef dict __dict__
 
     cdef update_from_other(self, other)
 

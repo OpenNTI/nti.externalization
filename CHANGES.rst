@@ -9,6 +9,8 @@
 - Avoid a ``TypeError`` from ``validate_named_field_value`` when
   external objects have unicode keys.
 
+- ``LocatedExternalDict`` objects accept more constructor arguments
+  and allow arbitrary attributes.
 
 1.0.0a6 (2018-07-31)
 ====================
