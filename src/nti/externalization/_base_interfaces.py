@@ -36,6 +36,9 @@ class _NotGiven(object):
 
 NotGiven = _NotGiven()
 
+dict_init = dict.__init__
+dict_update = dict.update
+
 class LocatedExternalDict(dict):
     """
     A dictionary that implements
@@ -49,23 +52,16 @@ class LocatedExternalDict(dict):
 
     # interfaces are applied in interfaces.py
 
-    __slots__ = (
-        '__name__',
-        '__parent__',
-        '__acl__',
-        'mimeType',
-    )
-
-    def __init__(self, **kwargs):
-        # XXX: Do we need to support the possible dictionary constructors?
-        dict.__init__(self, **kwargs)
+    def __init__(self, *args, **kwargs):
+        dict_init(self, *args, **kwargs)
         self.__name__ = u''
         self.__parent__ = None
         self.__acl__ = ()
         self.mimeType = None
 
     def update_from_other(self, other):
-        return dict.update(self, other)
+        return dict_update(self, other)
+
 
 def make_external_dict():
     # This layer of indirection is for cython; it can't cimport
