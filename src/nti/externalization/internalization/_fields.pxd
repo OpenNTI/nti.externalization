@@ -30,7 +30,7 @@ cdef IFromUnicode_providedBy
 cdef get_exc_info
 
 
-cdef noop()
+cpdef noop()
 cpdef _FieldProperty__set__valid(self, inst, value)
 cdef _FieldProperty_orig_set
 
