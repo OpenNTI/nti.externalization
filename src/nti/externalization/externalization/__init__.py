@@ -22,6 +22,7 @@ import collections
 import warnings
 
 from zope import component
+from zope import deferredimport
 
 from nti.externalization._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
 from nti.externalization._base_interfaces import isSyntheticKey
@@ -149,3 +150,11 @@ def removed_unserializable(ext):
         ext = list(ext)
     _clean(ext)
     return ext
+
+deferredimport.initialize()
+deferredimport.deprecatedFrom(
+    "Import from .interfaces",
+    "nti.externalization.interfaces",
+    "StandardExternalFields",
+    "StandardInternalFields",
+)

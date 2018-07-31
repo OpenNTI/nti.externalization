@@ -686,3 +686,26 @@ class TestNoPickle(unittest.TestCase):
 
     def test_decorator(self):
         assert_does_not_pickle(DoNotPickleMe())
+
+
+class TestDeprecatedImports(unittest.TestCase):
+
+    def test_SEF(self):
+        from nti.externalization import externalization
+        from nti.externalization import interfaces
+        import warnings
+
+        with warnings.catch_warnings(record=True):
+            sef = getattr(externalization, 'StandardExternalFields')
+
+        assert_that(sef, is_(same_instance(interfaces.StandardExternalFields)))
+
+    def test_SIF(self):
+        from nti.externalization import externalization
+        from nti.externalization import interfaces
+        import warnings
+
+        with warnings.catch_warnings(record=True):
+            sif = getattr(externalization, 'StandardInternalFields')
+
+        assert_that(sif, is_(same_instance(interfaces.StandardInternalFields)))
