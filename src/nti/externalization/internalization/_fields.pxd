@@ -40,7 +40,7 @@ cdef _FieldProperty_orig_set
 @cython.freelist(1000)
 cdef class SetattrSet(object):
     cdef ext_self
-    cdef str field_name
+    cdef str field_name # setattr() wants native strings
     cdef value
 
 @cython.final
@@ -57,6 +57,8 @@ cdef bint _all_SchemaNotProvided(sequence)
 cdef _handle_SchemaNotProvided(field_name, field, value)
 cdef _handle_WrongType(field_name, field, value)
 cdef _handle_WrongContainedType(field_name, field, value)
+
+cdef str _as_native_str(s)
 
 cpdef validate_field_value(self, field_name, field, value)
 cpdef validate_named_field_value(self, iface, field_name, value)

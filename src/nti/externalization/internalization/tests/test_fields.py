@@ -24,8 +24,9 @@ from hamcrest import is_
 from hamcrest import same_instance
 
 from nti.externalization.internalization.fields import validate_named_field_value
+from nti.externalization.internalization.fields import validate_field_value
 
-# pylint:disable=inherit-non-class
+# pylint:disable=inherit-non-class,blacklisted-name
 
 class IThing(interface.Interface):
     pass
@@ -93,3 +94,52 @@ class TestValidateFieldValueEvents(CleanUp,
 
         events = eventtesting.getEvents(IFieldUpdatedEvent)
         assert_that(events, has_length(0))
+
+
+class TestValidateFieldValue(unittest.TestCase):
+
+    def _callFUT(self, ext_self, iface, field_name, value):
+        return validate_field_value(ext_self, field_name, iface[field_name], value)
+
+    def test_unicode_field_name_field_non_property(self):
+        from zope.schema import TextLine
+        class IFoo(interface.Interface):
+            field = TextLine(title=u'text')
+
+        class Foo(object):
+            pass
+
+        foo = Foo()
+        self._callFUT(foo, IFoo, u'field', u'text')()
+        assert_that(foo, has_attr('field', u'text'))
+
+    def test_unicode_field_name_field_non_property_readonly(self):
+        from zope.schema import TextLine
+        class IFoo(interface.Interface):
+            field = TextLine(title=u'text', readonly=True)
+            field.setTaggedValue('_ext_allow_initial_set', True)
+
+        class Foo(object):
+            pass
+
+        foo = Foo()
+        self._callFUT(foo, IFoo, u'field', u'text')()
+        assert_that(foo, has_attr('field', u'text'))
+
+
+class TestValidateNamedFieldValue(TestValidateFieldValue):
+
+    def _callFUT(self, ext_self, iface, field_name, value):
+        return validate_named_field_value(ext_self, iface, field_name, value)
+
+    def test_unicode_field_name_non_field(self):
+        class IFoo(interface.Interface):
+            field = interface.Attribute("An attribute")
+
+        class Foo(object):
+            pass
+
+        foo = Foo()
+        self._callFUT(foo, IFoo, u'field', 42)()
+
+        assert_that(foo, has_attr('field', 42))
