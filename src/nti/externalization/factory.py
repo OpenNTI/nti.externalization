@@ -49,7 +49,7 @@ class ObjectFactory(Factory):
      ...    default_description = 'A Description'
      >>> factory = MyObjectFactory()
      >>> factory # doctest: +ELLIPSIS
-     <MyObjectFactory for <... 'object'>>
+     <MyObjectFactory titled 'A Title' using <... 'object'> producing []>
      >>> print(factory.title)
      A Title
      >>> print(factory.description)
@@ -86,6 +86,15 @@ class ObjectFactory(Factory):
 
     def __hash__(self):
         return hash(self._callable)
+
+    def __repr__(self):
+        return '<%s titled %r using %r producing %r>' % (
+            self.__class__.__name__,
+            self.title,
+            self._callable,
+            list(self.getInterfaces())
+        )
+
 
 
 @interface.implementer(IMimeObjectFactory)

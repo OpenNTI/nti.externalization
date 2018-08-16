@@ -26,6 +26,7 @@ from zope import component
 from zope.schema import Object
 from zope.schema import Int
 from zope.schema import List
+from zope.schema import Dict
 
 from zope.testing.cleanup import CleanUp
 
@@ -207,7 +208,8 @@ class TestExternals(CleanUp,
         xmlconfig.string(zcml, context)
 
 
-        external = {'field': {'nested': {'value': 42}}}
+        external = {'field': {'nested': {'value': 42},
+                              'nested_dict': {'key': {'value': 24}}}}
 
         root = GlobalRoot()
 
@@ -259,6 +261,8 @@ class IGlobalNestedThing(interface.Interface):
 
 class IGlobalMiddleThing(interface.Interface):
     nested = Object(IGlobalNestedThing)
+    nested_dict = Dict(title=u'a dict',
+                       value_type=Object(IGlobalNestedThing))
 
 class IGlobalRoot(interface.Interface):
     field = Object(IGlobalMiddleThing)
@@ -272,6 +276,7 @@ class GlobalRoot(object):
 class GlobalMiddleThing(object):
     def __init__(self):
         self.nested = None
+        self.nested_dict = None
 
 @interface.implementer(IGlobalNestedThing)
 class GlobalNestedThing(object):

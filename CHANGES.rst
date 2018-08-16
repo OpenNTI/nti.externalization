@@ -6,7 +6,10 @@
 1.0.0a8 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Better support for internalizing anonymous value objects discovered
+  in a ``Dict`` value. Now, they won't raise a
+  ``ComponentLookupError`` when ``require_updater`` is True, and they
+  will be given a ``MimeType`` based on the schema (if they don't have one).
 
 
 1.0.0a7 (2018-07-31)

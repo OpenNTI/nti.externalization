@@ -15,6 +15,7 @@ from zope import interface
 from zope.dottedname import resolve as dottedname
 from zope.mimetype.interfaces import IContentTypeAware
 
+from nti.schema.interfaces import find_most_derived_interface
 from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
 
 
@@ -159,10 +160,24 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
     def _ap_handle_one_potential_factory_class(cls, namespace, package_name, implementation_class):
         # Private helper function
         # Does this implement something that should be externalizable?
+        # Recall that __external_class_name__ was set on the root interfaces
+        # identified by ``_ap_enumerate_externalizable_root_interfaces()`` in ``__class_init__``
+
+        interfaces_implemented = list(interface.implementedBy(implementation_class))
         check_ext = any(iface.queryTaggedValue('__external_class_name__')
-                        for iface in interface.implementedBy(implementation_class))
+                        for iface in interfaces_implemented)
         if not check_ext:
             return
+
+        most_derived = find_most_derived_interface(None, interface.Interface, interfaces_implemented)
+        if (most_derived is not interface.Interface
+            and not most_derived.queryTaggedValue('__external_default_implementation__')):
+            logger.log(TRACE,
+                       "Autopackage setting %s as __external_default_implementation__ for %s "
+                       "which is the most derived interface out of %r.",
+                       implementation_class, most_derived, interfaces_implemented)
+            most_derived.setTaggedValue('__external_default_implementation__',
+                                        implementation_class)
 
         ext_class_name = cls._ap_compute_external_class_name_from_concrete_class(implementation_class)
         # XXX: Checking for duplicates

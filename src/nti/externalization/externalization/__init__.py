@@ -158,3 +158,10 @@ deferredimport.deprecatedFrom(
     "StandardExternalFields",
     "StandardInternalFields",
 )
+
+
+deferredimport.deprecatedFrom(
+    "This is not meant to be manually used.",
+    "nti.externalization.externalization.replacers",
+    "DevmodeNonExternalizableObjectReplacer"
+)

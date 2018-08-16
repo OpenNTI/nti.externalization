@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 from zope import interface
+from zope import deprecation
 
 from nti.externalization.interfaces import INonExternalizableReplacement
 from nti.externalization.interfaces import INonExternalizableReplacementFactory
@@ -45,3 +46,10 @@ class DevmodeNonExternalizableObjectReplacementFactory(object):
         raise NonExternalizableObjectError(
             "Asked to externalize non-externalizable object %s, %s" %
             (type(obj), obj))
+
+
+
+DevmodeNonExternalizableObjectReplacer = DevmodeNonExternalizableObjectReplacementFactory
+
+deprecation.deprecated('DevmodeNonExternalizableObjectReplacer',
+                       "Replaced with DevmodeNonExternalizableObjectReplacementFactory")
