@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a8 (unreleased)
+1.0.0a8 (2018-08-16)
 ====================
 
 - Better support for internalizing anonymous value objects discovered
