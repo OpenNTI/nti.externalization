@@ -277,8 +277,6 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         :param ext_keys: As an optimization, the value of :meth:`_ext_all_possible_keys`
             is passed. Keys are only accepted if they are in this list.
         """
-        __traceback_info__ = k, ext_self, ext_keys
-
         return k not in self._excluded_in_ivars_ and k in ext_keys
 
     def _ext_accept_external_id(self, ext_self, parsed):
@@ -288,7 +286,6 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         :return: boolean
         """
-        __traceback_info__ = ext_self, parsed
         return False  # false by default
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
@@ -433,8 +430,15 @@ interface.classImplements(ExternalizableInstanceDict, IInternalObjectIO)
 
 _primitives = six.string_types + (numbers.Number, bool)
 
-_anonymous_dict_factory = AnonymousObjectFactory(lambda x: x)
-_anonymous_dict_factory.__external_factory_wants_arg__ = True
+class _AnonymousDictFactory(AnonymousObjectFactory):
+    __external_factory_wants_arg__ = True
+
+    @staticmethod
+    def default_factory(value):
+        return value
+
+
+
 
 class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
@@ -647,7 +651,19 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                     # so, automatically update it in place. The alternative
                     # requires the user to use a ZCML directive for each such
                     # dict field.
-                    factory = _anonymous_dict_factory
+                    value_schema = field.value_type.schema
+                    default_impl = value_schema.queryTaggedValue('__external_default_implementation__')
+                    if default_impl is not None:
+                        # Add MimeType if it's missing, so we can find the correct factories and
+                        # updaters.
+                        mime_type = default_impl.mimeType
+                        for nested_value in value.values():
+                            if (StandardExternalFields.MIMETYPE not in nested_value
+                                and StandardExternalFields.CLASS not in nested_value):
+                                nested_value[StandardExternalFields.MIMETYPE] = mime_type
+                    factory = _AnonymousDictFactory(title=key,
+                                                    interfaces=(value_schema,))
+                    field.setTaggedValue('__external_factory__', factory)
         return factory
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):

@@ -48,7 +48,7 @@ Lets look at the factories registered for our address:
    >>> _ = xmlconfig.file('configure.zcml', nti.externalization.tests.benchmarks)
    >>> factory = component.getUtility(IMimeObjectFactory, 'application/vnd.nextthought.benchmarks.address')
    >>> factory
-   <MimeObjectFactory for <class 'nti.externalization.tests.benchmarks.objects.Address'>>
+   <MimeObjectFactory titled 'Address' using <class 'nti.externalization.tests.benchmarks.objects.Address'>...>
    >>> factory()
    <nti.externalization.tests.benchmarks.objects.Address ...>
 

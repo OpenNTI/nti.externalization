@@ -44,3 +44,12 @@ to the factory? If not true or not set, the factory receives no
 arguments.
 
 .. versionadded:: 1.0a3
+
+* ``__external_default_implementation__``
+
+(Provisional). Tagged value of an interface implemented by one of the
+factories discovered by ``ext:registerAutoPackageIO`` holding the
+primary factory discovered for that interface. Used when internalizing
+anonymous external data.
+
+.. versionadded:: 1.0a8

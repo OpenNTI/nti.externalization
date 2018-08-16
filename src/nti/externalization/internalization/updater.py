@@ -320,6 +320,7 @@ def _update_from_external_object(containedObject, externalObject, args):
     # splitting the two parts
 
     # TODO: Should the current user impact on this process?
+    __traceback_info__ = containedObject, externalObject
 
     if IPersistent_providedBy(containedObject):
         # pylint:disable=protected-access
@@ -333,10 +334,10 @@ def _update_from_external_object(containedObject, externalObject, args):
 
     assert isinstance(externalObject, MutableMapping)
 
-    updater = _find_INamedExternalizedObjectFactoryFinder(containedObject, args.registry)
+    factory_finder = _find_INamedExternalizedObjectFactoryFinder(containedObject, args.registry)
 
-    find_factory_for_named_value = updater.find_factory_for_named_value
-
+    find_factory_for_named_value = factory_finder.find_factory_for_named_value
+    __traceback_info__ += find_factory_for_named_value,
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
     external_keys = []
@@ -354,6 +355,7 @@ def _update_from_external_object(containedObject, externalObject, args):
         else:
             factory = find_factory_for_named_value(k, v, args.registry)
             if factory is not None:
+                __traceback_info__ += factory,
                 new_obj = _invoke_factory(factory, v)
                 externalObject[k] = _update_from_external_object(new_obj, v, args)
 
@@ -368,7 +370,7 @@ def _update_from_external_object(containedObject, externalObject, args):
         # IInternalObjectUpdater to be registered at two different levels
         # of specificity, so we need to look up IInternalObjectUpdater,
         # not test if it's provided by what we already have.
-        if args.require_updater:
+        if args.require_updater and not isinstance(containedObject, dict):
             get = args.registry.getAdapter
         else:
             get = args.registry.queryAdapter
