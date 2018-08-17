@@ -11,6 +11,9 @@ PYPY = hasattr(sys, 'pypy_version_info')
 entry_points = {
     'console_scripts': [
     ],
+    'zest.releaser.prereleaser.before': [
+        'rm_cflags = nti.externalization._compat:release_remove_cflags',
+    ],
 }
 
 TESTS_REQUIRE = [
