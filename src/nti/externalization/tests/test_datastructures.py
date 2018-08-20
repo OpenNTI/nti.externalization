@@ -197,6 +197,22 @@ class TestInterfaceObjectIO(CleanUp,
         assert_that(inst, has_property('schema', interface.Interface))
         assert_that(result, is_(set()))
 
+    def test_subclass_with_set_ext_primitive_out_ivars(self):
+        import warnings
+        class Bad(self._getTargetClass()):
+            _ext_primitive_out_ivars_ = {'a', 'b'}
+
+        # Use a unique name based on the target class so that we get
+        # a warning when this test class is subclassed.
+        Bad.__name__ = 'Bad' + self._getTargetClass().__name__
+
+        with warnings.catch_warnings(record=True) as w:
+            Bad(object(), interface.Interface)
+
+        self.assertEqual(len(w), 1)
+        self.assertIn("should have a frozenset",
+                      str(w[0].message))
+
     def test_find_primitive_keys_plain_attribute(self):
 
         class I(interface.Interface):
@@ -485,7 +501,6 @@ class TestInterfaceObjectIO(CleanUp,
 
     def test_no_factory_for_dict_with_non_object_value(self):
         from zope.schema import Dict
-        from zope.schema import Object
         from zope.schema import TextLine
         from zope import component
 

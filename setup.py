@@ -12,6 +12,7 @@ entry_points = {
     'console_scripts': [
     ],
     'zest.releaser.prereleaser.before': [
+        # XXX This only works if we do `fullrelease`.
         'rm_cflags = nti.externalization._compat:release_remove_cflags',
     ],
 }

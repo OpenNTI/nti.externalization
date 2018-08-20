@@ -15,7 +15,7 @@ from __future__ import print_function
 
 # stdlib imports
 import numbers
-
+import warnings
 
 import six
 from six import iteritems
@@ -500,7 +500,18 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
         if not cache.ext_primitive_out_ivars:
             keys = self._ext_find_primitive_keys()
-            cache.ext_primitive_out_ivars = self._ext_primitive_out_ivars_ | keys
+            primitives = self._ext_primitive_out_ivars_
+            if not isinstance(primitives, frozenset):
+                warnings.warn(
+                    "Class %r should have a frozenset for _ext_primitive_out_ivars_."
+                    "Make InterfaceObjectIO._ext_primitive_out_ivars_ the LHS of the | operator."
+                    "This will be a TypeError in the future" % (
+                        type(self)
+                    ),
+                    FutureWarning,
+                )
+                primitives = frozenset(primitives)
+            cache.ext_primitive_out_ivars = primitives | keys
         self._ext_primitive_out_ivars_ = cache.ext_primitive_out_ivars
 
         self.validate_after_update = validate_after_update

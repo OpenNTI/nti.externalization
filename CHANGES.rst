@@ -6,7 +6,9 @@
 1.0.0a9 (unreleased)
 ====================
 
-- Nothing changed yet.
+- Allow subclasses of ``InterfaceObjectIO`` to have non-frozenset
+  values for ``_ext_primitive_out_ivars_``. This issues a warning and
+  in the future will be a TypeError.
 
 
 1.0.0a8 (2018-08-16)
