@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a9 (unreleased)
+1.0.0a9 (2018-08-20)
 ====================
 
 - Allow subclasses of ``InterfaceObjectIO`` to have non-frozenset
