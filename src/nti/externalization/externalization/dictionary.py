@@ -16,8 +16,6 @@ from __future__ import print_function
 import warnings
 
 
-from zope import component
-
 from nti.externalization._base_interfaces import make_external_dict
 from nti.externalization._base_interfaces import NotGiven
 
@@ -43,7 +41,6 @@ StandardExternalFields = get_standard_external_fields()
 def internal_to_standard_external_dictionary(
         self,
         mergeFrom=None,
-        registry=component,
         decorate=True,
         request=NotGiven,
         decorate_callback=NotGiven,
@@ -67,7 +64,8 @@ def internal_to_standard_external_dictionary(
         decorate, decorate_callback,
         IExternalMappingDecorator, 'decorateExternalMapping',
         self, result,
-        registry, request
+        None, # unused registry
+        request
     )
 
     return result
@@ -75,7 +73,7 @@ def internal_to_standard_external_dictionary(
 def to_standard_external_dictionary(
         self,
         mergeFrom=None,
-        registry=component,
+        registry=NotGiven, # Ignored
         decorate=True,
         request=NotGiven,
         decorate_callback=NotGiven,
@@ -116,7 +114,7 @@ def to_standard_external_dictionary(
       and produce a warning.
     """
 
-    if kwargs or name is not NotGiven or useCache is not NotGiven: # pragma: no cover
+    if kwargs or name is not NotGiven or useCache is not NotGiven or registry is not NotGiven: # pragma: no cover
         for _ in range(3):
             warnings.warn(
                 "Passing unused arguments to to_standard_external_dictionary will be an error",
@@ -125,7 +123,6 @@ def to_standard_external_dictionary(
     return internal_to_standard_external_dictionary(
         self,
         mergeFrom,
-        registry,
         decorate,
         request,
         decorate_callback,

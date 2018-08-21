@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 def resolve_externals(object_io, updating_object, externalObject,
-                      registry=component, context=None):
+                      context=None):
     # Run the resolution steps on the external object
     # TODO: Document this.
 
@@ -48,8 +48,8 @@ def resolve_externals(object_io, updating_object, externalObject,
             unwrap = True
 
         for i in range(0, len(externalObjectOid)): # pylint:disable=consider-using-enumerate
-            resolver = registry.queryMultiAdapter((updating_object, externalObjectOid[i]),
-                                                  IExternalReferenceResolver)
+            resolver = component.queryMultiAdapter((updating_object, externalObjectOid[i]),
+                                                   IExternalReferenceResolver)
             if resolver:
                 externalObjectOid[i] = resolver.resolve(externalObjectOid[i])
         if unwrap and keyPath in externalObject:  # Only put it in if it was there to start with

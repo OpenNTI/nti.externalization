@@ -33,7 +33,6 @@ cdef NotGiven
 
 cpdef LED internal_to_standard_external_dictionary(self,
                                                    mergeFrom=*,
-                                                   registry=*,
                                                    bint decorate=*,
                                                    request=*,
                                                    decorate_callback=*)

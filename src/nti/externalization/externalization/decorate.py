@@ -11,7 +11,7 @@ from __future__ import print_function
 # Our request hook function always returns None, and pylint
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
-
+from zope.component import subscribers
 
 from nti.externalization.extension_points import get_current_request
 from nti.externalization._base_interfaces import NotGiven
@@ -21,9 +21,10 @@ from nti.externalization.interfaces import IExternalMappingDecorator
 def decorate_external_object(do_decorate, call_if_not_decorate,
                              decorate_interface, decorate_meth_name,
                              original_object, external_object,
-                             registry, request):
+                             registry, # ignored
+                             request):
     if do_decorate:
-        for decorator in registry.subscribers((original_object,), decorate_interface):
+        for decorator in subscribers((original_object,), decorate_interface):
             meth = getattr(decorator, decorate_meth_name)
             meth(original_object, external_object)
 
@@ -33,7 +34,7 @@ def decorate_external_object(do_decorate, call_if_not_decorate,
         if request is not None:
             # Request specific decorating, if given, is more specific than plain object
             # decorating, so it gets to go last.
-            for decorator in registry.subscribers((original_object, request), decorate_interface):
+            for decorator in subscribers((original_object, request), decorate_interface):
                 meth = getattr(decorator, decorate_meth_name)
                 meth(original_object, external_object)
     elif call_if_not_decorate is not NotGiven and call_if_not_decorate is not None:
@@ -48,7 +49,7 @@ def decorate_external_mapping(original_object, external_object, registry, reques
         True, None,
         IExternalMappingDecorator, 'decorateExternalMapping',
         original_object, external_object,
-        registry, request
+        None, request
     )
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order

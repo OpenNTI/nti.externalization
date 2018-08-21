@@ -10,7 +10,9 @@ cdef defaultdict
 cdef six
 cdef numbers
 
-cdef component
+
+cdef queryAdapter
+cdef getAdapter
 cdef IFiniteSequence
 
 cdef ThreadLocalManager
@@ -24,6 +26,7 @@ cdef INonExternalizableReplacement
 cdef INonExternalizableReplacer
 cdef DefaultNonExternalizableReplacer
 cdef NotGiven
+cdef IInternalObjectExternalizer
 
 
 # Constants
@@ -44,7 +47,6 @@ cdef class _ExternalizationState(object):
     cdef dict memo
 
     cdef basestring name
-    cdef registry
     cdef catch_components
     cdef catch_component_action
     cdef request

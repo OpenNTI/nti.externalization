@@ -179,10 +179,10 @@ class TestFunctions(ExternalizationLayerTest):
         gsm.unregisterAdapter(factory=DevmodeNonExternalizableObjectReplacementFactory,
                               required=(interface.Interface,))
 
-        assert_that(toExternalObject(Broken(), registry=gsm),
+        assert_that(toExternalObject(Broken()),
                     has_entry("Class", "NonExternalizableObject"))
 
-        assert_that(toExternalObject([Broken()], registry=gsm),
+        assert_that(toExternalObject([Broken()]),
                     has_items(has_entry("Class", "NonExternalizableObject")))
 
     def test_catching_component(self):

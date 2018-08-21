@@ -239,7 +239,7 @@ class TestLookups(CleanUp,
         component.provideAdapter(Derived, (object,), provides=interfaces.IInternalObjectIO)
 
         with warnings.catch_warnings(record=True) as w:
-            found = updater._find_INamedExternalizedObjectFactoryFinder(self, component)
+            found = updater._find_INamedExternalizedObjectFactoryFinder(self)
 
         assert_that(found, is_(Derived))
         assert_that(w, has_length(1))

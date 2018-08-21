@@ -28,7 +28,7 @@ from weakref import WeakKeyDictionary
 import BTrees.OOBTree
 import persistent
 
-from zope import component
+from zope.component import queryAdapter
 from zope.interface.common.sequence import IFiniteSequence
 
 from nti.externalization._base_interfaces import NotGiven
@@ -89,7 +89,6 @@ class _ExternalizationState(object):
     __slots__ = (
         'name',
         'memo',
-        'registry',
         'catch_components',
         'catch_component_action',
         'request',
@@ -101,7 +100,7 @@ class _ExternalizationState(object):
     )
 
     def __init__(self, memos,
-                 name, registry, catch_components, catch_component_action,
+                 name, catch_components, catch_component_action,
                  request,
                  default_non_externalizable_replacer,
                  decorate=True,
@@ -115,7 +114,6 @@ class _ExternalizationState(object):
         # and thus ensure no overlapping ids
         self.memo = memos[self.name]
 
-        self.registry = registry
         self.catch_components = catch_components
         self.catch_component_action = catch_component_action
         self.request = request
@@ -147,7 +145,6 @@ def _externalize_mapping(obj, state):
     result = internal_to_standard_external_dictionary(
         obj,
         None,
-        state.registry,
         state.decorate,
         state.request,
         state.decorate_callback)
@@ -172,8 +169,7 @@ def _externalize_sequence(obj, state):
             value = _to_external_object_state(value, state,
                                               top_level=False)
         result.append(value)
-    result = state.registry.getAdapter(result,
-                                       ILocatedExternalSequence)
+    result = ILocatedExternalSequence(result)
     return result
 
 
@@ -225,12 +221,13 @@ def _externalize_object(obj, state):
     if obj_has_usable_external_object:
         toExternalObject = obj.toExternalObject
     else:
-        adapter = state.registry.queryAdapter(obj, IInternalObjectExternalizer, state.name)
+        adapter = None
+        if state.name:
+            adapter = queryAdapter(obj, IInternalObjectExternalizer, state.name)
 
-        if adapter is None and state.name != '':
-            # try for the default, but allow passing name of None to
-            # disable (?)
-            adapter = state.registry.queryAdapter(obj, IInternalObjectExternalizer)
+        if adapter is None:
+            # try for the default
+            adapter = IInternalObjectExternalizer(obj, None)
 
         if adapter is not None:
             toExternalObject = adapter.toExternalObject
@@ -286,14 +283,15 @@ def _to_external_object_state(obj, state, top_level=False):
                 # TODO: Should this live here, or at a higher level where the ultimate
                 # external target/use-case is known?
                 replacer = state.default_non_externalizable_replacer
-                result = state.registry.queryAdapter(obj, INonExternalizableReplacementFactory,
-                                                     default=replacer)(obj)
+                result = INonExternalizableReplacementFactory(obj, replacer)(obj)
+
 
         decorate_external_object(
             state.decorate, state.decorate_callback,
             IExternalObjectDecorator, 'decorateExternalObject',
             obj, result,
-            state.registry, state.request
+            None, # unused registry
+            state.request
         )
 
         if state.useCache:  # save result
@@ -316,7 +314,7 @@ def _to_external_object_state(obj, state, top_level=False):
 def to_external_object(
         obj,
         name=NotGiven,
-        registry=component,
+        registry=NotGiven,
         catch_components=(),
         catch_component_action=None,
         request=NotGiven,
@@ -375,13 +373,18 @@ def to_external_object(
         name = ''
     if request is NotGiven:
         request = get_current_request()
+    if registry is not NotGiven: # pragma: no cover
+        warnings.warn(
+            "The registry argument is deprecated and ignored. Call in a correct site.",
+            FutureWarning
+        )
 
     memos = manager_top[1]
     if memos is None:
         # Don't live beyond this dynamic function call
         memos = defaultdict(dict)
 
-    state = _ExternalizationState(memos, name, registry, catch_components, catch_component_action,
+    state = _ExternalizationState(memos, name, catch_components, catch_component_action,
                                   request,
                                   default_non_externalizable_replacer,
                                   decorate, useCache, decorate_callback)

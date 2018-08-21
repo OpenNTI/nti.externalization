@@ -6,7 +6,13 @@
 1.0.0a10 (unreleased)
 =====================
 
-- Nothing changed yet.
+- The ``registry`` argument to most functions is deprecated and
+  ignored. Instead of making calls to ``registry.queryAdapter``, we
+  now invoke the interface directly. For example,
+  ``IInternalObjectExternalizer(containedObject)``. This lets
+  individual objects have a say if they already provide the interface
+  without going through the legacy code paths (it also calls
+  ``__conform__`` on the object if needed).
 
 
 1.0.0a9 (2018-08-20)
