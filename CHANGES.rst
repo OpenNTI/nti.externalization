@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a10 (unreleased)
+1.0.0a10 (2018-08-21)
 =====================
 
 - The ``registry`` argument to most functions is deprecated and
