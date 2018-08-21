@@ -56,8 +56,10 @@ class TestEvents(CleanUp,
         from nti.externalization.internalization import notifyModified
         from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 
-        event = notifyModified(*args, **kwargs)
+        with warnings.catch_warnings(record=True):
+            event = notifyModified(*args, **kwargs)
         self.assertIsInstance(event, ObjectModifiedFromExternalEvent)
+
         return event
 
     def test_notify_event_kwargs(self):
@@ -379,7 +381,7 @@ class TestUpdateFromExternaObject(CleanUp,
 
     def test_update_empty_mapping_with_required_updater(self):
         ext = {}
-        with self.assertRaises(LookupError):
+        with self.assertRaises(TypeError):
             self._callFUT(self, ext, require_updater=True)
 
     def test_update_mapping_of_primitives_and_sequences(self):

@@ -298,7 +298,7 @@ class INamedExternalizedObjectFactoryFinder(interface.Interface):
     updated into it.
     """
 
-    def find_factory_for_named_value(name, value, registry):
+    def find_factory_for_named_value(name, value):
         """
         Find a factory for the external object *value* when it
         is the value with the name *name*.

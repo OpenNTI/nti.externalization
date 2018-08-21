@@ -17,6 +17,7 @@ from nti.externalization.internalization._factories cimport find_factory_for
 
 from nti.externalization.__interface_cache cimport cache_for
 
+cdef getUtility
 cdef IDict
 cdef IObject
 cdef IInternalObjectIOFinder
@@ -54,7 +55,7 @@ cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef _ext_accept_update_key(self, k, ext_self, ext_keys)
     cpdef _ext_accept_external_id(self, ext_self, parsed)
 
-    cpdef find_factory_for_named_value(self, key, value, registry)
+    cpdef find_factory_for_named_value(self, key, value)
     cdef _updateFromExternalObject(self, parsed)
 
 cdef class _ExternalizableInstanceDict(AbstractDynamicObjectIO):

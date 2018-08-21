@@ -11,7 +11,7 @@ cdef SEF StandardExternalFields
 # imports
 cdef component
 cdef interface
-
+cdef NotGiven
 cdef IClassObjectFactory
 cdef IExternalizedObjectFactoryFinder
 cdef IFactory

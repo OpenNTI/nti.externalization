@@ -13,6 +13,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 from ZODB.POSException import POSError
 import simplejson
 import yaml
@@ -36,7 +38,7 @@ __all__ = [
 
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
-                               name=_NotGiven, registry=component):
+                               name=_NotGiven, registry=_NotGiven):
     """
     to_external_representation(obj, ext_format='json', name=NotGiven) -> str
 
@@ -51,12 +53,17 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
         name of some other utility that implements
         `~nti.externalization.interfaces.IExternalObjectRepresenter`
     """
+    if registry is not _NotGiven: # pragma: no cover
+        warnings.warn(
+            "The registry argument is ignored. Call in a correct site.",
+            FutureWarning
+        )
     # It would seem nice to be able to do this in one step during
     # the externalization process itself, but we would wind up traversing
     # parts of the datastructure more than necessary. Here we traverse
     # the whole thing exactly twice.
-    ext = toExternalObject(obj, name=name, registry=registry)
-    return registry.getUtility(IExternalObjectRepresenter, name=ext_format).dump(ext)
+    ext = toExternalObject(obj, name=name)
+    return component.getUtility(IExternalObjectRepresenter, name=ext_format).dump(ext)
 
 
 def to_json_representation(obj):

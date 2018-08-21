@@ -28,6 +28,7 @@ from zope import component
 from zope import interface
 
 from nti.externalization._base_interfaces import PRIMITIVES
+from nti.externalization._base_interfaces import NotGiven
 from nti.externalization.interfaces import IInternalObjectUpdater
 from nti.externalization.interfaces import IInternalObjectIO
 from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
@@ -44,7 +45,6 @@ IPersistent_providedBy = IPersistent.providedBy
 
 class _RecallArgs(object):
     __slots__ = (
-        'registry',
         'context',
         'require_updater',
         'notify',
@@ -56,7 +56,6 @@ class _RecallArgs(object):
     # unneeded bint->object->bint conversions.
 
     def __init__(self):
-        self.registry = None
         self.context = None
         self.require_updater = False
         self.notify = True
@@ -172,8 +171,8 @@ else:
 
 class DefaultInternalObjectFactoryFinder(object):
 
-    def find_factory_for_named_value(self, name, value, registry):
-        return find_factory_for(value, registry)
+    def find_factory_for_named_value(self, name, value):
+        return find_factory_for(value)
 
 
 interface.classImplements(DefaultInternalObjectFactoryFinder, INamedExternalizedObjectFactoryFinder)
@@ -181,7 +180,7 @@ interface.classImplements(DefaultInternalObjectFactoryFinder, INamedExternalized
 _default_factory_finder = DefaultInternalObjectFactoryFinder()
 
 def update_from_external_object(containedObject, externalObject,
-                                registry=component, context=None,
+                                registry=NotGiven, context=None,
                                 require_updater=False,
                                 notify=True,
                                 pre_hook=None):
@@ -229,8 +228,13 @@ def update_from_external_object(containedObject, externalObject,
         for i in range(3):
             warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
 
+    if registry is not NotGiven: # pragma: no cover
+        warnings.warn(
+            "registry is deprecated and ignored. Call in a correct site.",
+            FutureWarning
+        )
+
     kwargs = _RecallArgs()
-    kwargs.registry = registry
     kwargs.context = context
     kwargs.require_updater = require_updater
     kwargs.notify = notify
@@ -254,7 +258,7 @@ def _update_sequence(
     for index, value in enumerate(externalObject):
         if args.pre_hook is not None: # pragma: no cover
             args.pre_hook(None, value)
-        factory = find_factory_for_named_value(destination_name, value, args.registry)
+        factory = find_factory_for_named_value(destination_name, value)
         if factory is not None:
             new_obj = _invoke_factory(factory, value)
             value = _update_from_external_object(new_obj, value, args)
@@ -269,7 +273,7 @@ def _invoke_updater(containedObject, externalObject,
 
     # Let the updater resolve externals
     resolve_externals(updater, containedObject, externalObject,
-                      registry=args.registry, context=args.context)
+                      context=args.context)
 
     updated = None
     # The signature may vary.
@@ -288,13 +292,13 @@ def _invoke_updater(containedObject, externalObject,
                         updater, external_keys, _EMPTY_DICT)
 
 
-def _find_INamedExternalizedObjectFactoryFinder(containedObject, registry):
-    updater = registry.queryAdapter(containedObject, INamedExternalizedObjectFactoryFinder)
+def _find_INamedExternalizedObjectFactoryFinder(containedObject):
+    updater = INamedExternalizedObjectFactoryFinder(containedObject, None)
     if updater is None:
         # Ok, check to see if an instance of the old root interface
         # InternalObjectIO is there and also provides INamedExternalizedObjectFactoryFinder;
         # if so, there's a bad ZCML registration.
-        updater = registry.queryAdapter(containedObject, IInternalObjectIO)
+        updater = IInternalObjectIO(containedObject, None)
         if INamedExternalizedObjectFactoryFinder.providedBy(updater):
             warnings.warn(
                 "The adapter %r was registered as IInternalObjectIO when it should be "
@@ -320,7 +324,6 @@ def _update_from_external_object(containedObject, externalObject, args):
     # splitting the two parts
 
     # TODO: Should the current user impact on this process?
-    __traceback_info__ = containedObject, externalObject
 
     if IPersistent_providedBy(containedObject):
         # pylint:disable=protected-access
@@ -334,10 +337,10 @@ def _update_from_external_object(containedObject, externalObject, args):
 
     assert isinstance(externalObject, MutableMapping)
 
-    factory_finder = _find_INamedExternalizedObjectFactoryFinder(containedObject, args.registry)
+    factory_finder = _find_INamedExternalizedObjectFactoryFinder(containedObject)
 
     find_factory_for_named_value = factory_finder.find_factory_for_named_value
-    __traceback_info__ += find_factory_for_named_value,
+
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
     external_keys = []
@@ -353,9 +356,8 @@ def _update_from_external_object(containedObject, externalObject, args):
             # Update the sequence in-place
             _update_sequence(v, args, k, find_factory_for_named_value)
         else:
-            factory = find_factory_for_named_value(k, v, args.registry)
+            factory = find_factory_for_named_value(k, v)
             if factory is not None:
-                __traceback_info__ += factory,
                 new_obj = _invoke_factory(factory, v)
                 externalObject[k] = _update_from_external_object(new_obj, v, args)
 
@@ -371,11 +373,10 @@ def _update_from_external_object(containedObject, externalObject, args):
         # of specificity, so we need to look up IInternalObjectUpdater,
         # not test if it's provided by what we already have.
         if args.require_updater and not isinstance(containedObject, dict):
-            get = args.registry.getAdapter
+            updater = IInternalObjectUpdater(containedObject)
         else:
-            get = args.registry.queryAdapter
+            updater = IInternalObjectUpdater(containedObject, None)
 
-        updater = get(containedObject, IInternalObjectUpdater)
 
     if updater is not None:
         _invoke_updater(containedObject, externalObject, updater, external_keys, args)

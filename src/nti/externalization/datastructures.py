@@ -21,6 +21,7 @@ import six
 from six import iteritems
 from zope import interface
 from zope import schema
+from zope.component import getUtility
 from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import IDict
 from zope.schema.interfaces import IObject
@@ -148,7 +149,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     _ext_primitive_out_ivars_ = frozenset()
     _prefer_oid_ = False
 
-    def find_factory_for_named_value(self, key, value, registry):
+    def find_factory_for_named_value(self, key, value):
         """
         Uses `.find_factory_for` to locate a factory.
 
@@ -156,7 +157,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         or the *key*. It only handles finding factories based on the
         class or MIME type found within *value*.
         """
-        return find_factory_for(value, registry)
+        return find_factory_for(value)
 
     def _ext_replacement(self):
         # Redeclare this here for cython
@@ -592,7 +593,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 cache.ext_accept_external_id = False
         return cache.ext_accept_external_id
 
-    def find_factory_for_named_value(self, key, value, registry):
+    def find_factory_for_named_value(self, key, value):
         """
         If `AbstractDynamicObjectIO.find_factory_for_named_value`
         cannot find a factory based on examining *value*, then we use
@@ -629,7 +630,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
            it wants objects for the value.
 
         """
-        factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value, registry)
+        factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value)
         if factory is None:
             # Is there a factory on the field?
             try:
@@ -649,7 +650,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                 # When it is a string, we require the factory to exist.
                 # Anything else is a programming error.
                 if isinstance(factory, str):
-                    factory = registry.getUtility(IAnonymousObjectFactory, factory)
+                    factory = getUtility(IAnonymousObjectFactory, factory)
 
                 if (
                         factory is None

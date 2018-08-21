@@ -16,9 +16,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 from zope import component
 from zope import interface
 
+from nti.externalization._base_interfaces import NotGiven
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
 from nti.externalization.interfaces import IFactory
@@ -60,8 +63,7 @@ def _search_for_mime_factory(externalized_object, mime_type):
         return factory
 
     # Is there a default?
-    factory = component_queryAdapter(externalized_object,
-                                     IMimeObjectFactory)
+    factory = IMimeObjectFactory(externalized_object, None)
 
     return factory
 
@@ -139,9 +141,9 @@ def find_factory_for_class_name(class_name):
     return factory
 
 
-def find_factory_for(externalized_object, registry=component):
+def find_factory_for(externalized_object, registry=NotGiven):
     """
-    find_factory_for(externalized_object, registry=<zope.component>) -> factory
+    find_factory_for(externalized_object) -> factory
 
     Given a
     :class:`~nti.externalization.interfaces.IExternalizedObject`,
@@ -158,10 +160,18 @@ def find_factory_for(externalized_object, registry=component):
 
     Otherwise, we examine the contents of the object itself to find a
     registered factory based on MIME type (preferably) or class name.
+
+    .. versionchanged:: 1.0a10
+       The ``registry`` argument is deprecated and ignored.
     """
-    factory_finder = registry.queryAdapter(
-        externalized_object,
-        IExternalizedObjectFactoryFinder)
+    if registry is not NotGiven: # pragma: no cover
+        warnings.warn(
+            "The registry argument is deprecated and ignored",
+            FutureWarning
+        )
+
+    factory_finder = IExternalizedObjectFactoryFinder(externalized_object, None)
+
     if factory_finder is not None:
         return factory_finder.find_factory(externalized_object)
 
