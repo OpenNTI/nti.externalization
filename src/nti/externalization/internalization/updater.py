@@ -171,8 +171,8 @@ else:
 
 class DefaultInternalObjectFactoryFinder(object):
 
-    def find_factory_for_named_value(self, name, value, registry):
-        return find_factory_for(value, registry)
+    def find_factory_for_named_value(self, name, value):
+        return find_factory_for(value)
 
 
 interface.classImplements(DefaultInternalObjectFactoryFinder, INamedExternalizedObjectFactoryFinder)
@@ -258,7 +258,7 @@ def _update_sequence(
     for index, value in enumerate(externalObject):
         if args.pre_hook is not None: # pragma: no cover
             args.pre_hook(None, value)
-        factory = find_factory_for_named_value(destination_name, value, component)
+        factory = find_factory_for_named_value(destination_name, value)
         if factory is not None:
             new_obj = _invoke_factory(factory, value)
             value = _update_from_external_object(new_obj, value, args)
@@ -356,7 +356,7 @@ def _update_from_external_object(containedObject, externalObject, args):
             # Update the sequence in-place
             _update_sequence(v, args, k, find_factory_for_named_value)
         else:
-            factory = find_factory_for_named_value(k, v, component)
+            factory = find_factory_for_named_value(k, v)
             if factory is not None:
                 new_obj = _invoke_factory(factory, v)
                 externalObject[k] = _update_from_external_object(new_obj, v, args)

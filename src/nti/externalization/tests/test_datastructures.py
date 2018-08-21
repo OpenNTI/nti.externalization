@@ -469,20 +469,20 @@ class TestInterfaceObjectIO(CleanUp,
         inst = self._makeOne(O(), iface_upper_bound=I)
 
         # Key not in schema: not an error (XXX should it be?)
-        assert_that(inst.find_factory_for_named_value('missing', {}, component),
+        assert_that(inst.find_factory_for_named_value('missing', {}),
                     is_(none()))
 
         # object that's not-string: not an error (XXX: should it be? we don't
         # test for 'callable' for performance)
         I['field'].setTaggedValue('__external_factory__', self)
 
-        assert_that(inst.find_factory_for_named_value('field', {}, component),
+        assert_that(inst.find_factory_for_named_value('field', {}),
                     is_(self))
 
         # string object is looked up as a utility
         I['field'].setTaggedValue('__external_factory__', 'some factory')
         with self.assertRaises(component.ComponentLookupError):
-            inst.find_factory_for_named_value('field', {}, component)
+            inst.find_factory_for_named_value('field', {})
 
     def test_no_factory_for_dict_with_no_types(self):
         from zope.schema import Dict
@@ -496,7 +496,7 @@ class TestInterfaceObjectIO(CleanUp,
             pass
 
         inst = self._makeOne(O(), iface_upper_bound=I)
-        factory = inst.find_factory_for_named_value('field', {}, component)
+        factory = inst.find_factory_for_named_value('field', {})
         assert_that(factory, is_(none()))
 
     def test_no_factory_for_dict_with_non_object_value(self):
@@ -515,7 +515,7 @@ class TestInterfaceObjectIO(CleanUp,
             pass
 
         inst = self._makeOne(O(), iface_upper_bound=I)
-        factory = inst.find_factory_for_named_value('field', {}, component)
+        factory = inst.find_factory_for_named_value('field', {})
         assert_that(factory, is_(none()))
 
     def test_factory_for_dict_with_object_value(self):
@@ -537,7 +537,7 @@ class TestInterfaceObjectIO(CleanUp,
             pass
 
         inst = self._makeOne(O(), iface_upper_bound=I)
-        factory = inst.find_factory_for_named_value('field', {}, component)
+        factory = inst.find_factory_for_named_value('field', {})
         assert_that(factory, is_not(none()))
 
 
