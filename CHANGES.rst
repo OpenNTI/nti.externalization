@@ -6,7 +6,8 @@
 1.0.0a11 (unreleased)
 =====================
 
-- Nothing changed yet.
+- The ``@WithRepr`` decorator takes into account the updated default
+  repr of Persistent objects with persistent 4.4 and doesn't hide it.
 
 
 1.0.0a10 (2018-08-21)

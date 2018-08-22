@@ -163,7 +163,7 @@ setup(
         'BTrees',
         'isodate',
         'nti.schema',
-        'persistent',
+        'persistent >= 4.4.0',
         'PyYAML',
         'pytz',
         'simplejson',
