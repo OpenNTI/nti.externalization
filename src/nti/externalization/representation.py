@@ -15,6 +15,7 @@ from __future__ import print_function
 
 import warnings
 
+from persistent import Persistent
 from ZODB.POSException import POSError
 import simplejson
 import yaml
@@ -196,8 +197,35 @@ def make_repr(default=_default_repr):
 
     return __repr__
 
+class _PReprException(Exception):
+    # Raised for the sole purpose of carrying a smuggled
+    # repr.
+    def __init__(self, value):
+        self.value = value
 
-def WithRepr(default=object()):
+    def __repr__(self):
+        return self.value
+
+
+def _add_repr_to_cls(cls, default=_default_repr):
+    if issubclass(cls, Persistent):
+        # Persistent 4.4 includes the OID and JAR repr
+        # by default, and catches all the exceptions that our
+        # make_repr would catch, handling them much better. We only want the
+        # __dict__ in there by default, though
+        if default is _default_repr:
+            default = lambda self: repr(self.__dict__)
+
+        def _p_repr(self):
+            raise _PReprException(default(self))
+
+        cls._p_repr = _p_repr
+    else:
+        cls.__repr__ = make_repr(default)
+
+    return cls
+
+def WithRepr(default=_default_repr):
     """
     A class decorator factory to give a ``__repr__`` to
     the object. Useful for persistent objects.
@@ -208,12 +236,8 @@ def WithRepr(default=object()):
     # If we get one argument that is a type, we were
     # called bare (@WithRepr), so decorate the type
     if isinstance(default, type):
-        default.__repr__ = make_repr()
-        return default
+        return _add_repr_to_cls(default)
 
     # If we got None or anything else, we were called as a factory,
     # so return a decorator
-    def d(cls):
-        cls.__repr__ = make_repr(default)
-        return cls
-    return d
+    return lambda cls: _add_repr_to_cls(cls, default)
