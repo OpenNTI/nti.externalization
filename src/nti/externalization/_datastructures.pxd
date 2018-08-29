@@ -42,7 +42,7 @@ cdef class ExternalizableDictionaryMixin(object):
 
 cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef _ext_replacement(self)
-    cpdef _ext_all_possible_keys(self)
+    cpdef frozenset _ext_all_possible_keys(self)
     cpdef _ext_setattr(self, ext_self, k, value)
     cpdef _ext_getattr(self, ext_self, k, default=*)
     cpdef _ext_replacement_getattr(self, k, default=*)
@@ -63,6 +63,10 @@ cdef class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
     cdef context
 
     cpdef _ext_accept_update_key(self, k, ext_self, ext_keys)
+    @cython.locals(
+        ext_dict=dict,
+    )
+    cpdef frozenset _ext_all_possible_keys(self)
 
 cdef class InterfaceObjectIO(AbstractDynamicObjectIO):
     cdef readonly _ext_self
