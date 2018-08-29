@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a11 (unreleased)
+1.0.0a11 (2018-08-29)
 =====================
 
 - The ``@WithRepr`` decorator takes into account the updated default
