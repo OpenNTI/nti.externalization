@@ -9,6 +9,11 @@
 - The ``@WithRepr`` decorator takes into account the updated default
   repr of Persistent objects with persistent 4.4 and doesn't hide it.
 
+- Subclasses of ``ExternalizableInstanceDict`` that have non-str
+  (unicode on Python 2, bytes on Python 3) keys in their ``__dict__``
+  do not throw ``TypeError`` when externalizing. Instead, the non-str
+  values are converted to strs (using ASCII encoding) and the
+  ``_p_changed`` attribute, if any, is set.
 
 1.0.0a10 (2018-08-21)
 =====================

@@ -673,3 +673,39 @@ class TestExternalizableInstanceDict(CommonTestMixins,
         io.updateFromExternalObject(d)
         assert_that(d2, is_({}))
         assert_that(d2, has_property('a', 'b'))
+
+
+    def test_unicode_strs_in_dict(self):
+        # Seen in the wild with legacy data.
+        # The unicode path is bad on Python 2,
+        # the bytes path is bad on Python 3.
+        from persistent import Persistent
+        class MappingIO(self._getTargetClass(), Persistent):
+            pass
+
+        m = MappingIO()
+        m.__dict__[u'bad_u_key'] = 'bad_value'
+        m.__dict__[b'bad_b_key'] = 'bad_value'
+
+        class Jar(object):
+            def register(self, obj):
+                "Needed for IJar interface"
+
+        # p_changed can only be set if we have a jar
+        m._p_jar = Jar()
+
+        assert_that(m, has_property('_p_changed', False))
+        ext = m.toExternalObject()
+
+        assert_that(ext, is_({
+            'Class': 'MappingIO',
+            'bad_u_key': 'bad_value',
+            'bad_b_key': 'bad_value',
+        }))
+
+        # Updated in place
+        for k in m.__dict__:
+            assert_that(k, is_(str))
+
+        # And marked as changed
+        assert_that(m, has_property('_p_changed', True))

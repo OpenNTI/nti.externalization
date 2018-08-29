@@ -356,7 +356,29 @@ class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
         return self.context
 
     def _ext_all_possible_keys(self):
-        return frozenset(self._ext_replacement().__dict__.keys())
+        # Be sure that this returns native strings, even if the dict
+        # has unicode (Python 2) or bytes (Python 3) values.
+        # Because we are likely to turn around and pass the strings
+        # we return here to _ext_getattr(), the best solution is to actually
+        # fix the dict if we find any broken attributes; Python 3 would fail
+        # if we encode a bytes value in the dict and then ask for it by string.
+        ext_self = self._ext_replacement()
+        ext_dict = ext_self.__dict__
+        # Do our best to avoid copying in the common case that no
+        # fixup is needed
+        for key in ext_dict:
+            if not isinstance(key, str):
+                # fixup
+                if hasattr(ext_self, '_p_changed'):
+                    ext_self._p_changed = 1
+                for k in list(ext_dict):
+                    if not isinstance(k, str):
+                        new_k = k.encode('ascii') if not isinstance(k, bytes) else k.decode('ascii')
+                        val = ext_dict.pop(k)
+                        ext_dict[new_k] = val
+
+                break
+        return frozenset(ext_dict)
 
     def _ext_getattr(self, ext_self, k, default=NotGiven):
         if default is NotGiven:
@@ -583,7 +605,6 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         of ``__external_accept_id__`` on the ``id`` field, then
         this will return that value; otherwise, returns false.
         """
-        __traceback_info__ = ext_self, parsed,
         cache = cache_for(self, ext_self)
         if cache.ext_accept_external_id is None:
             try:
