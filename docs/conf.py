@@ -21,10 +21,12 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import os
 import sys
-import pkg_resources
 # Use the python versions instead of the cython compiled versions
 # for better documentation extraction and ease of tweaking docs.
 os.environ['PURE_PYTHON'] = '1'
+
+import pkg_resources
+
 
 sys.path.append(os.path.abspath('../src'))
 rqmt = pkg_resources.require('nti.externalization')[0]

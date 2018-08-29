@@ -73,29 +73,32 @@ def make_external_dict():
 
 class StandardExternalFields(object):
     """
-    Namespace object defining constants whose values are the
-    keys used in external mappings.
+    Namespace object defining constants whose values are the keys used
+    in external mappings.
 
     These are text (unicode).
 
     Not all external objects will have all possible keys.
+
+    Two special values are collections of metadata, not strings: `ALL`
+    and `EXTERNAL_KEYS`.
     """
     __slots__ = (
-        'ID',
-        'OID',
-        'HREF',
-        'INTID',
-        'NTIID',
-        'CREATOR',
+        'CLASS',
         'CONTAINER_ID',
         'CREATED_TIME',
+        'CREATOR',
+        'HREF',
+        'ID',
+        'INTID',
+        'ITEMS',
+        'ITEM_COUNT',
         'LAST_MODIFIED',
-        'CLASS',
         'LINKS',
         'MIMETYPE',
-        'ITEMS',
+        'NTIID',
+        'OID',
         'TOTAL',
-        'ITEM_COUNT',
 
         '_ALL_ATTR_NAMES',
         '_ALL_EXTERNAL_KEYS',
@@ -143,10 +146,23 @@ class StandardExternalFields(object):
 
     @property
     def ALL(self):
+        """
+        A collection of all *names* of all the attributes of this class.
+
+        That is, the contents of this collection are the attribute names
+        that give standard external fields. You can iterate this
+        and use :func:`getattr` to get the corresponding values.
+        """
         return self._ALL_ATTR_NAMES
 
     @property
     def EXTERNAL_KEYS(self):
+        """
+        A collection of all *values* of all attributes of this class.
+
+        That is, the contents of this collection are the keys that
+        a standard external object would be expected to have.
+        """
         return self._ALL_EXTERNAL_KEYS
 
 _standard_external_fields = StandardExternalFields()
