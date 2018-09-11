@@ -14,16 +14,16 @@ from zope import component
 from zope import interface
 from zope.interface.common.idatetime import IDate
 from zope.testing.cleanup import CleanUp
+from zope.schema.interfaces import InvalidValue
 
 from nti.externalization.tests import ExternalizationLayerTest
-from nti.schema.interfaces import InvalidValue
+
 
 from .. import internalization as INT
 from ..interfaces import IClassObjectFactory
 from ..interfaces import IMimeObjectFactory
 
 from hamcrest import assert_that
-from hamcrest import calling
 from hamcrest import contains
 from hamcrest import contains_string
 from hamcrest import equal_to
@@ -35,7 +35,6 @@ from hamcrest import is_
 from hamcrest import is_in
 from hamcrest import is_not
 from hamcrest import none
-from hamcrest import raises
 from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
@@ -46,7 +45,10 @@ from hamcrest import same_instance
 class TestDate(ExternalizationLayerTest):
 
     def test_exception(self):
-        assert_that(calling(IDate).with_args('xx'), raises(InvalidValue))
+        with self.assertRaises(InvalidValue) as exc:
+            IDate('xx')
+
+        assert_that(exc.exception, has_property('value', 'xx'))
 
 
 class TestEvents(CleanUp,

@@ -15,7 +15,7 @@ import unittest
 
 from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
-
+from zope.schema.interfaces import InvalidValue
 from zope.configuration import xmlconfig
 from zope.testing import cleanup
 
@@ -24,7 +24,6 @@ from nti.externalization.datetime import datetime_to_string
 from nti.externalization.datetime import datetime_from_string
 from nti.externalization.tests import ExternalizationLayerTest
 from nti.externalization.tests import externalizes
-from nti.schema.interfaces import InvalidValue
 
 from hamcrest import assert_that
 from hamcrest import calling
@@ -53,8 +52,10 @@ class TestDatetime(ExternalizationLayerTest):
     def test_date_from_string(self):
         assert_that(IDate('1982-01-01'), is_(date))
 
-        assert_that(calling(IDate).with_args('boo'),
-                    raises(InvalidValue))
+        with self.assertRaises(InvalidValue) as exc:
+            IDate('boo')
+
+        assert_that(exc.exception, has_property('value', 'boo'))
 
     def test_date_to_string(self):
         the_date = IDate('1982-01-31')
