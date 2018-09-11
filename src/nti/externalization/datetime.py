@@ -29,9 +29,10 @@ from zope import interface
 from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
 from zope.interface.common.idatetime import ITimeDelta
+from zope.schema.interfaces import InvalidValue
 
 from nti.externalization.interfaces import IInternalObjectExternalizer
-from nti.schema.interfaces import InvalidValue
+
 
 __all__ = [
     # IDate
@@ -52,7 +53,7 @@ def _parse_with(func, string):
     try:
         return func(string)
     except isodate.ISO8601Error as e:
-        e = InvalidValue(*e.args, value=string)
+        e = InvalidValue(*e.args).with_field_and_value(None, string)
         six.reraise(InvalidValue, e, sys.exc_info()[2])
 
 _input_type = (str if sys.version_info[0] >= 3 else basestring)

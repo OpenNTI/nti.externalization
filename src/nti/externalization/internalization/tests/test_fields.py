@@ -126,6 +126,29 @@ class TestValidateFieldValue(unittest.TestCase):
         self._callFUT(foo, IFoo, u'field', u'text')()
         assert_that(foo, has_attr('field', u'text'))
 
+    def test_raises_SchemaNotCorrectlyImplemented(self):
+        from zope.schema.interfaces import SchemaNotCorrectlyImplemented
+        from zope.schema import TextLine
+        class IFoo(interface.Interface):
+            field = TextLine(title=u'text', required=True)
+
+        @interface.implementer(IFoo)
+        class Foo(object):
+            pass
+
+        class IBaz(interface.Interface):
+            field = Object(IFoo, required=True)
+
+        @interface.implementer(IBaz)
+        class Baz(object):
+            pass
+
+        foo = Foo()
+        baz = Baz()
+        with self.assertRaises(SchemaNotCorrectlyImplemented):
+            self._callFUT(baz, IBaz, 'field', foo)
+
+
 
 class TestValidateNamedFieldValue(TestValidateFieldValue):
 

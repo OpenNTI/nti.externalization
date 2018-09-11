@@ -23,6 +23,7 @@ from zope.interface import implementedBy
 from zope.schema.interfaces import IField
 from zope.schema.interfaces import IFromUnicode
 from zope.schema.interfaces import SchemaNotProvided
+from zope.schema.interfaces import SchemaNotCorrectlyImplemented
 from zope.schema.interfaces import ValidationError
 from zope.schema.interfaces import WrongContainedType
 from zope.schema.interfaces import WrongType
@@ -183,8 +184,6 @@ def _handle_SchemaNotProvided(field_name, field, value):
     # Can we adapt the provided object to the desired interface?
     # First, capture the details so we can reraise if needed
     exc_info = get_exc_info()
-    if not exc_info[1].args:  # zope.schema doesn't fill in the details, which sucks
-        exc_info[1].args = (field_name, field.schema)
 
     try:
         value = field.schema(value)
@@ -202,10 +201,10 @@ def _handle_WrongType(field_name, field, value):
     # Can we adapt?
     exc_info = get_exc_info()
 
-    if len(exc_info[1].args) != 3: # pragma: no cover
+    if not exc_info[1].expected_type: # pragma: no cover
         reraise(*exc_info)
 
-    exp_type = exc_info[1].args[1]
+    exp_type = exc_info[1].expected_type
     implemented_by_type = list(implementedBy(exp_type))
     # If the type unambiguously implements an interface (one interface)
     # that's our target. IDate does this
@@ -233,11 +232,9 @@ def _handle_WrongContainedType(field_name, field, value):
     # types.
     # Try to adapt each value to what the sequence wants, just as above,
     # if the error is one that may be solved via simple adaptation
-    # TODO: This is also thrown from IObject fields when validating the
-    # fields of the object
     exc_info = get_exc_info()
 
-    if not exc_info[1].args or not _all_SchemaNotProvided(exc_info[1].args[0]):
+    if not exc_info[1].errors or not _all_SchemaNotProvided(exc_info[1].errors):
         reraise(*exc_info)
 
     # IObject provides `schema`, which is an interface, so we can adapt
@@ -290,11 +287,16 @@ def validate_field_value(self, field_name, field, value):
         else:
             field.validate(value)
     except SchemaNotProvided:
+        # Raised by Object fields
         value = _handle_SchemaNotProvided(field_name, field, value)
     except WrongType:
         value = _handle_WrongType(field_name, field, value)
         # Lets try again with the adapted value
         return validate_field_value(self, field_name, field, value)
+    except SchemaNotCorrectlyImplemented:
+        # Raised by Object fields. Order matters, for BWC this is a type of
+        # WrongContainedType.
+        raise
     except WrongContainedType:
         value = _handle_WrongContainedType(field_name, field, value)
 

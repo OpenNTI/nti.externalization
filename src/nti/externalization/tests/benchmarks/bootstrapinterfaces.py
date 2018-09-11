@@ -12,7 +12,7 @@ import re
 from zope.interface import Interface
 
 
-from nti.schema.interfaces import InvalidValue
+from zope.schema.interfaces import InvalidValue
 
 # pylint:disable=inherit-non-class
 
@@ -24,7 +24,8 @@ class EmailAddressInvalid(InvalidValue):
     i18n_message = u"The email address you have entered is not valid."
 
     def __init__(self, address):
-        super(EmailAddressInvalid, self).__init__(address, value=address)
+        super(EmailAddressInvalid, self).__init__(address)
+        self.with_field_and_value(None, address)
 
 
 class RealnameInvalid(InvalidValue):
@@ -36,7 +37,8 @@ class RealnameInvalid(InvalidValue):
     i18n_message = u"The first or last name you have entered is not valid."
 
     def __init__(self, name):
-        super(RealnameInvalid, self).__init__(name, value=name)
+        super(RealnameInvalid, self).__init__(name)
+        self.with_field_and_value(None, value=name)
 
 
 rfc822_specials = '()<>@,;:\\"[]'

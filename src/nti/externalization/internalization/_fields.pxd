@@ -52,7 +52,7 @@ cdef class FieldSet(object):
     cdef value
 
 cpdef _adapt_sequence(field, value)
-cdef bint _all_SchemaNotProvided(sequence)
+cdef bint _all_SchemaNotProvided(sequence) except *
 
 cdef _handle_SchemaNotProvided(field_name, field, value)
 cdef _handle_WrongType(field_name, field, value)
