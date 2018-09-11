@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a12 (unreleased)
+1.0.0a12 (2018-09-11)
 =====================
 
 - Add support for zope.schema 4.7.0 and nti.schema 1.5.0. Drop support
