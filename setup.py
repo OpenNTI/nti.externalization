@@ -162,7 +162,7 @@ setup(
         'setuptools',
         'BTrees',
         'isodate',
-        'nti.schema >= 1.5.0',
+        'nti.schema >= 1.7.0',
         'persistent >= 4.4.0',
         'PyYAML',
         'pytz',
