@@ -413,11 +413,15 @@ class TestInterfaceObjectIO(CleanUp,
         inst.updateFromExternalObject({'ivar': u'2.0'})
         assert_that(ext_self, has_property('ivar', 2.0))
 
-        # A byte string is NOT fine
-        with self.assertRaises(WrongType):
-            inst.updateFromExternalObject({'ivar': b'3.0'})
+        # A byte string is fine
+        inst.updateFromExternalObject({'ivar': b'3.0'})
 
-        assert_that(ext_self, has_property('ivar', 2.0))
+        # An object is NOT fine
+        with self.assertRaises(WrongType):
+            inst.updateFromExternalObject({'ivar': object()})
+
+
+        assert_that(ext_self, has_property('ivar', 3.0))
 
 
         # Now a validation error after set

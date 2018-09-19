@@ -126,6 +126,27 @@ class TestValidateFieldValue(unittest.TestCase):
         self._callFUT(foo, IFoo, u'field', u'text')()
         assert_that(foo, has_attr('field', u'text'))
 
+    def test_from_bytes(self):
+        from zope.schema.interfaces import IFromBytes
+        from zope.schema import Field
+        @interface.implementer(IFromBytes)
+        class OnlyBytes(Field):
+            _type = bytes
+
+            def fromBytes(self, value):
+                return b'from bytes'
+
+        class IFoo(interface.Interface):
+            field = OnlyBytes(title=u'text')
+
+        class Foo(object):
+            pass
+
+        foo = Foo()
+        self._callFUT(foo, IFoo, u'field', b'text')()
+        assert_that(foo, has_attr('field', b'from bytes'))
+
+
     def test_raises_SchemaNotCorrectlyImplemented(self):
         from zope.schema.interfaces import SchemaNotCorrectlyImplemented
         from zope.schema import TextLine

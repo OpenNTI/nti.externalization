@@ -26,6 +26,7 @@ cdef notify
 
 # optimizations
 cdef IField_providedBy
+cdef IFromBytes_providedBy
 cdef IFromUnicode_providedBy
 cdef get_exc_info
 

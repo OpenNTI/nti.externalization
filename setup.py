@@ -183,7 +183,7 @@ setup(
         'zope.location',
         'zope.mimetype >= 2.3.0',
         'zope.proxy',
-        'zope.schema >= 4.7.0',
+        'zope.schema >= 4.8.0',
         'zope.security',
     ],
     extras_require={

@@ -21,6 +21,7 @@ from six import reraise
 from zope.interface import implementedBy
 
 from zope.schema.interfaces import IField
+from zope.schema.interfaces import IFromBytes
 from zope.schema.interfaces import IFromUnicode
 from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import SchemaNotCorrectlyImplemented
@@ -35,6 +36,7 @@ from zope.schema.fieldproperty import FieldUpdatedEvent
 from zope.event import notify
 
 IField_providedBy = IField.providedBy
+IFromBytes_providedBy = IFromBytes.providedBy
 IFromUnicode_providedBy = IFromUnicode.providedBy
 
 __all__ = [
@@ -284,6 +286,8 @@ def validate_field_value(self, field_name, field, value):
     try:
         if isinstance(value, text_type) and IFromUnicode_providedBy(field):
             value = field.fromUnicode(value)  # implies validation
+        elif isinstance(value, bytes) and IFromBytes_providedBy(field):
+            value = field.fromBytes(value)  # implies validation
         else:
             field.validate(value)
     except SchemaNotProvided:
