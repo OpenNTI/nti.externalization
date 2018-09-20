@@ -146,22 +146,21 @@ def _adapt_sequence(field, value):
     # using it. Some other things do not, for example nti.schema.field.Variant
     # They might provide a `fromObject` function to do the conversion
     # The field may be able to handle the whole thing by itself or we may need
-    # to do the individual objects
+    # to do the individual objects. If there was a `fromObject` for the field,
+    # we called it already.
 
     # The conversion process may raise TypeError
-    if hasattr(field, 'fromObject'):
-        value = field.fromObject(value)
+    value_type = field.value_type
+    if hasattr(value_type, 'fromObject'):
+        converter = value_type.fromObject
+    elif hasattr(value_type, 'schema'):
+        converter = value_type.schema
     else:
-        if hasattr(field.value_type, 'fromObject'):
-            converter = field.value_type.fromObject
-        elif hasattr(field.value_type, 'schema'):
-            converter = field.value_type.schema
-        else:
-            raise CannotConvertSequenceError(
-                "Don't know how to convert sequence %r for field %s"
-                % (value, field))
+        raise CannotConvertSequenceError(
+            "Don't know how to convert sequence %r for field %s"
+            % (value, field))
 
-        value = [converter(v) for v in value]
+    value = [converter(v) for v in value]
 
     return value
 
@@ -265,6 +264,21 @@ def _handle_WrongContainedType(field_name, field, value):
 
     return value
 
+_not_set = object()
+
+_CONVERTERS = [
+    ('fromUnicode', text_type),
+    ('fromBytes', bytes),
+    ('fromObject', object)
+]
+
+def _test_and_validate(value, kind, field, meth_name):
+    if isinstance(value, kind):
+        meth = getattr(field, meth_name, None)
+        if meth is not None:
+            return meth(value)
+    return _not_set
+
 def validate_field_value(self, field_name, field, value):
     """
     Given a :class:`zope.schema.interfaces.IField` object from a schema
@@ -284,12 +298,16 @@ def validate_field_value(self, field_name, field, value):
     """
     field = field.bind(self)
     try:
-        if isinstance(value, text_type) and IFromUnicode_providedBy(field):
-            value = field.fromUnicode(value)  # implies validation
-        elif isinstance(value, bytes) and IFromBytes_providedBy(field):
-            value = field.fromBytes(value)  # implies validation
+        for meth_name, kind in _CONVERTERS:
+            result = _test_and_validate(value, kind, field, meth_name)
+            if result is not _not_set:
+                # We did it! Yay!
+                value = result
+                break
         else:
+            # Here if we do not break out of the loop.
             field.validate(value)
+
     except SchemaNotProvided:
         # Raised by Object fields
         value = _handle_SchemaNotProvided(field_name, field, value)
