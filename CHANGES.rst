@@ -6,7 +6,9 @@
 1.0.0a13 (unreleased)
 =====================
 
-- Nothing changed yet.
+- Support ``IFromBytes`` fields introduced by zope.schema 4.8.0. See
+  `issue 92
+  <https://github.com/NextThought/nti.externalization/issues/92>`_.
 
 
 1.0.0a12 (2018-09-11)

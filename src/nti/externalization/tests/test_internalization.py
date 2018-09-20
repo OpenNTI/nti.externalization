@@ -702,25 +702,33 @@ class TestValidateFieldValue(CleanUp,
             self._callFUT(Field(), [object()])
 
 
-    def test_wrong_contained_type_field_fromObject(self):
+    def test_wrong_contained_type_field(self):
         from zope.schema import Object
         from zope.schema import List
         from zope.schema.interfaces import WrongContainedType
 
-        class FromList(List):
-            def fromObject(self, o):
-                assert isinstance(o, list)
-                return o
 
         class IThing(interface.Interface):
             pass
 
-        field = FromList(value_type=Object(IThing))
+        field = List(value_type=Object(IThing))
 
         # This gets us to the second pass, after we run the fromObject
-        # one time.
+        # one time. _adapt_sequence fails.
         with self.assertRaises(WrongContainedType):
             self._callFUT(field, [object()])
+
+        class Conforms(object):
+
+            def __conform__(self, iface):
+                assert iface is IThing
+                return 'conforms'
+
+        with self.assertRaises(WrongContainedType) as exc:
+            self._callFUT(field, [Conforms()])
+
+        ex = exc.exception
+        assert_that(ex.errors[0], has_property('value', is_(Conforms)))
 
     def test_wrong_contained_type_value_type_fromObject(self):
         from zope.schema import Object

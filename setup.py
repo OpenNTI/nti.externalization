@@ -162,7 +162,7 @@ setup(
         'setuptools',
         'BTrees',
         'isodate',
-        'nti.schema >= 1.5.0',
+        'nti.schema >= 1.7.0',
         'persistent >= 4.4.0',
         'PyYAML',
         'pytz',
@@ -183,7 +183,7 @@ setup(
         'zope.location',
         'zope.mimetype >= 2.3.0',
         'zope.proxy',
-        'zope.schema >= 4.7.0',
+        'zope.schema >= 4.8.0',
         'zope.security',
     ],
     extras_require={
