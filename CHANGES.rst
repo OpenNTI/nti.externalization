@@ -10,6 +10,11 @@
   `issue 92
   <https://github.com/NextThought/nti.externalization/issues/92>`_.
 
+- Make ``validate_field_value`` (and by extension
+  ``InterfaceObjectIO.update_from_external_object``) call
+  ``fromObject`` defined by any fields for non-byte and non-text data.
+  Previously, only if the field raised a ``WrongContainedTypeError``
+  would ``fromObject`` be called.
 
 1.0.0a12 (2018-09-11)
 =====================
