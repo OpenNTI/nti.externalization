@@ -3,7 +3,7 @@
 =========
 
 
-1.0.0a13 (unreleased)
+1.0.0a13 (2018-09-20)
 =====================
 
 - Support ``IFromBytes`` fields introduced by zope.schema 4.8.0. See
