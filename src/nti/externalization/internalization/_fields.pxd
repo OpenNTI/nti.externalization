@@ -12,7 +12,9 @@ cdef reraise
 cdef implementedBy
 
 cdef IField
+# Exceptions we catche
 cdef SchemaNotProvided
+cdef SchemaNotCorrectlyImplemented
 cdef ValidationError
 cdef WrongContainedType
 cdef WrongType
@@ -58,9 +60,10 @@ cdef _handle_WrongContainedType(field_name, field, value)
 
 cdef str _as_native_str(s)
 
-cdef _not_set
-cdef list _CONVERTERS
-cdef _test_and_validate(value, kind, field, meth_name)
+cdef tuple _CONVERTERS
 
+@cython.locals(
+    meth_name_kind=tuple,
+)
 cpdef validate_field_value(self, field_name, field, value)
 cpdef validate_named_field_value(self, iface, field_name, value)

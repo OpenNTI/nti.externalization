@@ -260,20 +260,11 @@ def _handle_WrongContainedType(field_name, field, value):
 
     return value
 
-_not_set = object()
-
-_CONVERTERS = [
+_CONVERTERS = (
     ('fromUnicode', text_type),
     ('fromBytes', bytes),
     ('fromObject', object)
-]
-
-def _test_and_validate(value, kind, field, meth_name):
-    if isinstance(value, kind):
-        meth = getattr(field, meth_name, None)
-        if meth is not None:
-            return meth(value)
-    return _not_set
+)
 
 def validate_field_value(self, field_name, field, value):
     """
@@ -294,12 +285,12 @@ def validate_field_value(self, field_name, field, value):
     """
     field = field.bind(self)
     try:
-        for meth_name, kind in _CONVERTERS:
-            result = _test_and_validate(value, kind, field, meth_name)
-            if result is not _not_set:
-                # We did it! Yay!
-                value = result
-                break
+        for meth_name_kind in _CONVERTERS:
+            if isinstance(value, meth_name_kind[1]):
+                meth = getattr(field, meth_name_kind[0], None)
+                if meth is not None:
+                    value = meth(value)
+                    break
         else:
             # Here if we do not break out of the loop.
             field.validate(value)
