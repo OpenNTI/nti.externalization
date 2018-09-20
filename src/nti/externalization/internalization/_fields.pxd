@@ -12,7 +12,6 @@ cdef reraise
 cdef implementedBy
 
 cdef IField
-cdef IFromUnicode
 cdef SchemaNotProvided
 cdef ValidationError
 cdef WrongContainedType
@@ -26,8 +25,6 @@ cdef notify
 
 # optimizations
 cdef IField_providedBy
-cdef IFromBytes_providedBy
-cdef IFromUnicode_providedBy
 cdef get_exc_info
 
 

@@ -21,8 +21,6 @@ from six import reraise
 from zope.interface import implementedBy
 
 from zope.schema.interfaces import IField
-from zope.schema.interfaces import IFromBytes
-from zope.schema.interfaces import IFromUnicode
 from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import SchemaNotCorrectlyImplemented
 from zope.schema.interfaces import ValidationError
@@ -36,8 +34,6 @@ from zope.schema.fieldproperty import FieldUpdatedEvent
 from zope.event import notify
 
 IField_providedBy = IField.providedBy
-IFromBytes_providedBy = IFromBytes.providedBy
-IFromUnicode_providedBy = IFromUnicode.providedBy
 
 __all__ = [
     'validate_field_value',
