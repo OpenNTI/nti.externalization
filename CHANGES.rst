@@ -6,7 +6,7 @@
 1.0.0a14 (unreleased)
 =====================
 
-- Nothing changed yet.
+- Build with Cython 0.29 using '3str' as the language level.
 
 
 1.0.0a13 (2018-09-20)

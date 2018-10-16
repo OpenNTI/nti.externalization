@@ -31,24 +31,26 @@ def _read(fname):
 
 # Cython
 
+# Based on code from
+# http://cython.readthedocs.io/en/latest/src/reference/compilation.html#distributing-cython-modules
+def _dummy_cythonize(extensions, **_kwargs):
+    for extension in extensions:
+        sources = []
+        for sfile in extension.sources:
+            path, ext = os.path.splitext(sfile)
+            if ext in ('.pyx', '.py'):
+                ext = '.c'
+                sfile = path + ext
+            sources.append(sfile)
+        extension.sources[:] = sources
+    return extensions
+
 try:
     from Cython.Build import cythonize
 except ImportError:
     # The .c files had better already exist, as they should in
-    # an sdist. Based on code from
-    # http://cython.readthedocs.io/en/latest/src/reference/compilation.html#distributing-cython-modules
-    def cythonize(extensions, **_kwargs):
-        for extension in extensions:
-            sources = []
-            for sfile in extension.sources:
-                path, ext = os.path.splitext(sfile)
-                if ext in ('.pyx', '.py'):
-                    ext = '.c'
-                    sfile = path + ext
-                sources.append(sfile)
-            extension.sources[:] = sources
-        return extensions
-
+    # an sdist.
+    cythonize = _dummy_cythonize
 
 ext_modules = []
 
@@ -119,14 +121,27 @@ if not PYPY:
                 define_macros=[('CYTHON_TRACE', '1')],
             ))
 
-    ext_modules = cythonize(
-        ext_modules,
-        annotate=True,
-        compiler_directives={
-            #'linetrace': True,
-            'infer_types': True,
-        },
-    )
+    try:
+        ext_modules = cythonize(
+            ext_modules,
+            annotate=True,
+            compiler_directives={
+                #'linetrace': True,
+                'infer_types': True,
+                'language_level': '3str',
+                'always_allow_keywords': False,
+                'nonecheck': False,
+            },
+        )
+    except ValueError:
+        # 'invalid literal for int() with base 10: '3str'
+        # This is seen when an older version of Cython is installed.
+        # It's a bit of a chicken-and-egg, though, because installing
+        # from dev-requirements first scans this egg for its requirements
+        # before doing any updates.
+        import traceback
+        traceback.print_exc()
+        ext_modules = _dummy_cythonize(ext_modules)
 
 setup(
     name='nti.externalization',

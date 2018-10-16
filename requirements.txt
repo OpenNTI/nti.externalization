@@ -1,2 +1,2 @@
-cython >= 0.28.4
+cython >= 0.29
 .[test,docs,benchmarks]
