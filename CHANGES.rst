@@ -6,8 +6,13 @@
 1.0.0a14 (unreleased)
 =====================
 
-- Build with Cython 0.29 using '3str' as the language level.
+- Build with Cython 0.29.14 using '3str' as the language level.
 
+- Add support for Python 3.8.
+
+- Update PyYAML to 5.1 and change the default output style slightly.
+
+- Fix tests with Persistent 4.4.3 and above.
 
 1.0.0a13 (2018-09-20)
 =====================

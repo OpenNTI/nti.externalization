@@ -165,7 +165,13 @@ _UnicodeLoader.add_constructor(u'tag:yaml.org,2002:str',
 class YamlRepresenter(object):
 
     def dump(self, obj, fp=None):
-        return yaml.dump(obj, stream=fp, Dumper=_ExtDumper)
+        # The default_flow_style changed in PyYaml 5.1 from None to False.
+        # Using False produces multi-line, indented, verbose output. While being human readable,
+        # this consumes space and eliminates simple parsing with JSON. Using True
+        # produces JSON-compatible output in many cases. Using None (the old default)
+        # produces backwards-compatible output that's a hybrid of indented and JSON-like.
+        # https://github.com/yaml/pyyaml/issues/199
+        return yaml.dump(obj, stream=fp, Dumper=_ExtDumper, default_flow_style=True)
 
     def load(self, stream):
         return yaml.load(stream, Loader=_UnicodeLoader)

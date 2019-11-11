@@ -162,7 +162,7 @@ class TestFunctions(ExternalizationLayerTest):
         l.append(LocatedExternalDict(k2=SubUnicode(u'foo')))
 
         assert_that(to_external_representation(l, EXT_REPR_YAML),
-                    is_('- {k: v}\n- {k2: foo}\n'))
+                    is_('[{k: v}, {k2: foo}]\n'))
 
     def test_external_class_name(self):
         class C(UserDict, ExternalizableDictionaryMixin):
