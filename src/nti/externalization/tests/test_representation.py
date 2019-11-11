@@ -113,16 +113,17 @@ class TestWithRepr(unittest.TestCase):
 
         o._p_oid = b'12345678'
         r = self._normalized_repr(o)
-
+        # Persistent 4.4.3 and above represent the OID using hex; prior
+        # to that it was bytes.
         assert_that(r,
-                    is_("<Foo object at 0xdeadbeef oid b'12345678' _p_repr {}>"))
+                    is_("<Foo object at 0xdeadbeef oid 0xdeadbeef _p_repr {}>"))
 
         o.a = 1
 
         r = self._normalized_repr(o)
 
         assert_that(r,
-                    is_("<Foo object at 0xdeadbeef oid b'12345678' _p_repr {'a': 1}>"))
+                    is_("<Foo object at 0xdeadbeef oid 0xdeadbeef _p_repr {'a': 1}>"))
 
     def test_persistent_subclass_custom(self):
         @representation.WithRepr(lambda s: 'Hi')
