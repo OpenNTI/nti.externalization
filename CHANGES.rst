@@ -14,6 +14,11 @@
 
 - Fix tests with Persistent 4.4.3 and above.
 
+- Support zope.interface 4.7, which lets tagged values on interfaces
+  be inherited, when using ``<registerAutoPackageIO>`` on a module
+  that had multiple objects implementing a derived interface. See `issue 97
+  <https://github.com/NextThought/nti.externalization/issues/97>`_.
+
 1.0.0a13 (2018-09-20)
 =====================
 
