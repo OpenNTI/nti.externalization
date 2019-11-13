@@ -166,17 +166,21 @@ class IOBase(object):
         import sys
         return sys.modules[__name__]
 
+
 class TestAutoPackageZCML(PlacelessSetup,
                           RegistrationMixin,
                           unittest.TestCase):
-    SCAN_THIS_MODULE = """
+    SCAN_THIS_MODULE_TMPL = """
         <configure xmlns:ext="http://nextthought.com/ntp/ext">
            <include package="nti.externalization" file="meta.zcml" />
-           <ext:registerAutoPackageIO root_interfaces="%s.IExtRoot" modules="%s"
-              iobase="%s.IOBase"
+           <ext:registerAutoPackageIO root_interfaces="%(mod)s.%(root)s"
+              modules="%(mod)s"
+              iobase="%(mod)s.IOBase"
               register_legacy_search_module="yes" />
         </configure>
-        """ % (__name__, __name__, __name__)
+        """
+
+    SCAN_THIS_MODULE = SCAN_THIS_MODULE_TMPL % {'mod': __name__, 'root': IExtRoot.__name__}
 
     def test_scan_package_empty(self):
         from nti.externalization import internalization as INT
@@ -192,6 +196,56 @@ class TestAutoPackageZCML(PlacelessSetup,
         assert_that(INT.LEGACY_FACTORY_SEARCH_MODULES,
                     is_empty())
 
+    def test_scan_package_inherited(self):
+        # Issue #97: When interface tags are inherited,
+        # we don't double register.
+        import sys
+        from zope.interface.interfaces import IInterface
+        from ..interfaces import IInternalObjectIOFinder
+
+        class IPublic(interface.Interface):
+            pass
+
+        class IPrivate(IPublic):
+            pass
+
+        @interface.implementer(IPublic)
+        class Public(object):
+            pass
+
+        @interface.implementer(IPrivate)
+        class Private(object):
+            pass
+
+
+        to_reg = (IPublic, IPrivate, Public, Private, )
+        for r in to_reg:
+            setattr(sys.modules[__name__], r.__name__, r)
+        sys.modules[__name__].Alias = Private # The alias triggers issue #97
+        try:
+            xmlconfig.string(self.SCAN_THIS_MODULE_TMPL % {
+                'mod': __name__,
+                'root': IPublic.__name__,
+            })
+            gsm = component.getGlobalSiteManager()
+
+            ifaces = list(gsm.getAllUtilitiesRegisteredFor(IInterface))
+            assert_that(set(ifaces), is_({
+                _ILegacySearchModuleFactory,
+                IInternalObjectIOFinder,
+                IPublic,
+                IMimeObjectFactory,
+            }))
+            mime_factories = list(gsm.getAllUtilitiesRegisteredFor(IMimeObjectFactory))
+            assert_that(mime_factories, has_length(1))
+            # The root interface was registered
+            adapters = list(gsm.registeredAdapters())
+            assert_that(adapters, has_length(1))
+            assert_that(adapters[0], has_property('required', (IPublic,)))
+        finally:
+            for r in to_reg:
+                delattr(sys.modules[__name__], r.__name__)
+            del sys.modules[__name__].Alias
 
     def test_scan_package_legacy_utility(self):
         @interface.implementer(IExtRoot)
@@ -204,7 +258,6 @@ class TestAutoPackageZCML(PlacelessSetup,
         gsm = component.getGlobalSiteManager()
         # The interfaces IExtRoot and IInternalObjectIO were registered,
         # as well as an IMimeObjectFactory and that interface,
-        # two variants on ILegacySearchModuleFactory and its interface.
         assert_that(list(gsm.registeredUtilities()), has_length(7))
 
         factory = gsm.getUtility(IMimeObjectFactory, 'application/foo')

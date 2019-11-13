@@ -13,6 +13,7 @@ from ZODB.loglevels import TRACE
 from zope import interface
 
 from zope.dottedname import resolve as dottedname
+from zope.interface.interface import Element
 from zope.mimetype.interfaces import IContentTypeAware
 
 from nti.schema.interfaces import find_most_derived_interface
@@ -49,6 +50,20 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
     (:class:`nti.externalization.zcml.IAutoPackageExternalizationDirective`).
     You can still customize the behaviour by providing the ``iobase`` argument.
     """
+
+    @staticmethod
+    def _ap_iface_queryTaggedValue(iface, name):
+        # zope.interface 4.7.0 caused tagged values to become
+        # inherited. If we happened to have two items that implement a
+        # derived interface in a module, then we could get duplicate
+        # registartions (issue #97). So we make sure to only look
+        # at exactly the class we're interested in to make sure we
+        # return the same set of registrations as we did under 4.6.0
+        # and before.
+        #
+        # _ap_find_potential_factories_in_module() solves a related problem
+        # when class aliases were being used.
+        return Element.queryTaggedValue(iface, name)
 
     @classmethod
     def _ap_compute_external_class_name_from_interface_and_instance(cls, unused_iface, impl):
@@ -113,6 +128,26 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         raise NotImplementedError()
 
     @classmethod
+    def _ap_find_potential_factories_in_module(cls, module):
+        """
+        Given a module that we're supposed to examine, iterate over
+        the types that could be factories.
+
+        This includes only types defined in that module. Any given
+        type will only be returned once.
+        """
+        seen = set()
+        for v in vars(module).values():
+            # ignore imports and non-concrete classes
+            # NOTE: using issubclass to properly support metaclasses
+            if getattr(v, '__module__', None) != module.__name__ \
+               or not issubclass(type(v), type) \
+               or v in seen:
+                continue
+            seen.add(v)
+            yield v
+
+    @classmethod
     def _ap_find_factories(cls, package_name):
         """
         Return a namespace object whose attribute names are external class
@@ -147,13 +182,8 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
 
         for mod_name in cls._ap_enumerate_module_names():
             mod = dottedname.resolve(package_name + '.' + mod_name)
-            for _, v in mod.__dict__.items():
-                # ignore imports and non-concrete classes
-                # NOTE: using issubclass to properly support metaclasses
-                if getattr(v, '__module__', None) != mod.__name__ \
-                    or not issubclass(type(v), type):
-                    continue
-                cls._ap_handle_one_potential_factory_class(registry, package_name, v)
+            for potential_factory in cls._ap_find_potential_factories_in_module(mod):
+                cls._ap_handle_one_potential_factory_class(registry, package_name, potential_factory)
         return registry
 
     @classmethod
@@ -164,14 +194,16 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         # identified by ``_ap_enumerate_externalizable_root_interfaces()`` in ``__class_init__``
 
         interfaces_implemented = list(interface.implementedBy(implementation_class))
-        check_ext = any(iface.queryTaggedValue('__external_class_name__')
+        check_ext = any(cls._ap_iface_queryTaggedValue(iface, '__external_class_name__')
                         for iface in interfaces_implemented)
         if not check_ext:
             return
 
-        most_derived = find_most_derived_interface(None, interface.Interface, interfaces_implemented)
+        most_derived = find_most_derived_interface(None, interface.Interface,
+                                                   interfaces_implemented)
         if (most_derived is not interface.Interface
-            and not most_derived.queryTaggedValue('__external_default_implementation__')):
+            and not cls._ap_iface_queryTaggedValue(most_derived,
+                                                   '__external_default_implementation__')):
             logger.log(TRACE,
                        "Autopackage setting %s as __external_default_implementation__ for %s "
                        "which is the most derived interface out of %r.",
