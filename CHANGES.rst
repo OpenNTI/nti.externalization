@@ -6,7 +6,7 @@
 1.0.0a15 (unreleased)
 =====================
 
-- Nothing changed yet.
+- Add compatibility with zope.interface 5.0.
 
 
 1.0.0a14 (2019-11-13)

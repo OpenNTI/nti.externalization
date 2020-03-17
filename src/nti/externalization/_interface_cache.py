@@ -49,6 +49,10 @@ def cache_for_key(key, ext_self):
     cache_place = providedBy(ext_self)
     try:
         attrs = cache_place._v_attrs # pylint:disable=protected-access
+        if attrs is None:
+            # _v_attrs became defined None to begin with in
+            # zope.interface 5
+            raise AttributeError
     except AttributeError:
         attrs = cache_place._v_attrs = {}
 

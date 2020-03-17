@@ -63,4 +63,12 @@ class IHasListOfDerived(IRootInterface):
 for _ in __all__:
     # For documentation purposes, we have profileinterfaces separate.
     # But only one interfaces module is recognized by ext:registerAutoPackageIO
-    globals()[_].__module__ = IHasListOfDerived.__module__
+    iface = globals()[_]
+    try:
+        # __module__ became unwritable in zope.interface 5, for good reason.
+        # __ibmodule__ is a back door
+        getattr(iface, '__ibmodule__')
+    except AttributeError:
+        iface.__module__ = IHasListOfDerived.__module__
+    else:
+        iface.__ibmodule__ = IHasListOfDerived.__module__
