@@ -3,8 +3,8 @@
 =========
 
 
-1.0.0a15 (unreleased)
-=====================
+1.0.0 (2020-03-19)
+==================
 
 - Add compatibility with, and require, zope.interface 5.0.
 
