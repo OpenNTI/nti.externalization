@@ -193,7 +193,7 @@ setup(
         'zope.dublincore',
         'zope.event',
         'zope.hookable >= 4.2.0',
-        'zope.interface',
+        'zope.interface >= 5.0.0', # getDirectTaggedValue
         'zope.intid',
         'zope.lifecycleevent',
         'zope.location',
@@ -210,7 +210,7 @@ setup(
             'sphinx_rtd_theme',
         ],
         'benchmarks': [
-            'perf',
+            'pyperf',
         ],
     },
     entry_points=entry_points,

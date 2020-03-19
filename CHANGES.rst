@@ -6,7 +6,11 @@
 1.0.0a15 (unreleased)
 =====================
 
-- Add compatibility with zope.interface 5.0.
+- Add compatibility with, and require, zope.interface 5.0.
+
+- Document which tagged values are inherited and which are not.
+
+- Stop inheriting ``_ext_is_marker_interface``.
 
 
 1.0.0a14 (2019-11-13)

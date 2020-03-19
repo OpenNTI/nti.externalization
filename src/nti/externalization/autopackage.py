@@ -13,7 +13,6 @@ from ZODB.loglevels import TRACE
 from zope import interface
 
 from zope.dottedname import resolve as dottedname
-from zope.interface.interface import Element
 from zope.mimetype.interfaces import IContentTypeAware
 
 from nti.schema.interfaces import find_most_derived_interface
@@ -63,7 +62,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         #
         # _ap_find_potential_factories_in_module() solves a related problem
         # when class aliases were being used.
-        return Element.queryTaggedValue(iface, name)
+        return iface.queryDirectTaggedValue(name)
 
     @classmethod
     def _ap_compute_external_class_name_from_interface_and_instance(cls, unused_iface, impl):

@@ -374,9 +374,9 @@ class TestAnonymousObjectFactoryZCML(PlacelessSetup,
 
         xmlconfig.string(self.SCAN_THIS_MODULE)
 
-        assert_that(ISchema['field'].getTaggedValue('__external_factory__'),
+        assert_that(ISchema['field'].getDirectTaggedValue('__external_factory__'),
                     is_('nti.externalization.tests.test_zcml.ISchema:field'))
-        assert_that(ISchema['field2'].getTaggedValue('__external_factory__'),
+        assert_that(ISchema['field2'].getDirectTaggedValue('__external_factory__'),
                     is_('nti.externalization.tests.test_zcml.ISchema:field2'))
 
     def test_scan_no_create(self):
