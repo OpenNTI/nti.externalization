@@ -559,15 +559,22 @@ class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):
         class IRoot(interface.Interface):
             pass
 
+        class IMarker(interface.Interface):
+            # This is used to show that this tag isn't inherited.
+            interface.taggedValue('_ext_is_marker_interface', True)
+
         class IChild(IRoot):
             pass
 
         class IGrandChild(IChild):
             pass
 
-        class ISister(IRoot):
+        class ISister(IRoot, IMarker):
             pass
 
+        # This linearizes to a __sro__ of
+        # (Inconsistent, IGrandChild, IChild, ISister, IRoot, IMarker, object, Interface)
+        # TODO: We really ought to be able to handle this case.
         @interface.implementer(IGrandChild, ISister)
         class Inconsistent(object):
             pass
@@ -596,6 +603,15 @@ class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):
             pass
 
         io = IO(Consistent())
+        assert_that(io, has_property('_iface', IGrandChild))
+
+        # If we take away the graph-ness of ISister, the two failed
+        # cases both work.
+        ISister.setTaggedValue('_ext_is_marker_interface', True)
+
+        io = IO(Inconsistent())
+        assert_that(io, has_property('_iface', IGrandChild))
+        io = IO(InconsistentGrandChild())
         assert_that(io, has_property('_iface', IGrandChild))
 
 

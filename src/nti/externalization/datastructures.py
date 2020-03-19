@@ -729,8 +729,12 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
     def toExternalObject(self, mergeFrom=None, **kwargs):
         ext_class_name = None
+        # Walk up the tree, checking each one to see if ``__external__class_name__`` exists
+        # and wants to provide a value. The walking up is what ``queryTaggedValue`` would do,
+        # but we want to check each one in turn in case a subclass turns down but a superclass
+        # accepts.
         for iface in self._iface.__iro__:
-            ext_class_name = iface.queryTaggedValue('__external_class_name__')
+            ext_class_name = iface.queryDirectTaggedValue('__external_class_name__')
             if callable(ext_class_name):
                 # Even though the tagged value may have come from a superclass,
                 # give the actual class (interface) we're using
@@ -766,7 +770,7 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
             fields or attributes), then it can be tagged with
             ``_ext_is_marker_interface`` and it will be excluded when
             determining the most derived interfaces. This can correct some
-            cases that would otherwise raise a TypeError.
+            cases that would otherwise raise a TypeError. This tag is not inherited.
     """
 
     _ext_search_module = None
@@ -784,7 +788,9 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
 
         # In theory, this is now the most derived interface.
         # If we have a graph that is not a tree, though, it may not be.
-        # In that case, we are not suitable for use with this object
+        # In that case, we are not suitable for use with this object.
+        # TODO: This algorithm can and should be better in some cases, following the
+        # C3 algorithm that __sro__ derivation itself uses.
         for iface in self._ext_schemas_to_consider(ext_self):
             if iface is most_derived:
                 # Support interfaces that have their __module__ changed
@@ -805,7 +811,7 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         search_module_name = self._ext_search_module.__name__
         return [x for x in interface.providedBy(ext_self)
                 if x.__module__ == search_module_name
-                and not x.queryTaggedValue('_ext_is_marker_interface')]
+                and not x.queryDirectTaggedValue('_ext_is_marker_interface')]
 
 # pylint:disable=wrong-import-position,wrong-import-order
 from nti.externalization._compat import import_c_accel
