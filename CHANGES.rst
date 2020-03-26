@@ -3,10 +3,15 @@
 =========
 
 
-1.0.1 (unreleased)
+1.1.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Make instances of ``fractions.Fraction`` externalize as a string
+  such as ``"1/3"``. When received by a schema field that can parse
+  this format, such as ``zope.schema.Rational`` (or higher on the
+  numeric tower), this means fractions can be round-tripped.
+- Support externalizing ``decimal.Decimal`` objects in the YAML
+  representation.
 
 
 1.0.0 (2020-03-19)

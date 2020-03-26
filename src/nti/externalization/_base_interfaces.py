@@ -13,8 +13,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numbers
+import decimal
 import six
+
 
 __all__ = [
     'NotGiven',
@@ -52,7 +53,7 @@ class LocatedExternalDict(dict):
 
     # interfaces are applied in interfaces.py
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs): # pylint:disable=super-init-not-called
         dict_init(self, *args, **kwargs)
         self.__name__ = u''
         self.__parent__ = None
@@ -220,14 +221,16 @@ class StandardInternalFields(object):
         #: to a text string to fill in `.StandardExternalFields.CREATOR`.
         self.CREATOR = 'creator'
         #: 'createdTime': The Unix timestamp of the creation of this object.
-        #: If no value can be found, we will attempt to adapt to `zope.dublincore.interfaces.IDCTimes`
+        #: If no value can be found, we will attempt to adapt to
+        #: `zope.dublincore.interfaces.IDCTimes`
         #: and use its 'created' attribute. Fills `StandardExternalFields.CREATED_TIME`
         self.CREATED_TIME = 'createdTime'
         #: 'containerId': The ID of the container of this object.
         #: Fills `StandardExternalFields.CONTAINER_ID`.
         self.CONTAINER_ID = 'containerId'
         #: 'lastModified': The Unix timestamp of the last modification of this object.
-        #: If no value can be found, we will attempt to adapt to `zope.dublincore.interfaces.IDCTimes`
+        #: If no value can be found, we will attempt to adapt to
+        #: zope.dublincore.interfaces.IDCTimes`
         #: and use its 'modified' attribute. Fills `.StandardExternalFields.LAST_MODIFIED`
         self.LAST_MODIFIED = 'lastModified'
 
@@ -239,8 +242,32 @@ _standard_internal_fields = StandardInternalFields()
 def get_standard_internal_fields():
     return _standard_internal_fields
 
+# Note that we DO NOT include ``numbers.Number``
+# as a primitive type. That's because ``numbers.Number``
+# is an ABC and arbitrary types can register as it; but
+# arbitrary types are not necessarily understood as proper
+# external objects by all representers. In particular,
+# ``fractions.Fraction`` cannot be handled by default and
+# needs to go through the adaptation process, as does ``complex``.
+# simplejson can handle ``decimal.Decimal``, but YAML cannot.
+_PRIMITIVE_NUMBER_TYPES = (
+    int, # bool is a subclass of int.
+    float,
+    decimal.Decimal,
+)
+try:
+    long
+except NameError:
+    pass
+else: # Python 2
+    _PRIMITIVE_NUMBER_TYPES += (
+        long,
+    )
 
-PRIMITIVES = six.string_types + (numbers.Number, bool, type(None))
+
+PRIMITIVES = six.string_types + (
+    type(None),
+) + _PRIMITIVE_NUMBER_TYPES
 
 
 

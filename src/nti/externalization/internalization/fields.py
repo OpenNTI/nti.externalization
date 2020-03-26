@@ -348,7 +348,7 @@ def validate_named_field_value(self, iface, field_name, value):
 def _as_native_str(s):
     if isinstance(s, str):
         return s
-    return s.encode('ascii')
+    return s.encode('ascii') # Python 2
 
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order

@@ -247,7 +247,7 @@ class TestNoPickle(unittest.TestCase):
         except ImportError: # pragma: no cover
             # Python 3
             raise TypeError("Not allowed to pickle")
-        else:
+        else: # pragma: no cover
             cPickle.dumps(obj)
 
     def _all_persists_fail(self, factory):

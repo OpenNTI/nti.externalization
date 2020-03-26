@@ -13,7 +13,7 @@ from __future__ import print_function
 # stdlib imports
 try:
     from collections.abc import MutableSequence
-except ImportError:
+except ImportError: # Python 2
     from collections import MutableSequence
     from collections import MutableMapping
 else: # pragma: no cover
@@ -90,11 +90,11 @@ def _get_update_signature(updater):
     if spec is None:
         try:
             func = updater.updateFromExternalObject
-            if hasattr(inspect, 'getfullargspec'): # pragma: no cover
+            if hasattr(inspect, 'getfullargspec'):
                 # Python 3. getargspec() is deprecated.
                 argspec = inspect.getfullargspec(func) # pylint:disable=no-member
                 keywords = argspec.varkw
-            else:
+            else: # Python 2
                 argspec = inspect.getargspec(func)
                 keywords = argspec.keywords
             args = argspec.args

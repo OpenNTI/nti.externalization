@@ -151,30 +151,135 @@ class TestWithRepr(unittest.TestCase):
                     is_('<Foo object at 0xdeadbeef _p_repr AttributeError()>'))
 
 
-class TestYaml(unittest.TestCase):
+class AbstractRepresenterTestMixin(object):
+    FORMAT = None
+
+    def _getTargetClass(self):
+        raise NotImplementedError
+
+    def _makeOne(self):
+        return self._getTargetClass()()
+
+    def _simpleStringRepr(self, s):
+        raise NotImplementedError
+
+    def _simpleNumRepr(self, i):
+        return str(i)
+
+    def test_dump_fraction(self):
+        import fractions
+        num = fractions.Fraction('1/3')
+
+        rep = self._makeOne()
+        result = rep.dump(num)
+        assert_that(result, is_(self._simpleStringRepr('1/3')))
+
+        assert_that(
+            representation.to_external_representation({'key': num}, self.FORMAT),
+            is_(representation.to_external_representation({'key': '1/3'}, self.FORMAT))
+        )
+
+    def test_dump_decimal_integral(self):
+        import decimal
+        num = decimal.Decimal(1)
+
+        rep = self._makeOne()
+        result = rep.dump(num)
+        assert_that(result, is_(self._simpleNumRepr(1)))
+
+        assert_that(
+            representation.to_external_representation({'key': num}, self.FORMAT),
+            is_(representation.to_external_representation({'key': 1}, self.FORMAT))
+        )
+
+
+    def test_dump_decimal_float(self):
+        import decimal
+
+        for s in '1.1', '2.561702493119680037517373933E+139':
+            num = decimal.Decimal(s)
+            rep = self._makeOne()
+            result = rep.dump(num)
+            assert_that(result.lower(), is_(self._simpleNumRepr(s.lower())))
+
+            # We preserve the full representation of the decimal
+            expected = representation.to_external_representation({'key': float(s)}, self.FORMAT)
+            expected = expected.replace('2.56170249311968e+139', s.lower())
+            assert_that(
+                representation.to_external_representation({'key': num}, self.FORMAT).lower(),
+                is_(expected)
+            )
+
+
+    def test_dump_decimal_nan(self):
+        import decimal
+        rep = self._makeOne()
+
+        for f in float('-nan'), float('nan'):
+            num = decimal.Decimal.from_float(f)
+            result = rep.dump(num)
+            __traceback_info__ = result
+            result = rep.load(result)
+            assert_that(str(f), is_(str(result)))
+
+    def test_dump_decimal_inf(self):
+        import decimal
+        rep = self._makeOne()
+
+        for f in float('-inf'), float('inf'):
+            num = decimal.Decimal(f)
+            result = rep.dump(num)
+            __traceback_info__ = result
+            result = rep.load(result)
+            assert_that(result, is_(f))
 
     def test_unicode(self):
-        yaml = representation.YamlRepresenter()
+        rep = self._makeOne()
 
-        result = yaml.dump(u"Hi")
-        assert_that(result, is_('Hi\n...\n'))
+        result = rep.dump(u"Hi")
+        assert_that(result, is_(self._simpleStringRepr('Hi')))
 
-        result = yaml.load(result)
+        result = rep.load(result)
         assert_that(result, is_(u'Hi'))
 
-class TestJson(ExternalizationLayerTest):
+
+class TestYaml(AbstractRepresenterTestMixin,
+               ExternalizationLayerTest):
+
+    FORMAT = u'yaml'
+
+    def _getTargetClass(self):
+        return representation.YamlRepresenter
+
+    def _simpleStringRepr(self, s):
+        return s + '\n...\n'
+
+    def _simpleNumRepr(self, i):
+        return str(i) + '\n...\n'
+
+
+class TestJson(AbstractRepresenterTestMixin,
+               ExternalizationLayerTest):
+
+    FORMAT = u'json'
+
+    def _getTargetClass(self):
+        return representation.JsonRepresenter
+
+    def _simpleStringRepr(self, s):
+        return '"' + s + '"'
 
     def test_dump_to_stream(self):
         import io
 
-        json = representation.JsonRepresenter()
+        json = self._makeOne()
         bio = io.BytesIO() if str is bytes else io.StringIO()
         json.dump(u"hi", bio)
 
         assert_that(bio.getvalue(), is_('"hi"'))
 
     def test_load_bytes(self):
-        json = representation.JsonRepresenter()
+        json = self._makeOne()
         result = json.load(b'"hi"')
         assert_that(result, is_(u"hi"))
 
@@ -182,10 +287,9 @@ class TestJson(ExternalizationLayerTest):
     def test_loads_returns_bytes(self, loads):
         loads.expects_call().returns(b'bytes')
 
-        json = representation.JsonRepresenter()
+        json = self._makeOne()
         result = json.load(b'hi')
         assert_that(result, is_(u'bytes'))
-
 
     def test_to_json_representation(self):
         result = representation.to_json_representation({})
@@ -195,12 +299,11 @@ class TestJson(ExternalizationLayerTest):
         from ..interfaces import IExternalObject
         from zope import component
 
-        json = representation.JsonRepresenter()
+        json = self._makeOne()
         result = json.dump(self)
         assert_that(result, contains_string('NonExternalizableObject'))
 
         class SecondPass(object):
-
             def __init__(self, obj):
                 self.obj = obj
 
@@ -213,16 +316,14 @@ class TestJson(ExternalizationLayerTest):
             provided=IExternalObject,
             name="second-pass"
         )
-
-
-
-        json = representation.JsonRepresenter()
-        with self.assertRaises(TypeError):
-            json.dump(self)
-
-        component.getGlobalSiteManager().unregisterAdapter(
-            SecondPass,
-            required=(type(self,),),
-            provided=IExternalObject,
-            name="second-pass"
-        )
+        try:
+            json = representation.JsonRepresenter()
+            with self.assertRaises(TypeError):
+                json.dump(self)
+        finally:
+            component.getGlobalSiteManager().unregisterAdapter(
+                SecondPass,
+                required=(type(self,),),
+                provided=IExternalObject,
+                name="second-pass"
+            )

@@ -13,6 +13,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import decimal
 import warnings
 
 from persistent import Persistent
@@ -80,7 +81,7 @@ def to_json_representation(obj):
 def _second_pass_to_external_object(obj):
     result = toExternalObject(obj, name='second-pass')
     if result is obj:
-        raise TypeError(repr(obj) + " is not JSON serializable")
+        raise TypeError(repr(obj) + " is not serializable")
     return result
 
 
@@ -141,14 +142,44 @@ class _ExtDumper(yaml.SafeDumper):
 
     Therefore we must register their base types as multi-representers.
     """
+
+# The difference between 'add_representer' and 'add_multi_representer'
+# is that the multi version accepts subclasses, but the plain version
+# requires an exact type match.
 _ExtDumper.add_multi_representer(list, _ExtDumper.represent_list)
 _ExtDumper.add_multi_representer(dict, _ExtDumper.represent_dict)
-if str is bytes:
+if str is bytes: # Python 2
+     # pylint:disable=undefined-variable,no-member
     _ExtDumper.add_multi_representer(unicode, _ExtDumper.represent_unicode)
-else: # pragma: no cover Python 3
+else: # Python 3
     _ExtDumper.add_multi_representer(str, _ExtDumper.represent_str)
 
-class _UnicodeLoader(yaml.SafeLoader):  # pylint:disable=R0904
+def _yaml_represent_decimal(dumper, data):
+    s = str(data)
+    if '.' not in s:
+        try:
+            int(s)
+        except ValueError:
+            pass
+        else:
+            return dumper.represent_int(data)
+    if data.is_nan():
+        return dumper.represent_float(float('nan'))
+    if data.is_infinite():
+        return dumper.represent_float(float('-inf') if data.is_signed() else float('+inf'))
+    return dumper.represent_scalar('tag:yaml.org,2002:float', str(data).lower())
+_ExtDumper.add_representer(decimal.Decimal, _yaml_represent_decimal)
+
+# PyYAML uses the multi dumper on ``None`` as the fallback when
+# nothing else can be found.
+def _yaml_represent_unknown(dumper, data):
+    ext_obj = _second_pass_to_external_object(data)
+    return dumper.represent_data(ext_obj)
+_ExtDumper.add_multi_representer(None, _yaml_represent_unknown)
+
+
+
+class _UnicodeLoader(yaml.SafeLoader):
 
     def construct_yaml_str(self, node):
         # yaml defines strings to be unicode, but
@@ -207,6 +238,7 @@ class _PReprException(Exception):
     # Raised for the sole purpose of carrying a smuggled
     # repr.
     def __init__(self, value):
+        Exception.__init__(self)
         self.value = value
 
     def __repr__(self):

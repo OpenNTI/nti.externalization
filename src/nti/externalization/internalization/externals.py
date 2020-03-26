@@ -16,7 +16,7 @@ from __future__ import print_function
 # stdlib imports
 try:
     from collections.abc import MutableSequence
-except ImportError:
+except ImportError: # Python 2
     from collections import MutableSequence
 
 

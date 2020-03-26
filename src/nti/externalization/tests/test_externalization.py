@@ -67,8 +67,8 @@ from hamcrest import has_property as has_attr
 
 try:
     from collections import UserDict
-except ImportError:
-    from UserDict import UserDict # Python 2
+except ImportError: # Python 2
+    from UserDict import UserDict
 
 
 # disable: accessing protected members, too many methods

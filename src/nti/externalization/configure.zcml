@@ -40,6 +40,9 @@
     <utility factory=".representation.JsonRepresenter" />
     <utility factory=".representation.YamlRepresenter" />
 
+    <!-- -->
+    <!-- Dates and datetimes -->
+    <!-- -->
     <!-- Offer to adapt strings to dates -->
     <!-- TODO: This is a bit ad-hoc. Surely there's a more formal set
     of transforms somewhere? -->
@@ -49,11 +52,20 @@
     <adapter factory=".datetime.datetime_from_timestamp" for="int" />
     <adapter factory=".datetime.datetime_from_timestamp" for="float" />
 
-    <!-- Do the reverse as well.-->
+    <!-- Do the reverse as well. -->
     <adapter factory=".datetime.date_to_string" />
     <adapter factory=".datetime.datetime_to_string" />
     <adapter factory=".datetime.duration_to_string" />
 
+    <!-- -->
+    <!-- Numbers (fractions) -->
+    <!-- -->
+    <!-- Anything not represented directly goes out as a string. -->
+    <adapter factory=".numbers.second_chance_number_externalizer" />
+
+    <!-- -->
+    <!-- Object factories -->
+    <!-- -->
     <adapter for="*"
              factory=".internalization.default_externalized_object_factory_finder_factory"
              provides=".interfaces.IExternalizedObjectFactoryFinder" />
