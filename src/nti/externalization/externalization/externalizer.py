@@ -17,7 +17,7 @@ from __future__ import print_function
 import warnings
 try:
     from collections.abc import Set
-except ImportError:
+except ImportError: # Python 2
     from collections import Set
     from collections import Mapping
 else: # pragma: no cover
@@ -360,10 +360,11 @@ def to_external_object(
     :param decorate_callback: Callable to be invoked in case there is
         no decaration
     """
-
     # Catch the primitives up here, quickly. This catches
-    # numbers, strings, and None
-    if isinstance(obj, PRIMITIVES):
+    # numbers, strings, and None. Only do this if we're not on the
+    # second-pass fallback; that means that some representer couldn't handle
+    # a primitive natively (usually a decimal)
+    if name != 'second-pass' and isinstance(obj, PRIMITIVES):
         return obj
 
     manager_top = _manager_get() # (name, memos)

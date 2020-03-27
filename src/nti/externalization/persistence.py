@@ -19,7 +19,7 @@ from __future__ import print_function
 # stdlib imports
 try:
     from collections.abc import Sequence
-except ImportError:
+except ImportError: # Python 2
     from collections import Sequence
 
 try:
