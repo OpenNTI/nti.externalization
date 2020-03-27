@@ -361,10 +361,8 @@ def to_external_object(
         no decaration
     """
     # Catch the primitives up here, quickly. This catches
-    # numbers, strings, and None. Only do this if we're not on the
-    # second-pass fallback; that means that some representer couldn't handle
-    # a primitive natively (usually a decimal)
-    if name != 'second-pass' and isinstance(obj, PRIMITIVES):
+    # numbers, strings, and None.
+    if isinstance(obj, PRIMITIVES):
         return obj
 
     manager_top = _manager_get() # (name, memos)

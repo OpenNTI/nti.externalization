@@ -6,7 +6,8 @@
 1.1.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Fix a faulty assertion error. See `issue 102
+  <https://github.com/NextThought/nti.externalization/issues/102>`_.
 
 
 1.1.0 (2020-03-27)
