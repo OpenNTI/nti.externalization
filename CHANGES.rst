@@ -3,7 +3,7 @@
 =========
 
 
-1.1.1 (unreleased)
+1.1.1 (2020-03-27)
 ==================
 
 - Fix a faulty assertion error. See `issue 102
