@@ -68,6 +68,7 @@ cpdef update_from_external_object(containedObject,
                                   pre_hook=*)
 
 cdef dict _argspec_cacheg
+
 cdef str _UPDATE_ARGS_TWO
 cdef str _UPDATE_ARGS_ONE
 cdef str _UPDATE_ARGS_CONTEXT_KW

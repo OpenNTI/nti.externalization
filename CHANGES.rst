@@ -6,7 +6,15 @@
 1.1.2 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Adapt to a change in zope.container 4.4.0 that exposed unsafe
+  assumptions that ``providedBy(obj)`` would return the exact same
+  object with the exact same state on a subsequent call. This was
+  always a bug in the case of concurrency (e.g., if a different thread
+  called ``directlyProvides`` on the same object, or adjusted the
+  ``__bases__`` of some interface in the IRO); the zope.container
+  changes made it possible without concurrency. See
+  https://github.com/zopefoundation/zope.container/issues/38 and
+  https://github.com/NextThought/nti.externalization/issues/104.
 
 
 1.1.1 (2020-03-27)

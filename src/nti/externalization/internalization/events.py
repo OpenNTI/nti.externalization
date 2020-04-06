@@ -17,7 +17,7 @@ from zope.event import notify as _zope_event_notify
 from zope.lifecycleevent import IAttributes
 
 from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
-from nti.externalization._interface_cache import cache_for_key
+from nti.externalization._interface_cache import cache_for_key_in_providedBy
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -43,46 +43,42 @@ classImplements(_Attributes, IAttributes)
 
 
 def _make_modified_attributes(containedObject, external_keys):
-    cache = cache_for_key(_Attributes, containedObject)
-    # {'attrname': Interface}
+    # Returns a sequence of fresh _Attributes objects,
+    # one for each distinct interface (including None) that declared
+    # any key found in *external_keys*.
+
+
+    # Get the InterfaceCache object. This object is reset when
+    # the interfaces implemented by containedObject are changed,
+    # such as by having bases added or removed, or by having directlyProvides/
+    # noLongerProvides/etc executed on it. In theory that could happen
+    # while this method is running, so access to internals like _v_attrs
+    # is not safe.
+    provides = providedBy(containedObject)
+    cache = cache_for_key_in_providedBy(_Attributes, provides)
+    # {'attrname': InterfaceDeclaringAttrname}; values may be None.
     attr_to_iface = cache.modified_event_attributes
 
-    # Ensure that each attribute name in *names* is
-    # in the _v_attrs dict of *provides*. Also
-    # makes sure that self.attr_to_iface maps each
-    # name to its interface.
-    # Returns a sequence of fresh _Attributes objects.
-    provides = providedBy(containedObject)
-    # {iface -> _Attributes(iface)}
+    # {iface -> _Attributes(iface)}. Note that iface will be None if there
+    # is no interface that defined the key.
     result = {}
-    # By the time we get here, we're guaranteed that
-    # _v_attrs exists---it's where we're cached
-    attrs = provides._v_attrs # pylint:disable=protected-access
+
+    provides_get = provides.get
 
     for name in external_keys:
-        # This is the core loop of provides.get()
-        # (z.i.declaration.Declaration.get)
-        attr = attrs.get(name, cache)
-        # Steady state, misses are rare here.
-        if attr is cache:
-            for iface in provides.__iro__:
-                attr = iface.direct(name)
-                if attr is not None:
-                    attrs[name] = attr
-                    break
-            else:
-                # Not part of any interface
-                attr = attrs[name] = None
-
         providing_iface = attr_to_iface.get(name, cache)
         if providing_iface is cache:
-            # In the steady state, misses should be rare here.
+            # Ok, we haven't seen it before. Try to find it. Note that
+            # provides.get() (z.i.declaration.Declaration.get()) is
+            # only a positive cache, not a negative cache (if it would
+            # return None, the search up the IRO is repeated). So
+            # that's why we check our own cache first, because it is a
+            # negative cache.
             providing_iface = None
+            attr = provides_get(name)
             if attr is not None:
                 providing_iface = attr.interface
             attr_to_iface[name] = providing_iface
-
-
 
         attributes = result.get(providing_iface)
         if attributes is None:

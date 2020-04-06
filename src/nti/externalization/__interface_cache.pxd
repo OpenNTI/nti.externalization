@@ -17,4 +17,4 @@ cdef class InterfaceCache(object):
 cdef _cache_cleanUp(instances)
 
 cpdef InterfaceCache cache_for(externalizer, ext_self)
-cpdef InterfaceCache cache_for_key(key, ext_self)
+cpdef InterfaceCache cache_for_key_in_providedBy(key, ext_self)

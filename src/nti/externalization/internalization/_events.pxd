@@ -1,7 +1,7 @@
 # definitions for internalization.py
 import cython
 
-from nti.externalization.__interface_cache cimport cache_for_key
+from nti.externalization.__interface_cache cimport cache_for_key_in_providedBy
 
 # imports
 cdef providedBy

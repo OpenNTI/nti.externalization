@@ -37,24 +37,18 @@ class InterfaceCache(object):
         self.ext_all_possible_keys = None
         self.ext_accept_external_id = None
         self.ext_primitive_out_ivars = None
+        # {'attrname': InterfaceDeclaringAttrname}
         self.modified_event_attributes = {}
 
 
-
-def cache_for_key(key, ext_self):
-    # The Declaration objects maintain a _v_attrs that
+def cache_for_key_in_providedBy(key, provided_by): # type: (object, object) -> InterfaceCache
+    # The Declaration objects returned from ``providedBy(obj)`` maintain a _v_attrs that
     # gets blown away on changes to themselves or their
     # dependents, including adding interfaces dynamically to an instance
     # (In that case, the provided object actually gets reset)
-    cache_place = providedBy(ext_self)
-    try:
-        attrs = cache_place._v_attrs # pylint:disable=protected-access
-        if attrs is None:
-            # _v_attrs became defined None to begin with in
-            # zope.interface 5
-            raise AttributeError
-    except AttributeError:
-        attrs = cache_place._v_attrs = {}
+    attrs = provided_by._v_attrs # pylint:disable=protected-access
+    if attrs is None:
+        attrs = provided_by._v_attrs = {}
 
     try:
         cache = attrs[key]
@@ -66,8 +60,8 @@ def cache_for_key(key, ext_self):
     return cache
 
 
-def cache_for(externalizer, ext_self):
-    return cache_for_key(type(externalizer), ext_self)
+def cache_for(externalizer, ext_self): # type: (object, object) -> InterfaceCache
+    return cache_for_key_in_providedBy(type(externalizer), providedBy(ext_self))
 
 
 def _cache_cleanUp(instances):
