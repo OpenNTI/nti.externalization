@@ -15,15 +15,15 @@ jobs:
       - python: 3.8
         env: PURE_PYTHON=1
 env:
-    global:
-        CC: "ccache gcc"
-        CCACHE_SLOPPINESS: file_macro,time_macros,include_file_ctime,include_file_mtime
-        CCACHE_NOHASHDIR: true
-        CFLAGS: "-Ofast -pipe -fomit-frame-pointer -march=native"
-        PYTHONHASHSEED: random
-        PIP_UPGRADE_STRATEGY: eager
-        # Not Yet. See https://github.com/NextThought/nti.externalization/issues/105
-        # ZOPE_INTERFACE_STRICT_IRO: 1
+  global:
+    - CC="ccache gcc"
+    - CCACHE_SLOPPINESS=file_macro,time_macros,include_file_ctime,include_file_mtime
+    - CCACHE_NOHASHDIR=true
+    - CFLAGS="-Ofast -pipe -fomit-frame-pointer -march=native"
+    - PYTHONHASHSEED=random
+    - PIP_UPGRADE_STRATEGY=eager
+    # Not Yet. See https://github.com/NextThought/nti.externalization/issues/105
+    # - ZOPE_INTERFACE_STRICT_IRO=1
 
 script:
   - coverage run -m zope.testrunner --test-path=src
