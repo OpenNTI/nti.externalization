@@ -3,7 +3,7 @@
 =========
 
 
-1.1.2 (unreleased)
+1.1.2 (2020-04-07)
 ==================
 
 - Adapt to a change in zope.container 4.4.0 that exposed unsafe
