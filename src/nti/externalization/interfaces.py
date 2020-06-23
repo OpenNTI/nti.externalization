@@ -386,12 +386,31 @@ class IObjectWillUpdateFromExternalEvent(IObjectEvent):
     """
     An object will be updated from an external value.
     """
-    external_value = interface.Attribute("The external value")
+    external_value = interface.Attribute(
+        "The external value. "
+        "This is not necessarily a pristine object as decoded from, e.g., JSON. "
+        "It will be mutated as sub-objects get updated and parsed. For example, strings "
+        "may get replaced with datetimes, and so on. "
+        "The consequences of modifying this object in an event subscriber are undefined. "
+    )
+    root = interface.Attribute(
+        "The object initially passed to update_from_external_object. "
+        "For nested objects, this will be some ancestor of the object this event is for. "
+        "For updaters that manually update sub-objects, this isn't guaranteed to be the actual "
+        "true root object being updated."
+    )
+
 
 
 @interface.implementer(IObjectWillUpdateFromExternalEvent)
 class ObjectWillUpdateFromExternalEvent(ObjectEvent):
     external_value = None
+    root = None
+
+    def __init__(self, object, external_value=None, root=None):
+        ObjectEvent.__init__(self, object)
+        self.external_value = external_value
+        self.root = root
 
 
 class IObjectModifiedFromExternalEvent(IObjectModifiedEvent):

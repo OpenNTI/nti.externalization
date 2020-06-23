@@ -8,7 +8,6 @@ from ._factories cimport find_factory_for
 
 # imports
 cdef NotGiven
-cdef component
 cdef MutableSequence
 cdef MutableMapping
 cdef inspect
@@ -21,6 +20,8 @@ cdef interface
 cdef IInternalObjectUpdater
 cdef IInternalObjectIO
 cdef INamedExternalizedObjectFactoryFinder
+cdef notify
+cdef ObjectWillUpdateFromExternalEvent
 
 # optimizations
 
@@ -38,6 +39,7 @@ cdef dict _EMPTY_DICT
 cdef class _RecallArgs(object):
     cdef context
     cdef pre_hook
+    cdef root
     cdef bint require_updater
     cdef bint notify
 
