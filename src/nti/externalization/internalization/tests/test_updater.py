@@ -124,7 +124,7 @@ class TestUpdater(CleanUp,
         events = self.events
 
         ext = [{'MimeType': 'abc'}, {'MimeType': 'abc'}]
-        orig_ext = ext.copy()
+        orig_ext = list(ext)
         domain = [DomainObject(), DomainObject()]
 
         updater.update_from_external_object(domain, ext, require_updater=True)
