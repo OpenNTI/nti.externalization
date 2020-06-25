@@ -24,14 +24,15 @@ import warnings
 
 from persistent.interfaces import IPersistent
 from six import iteritems
-from zope import component
 from zope import interface
+from zope.event import notify
 
 from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization._base_interfaces import NotGiven
 from nti.externalization.interfaces import IInternalObjectUpdater
 from nti.externalization.interfaces import IInternalObjectIO
 from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
+from nti.externalization.interfaces import ObjectWillUpdateFromExternalEvent
 
 from .factories import find_factory_for
 from .events import _notifyModified
@@ -49,6 +50,7 @@ class _RecallArgs(object):
         'require_updater',
         'notify',
         'pre_hook',
+        'root',
     )
 
     # We don't have an __init__, we ask the caller
@@ -60,6 +62,7 @@ class _RecallArgs(object):
         self.require_updater = False
         self.notify = True
         self.pre_hook = None
+        self.root = None
 
 ##
 # Note on caching: We do not expect the updater objects to be proxied.
@@ -95,7 +98,7 @@ def _get_update_signature(updater):
                 argspec = inspect.getfullargspec(func) # pylint:disable=no-member
                 keywords = argspec.varkw
             else: # Python 2
-                argspec = inspect.getargspec(func)
+                argspec = inspect.getargspec(func) # pylint:disable=deprecated-method
                 keywords = argspec.keywords
             args = argspec.args
             defaults = argspec.defaults
@@ -218,10 +221,16 @@ def update_from_external_object(containedObject, externalObject,
         object. Deprecated.
     :return: *containedObject* after updates from *externalObject*
 
+    Notifies `~.IObjectModifiedFromExternalEvent` for each object that is modified,
+    and `~.IObjectWillUpdateFromExternalEvent` before doing so.
+
     .. seealso:: `~.INamedExternalizedObjectFactoryFinder`
 
     .. versionchanged:: 1.0.0a2
        Remove the ``object_hook`` parameter.
+    .. versionchanged:: 1.1.3
+       Correctly file `~.IObjectWillUpdateFromExternalEvent` before updating
+       each object.
     """
 
     if pre_hook is not None: # pragma: no cover
@@ -239,6 +248,7 @@ def update_from_external_object(containedObject, externalObject,
     kwargs.require_updater = require_updater
     kwargs.notify = notify
     kwargs.pre_hook = pre_hook
+    kwargs.root = containedObject
 
     return _update_from_external_object(containedObject, externalObject, kwargs)
 
@@ -335,7 +345,7 @@ def _update_from_external_object(containedObject, externalObject, args):
     if isinstance(externalObject, MutableSequence):
         return _update_sequence(externalObject, args)
 
-    assert isinstance(externalObject, MutableMapping)
+    assert isinstance(externalObject, MutableMapping), externalObject
 
     factory_finder = _find_INamedExternalizedObjectFactoryFinder(containedObject)
 
@@ -379,6 +389,7 @@ def _update_from_external_object(containedObject, externalObject, args):
 
 
     if updater is not None:
+        notify(ObjectWillUpdateFromExternalEvent(containedObject, externalObject, args.root))
         _invoke_updater(containedObject, externalObject, updater, external_keys, args)
 
     return containedObject

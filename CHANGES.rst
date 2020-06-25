@@ -6,7 +6,8 @@
 1.1.3 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Correctly fire ``IObjectWillUpdateFromExternalEvent`` events before
+  updating an object.
 
 
 1.1.2 (2020-04-07)
