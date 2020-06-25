@@ -3,7 +3,7 @@
 =========
 
 
-1.1.3 (unreleased)
+1.1.3 (2020-06-25)
 ==================
 
 - Correctly fire ``IObjectWillUpdateFromExternalEvent`` events before
