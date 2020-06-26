@@ -54,7 +54,7 @@ from ..testing import assert_does_not_pickle
 
 from hamcrest import assert_that
 from hamcrest import calling
-from hamcrest import contains
+from hamcrest import contains_exactly
 from hamcrest import has_entry
 from hamcrest import has_items
 from hamcrest import has_key
@@ -132,7 +132,7 @@ class TestFunctions(ExternalizationLayerTest):
         # Given a plain OID, we return just the plain OID
         oid = b'\x00\x00\x00\x00\x00\x00\x00\x01'
         assert_that(fromExternalOID(oid),
-                    contains(same_instance(oid), '', None))
+                    contains_exactly(same_instance(oid), '', None))
 
     def test_hookable_set_external_identifiers(self):
         assert_that(set_external_identifiers,
@@ -157,7 +157,7 @@ class TestFunctions(ExternalizationLayerTest):
         l = LocatedExternalList()
         l.append(LocatedExternalDict(k='v'))
 
-        class SubUnicode(str if bytes is not str else unicode):
+        class SubUnicode(type(u'abc')):
             pass
         l.append(LocatedExternalDict(k2=SubUnicode(u'foo')))
 

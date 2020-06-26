@@ -22,8 +22,7 @@ env:
     - CFLAGS="-Ofast -pipe -fomit-frame-pointer -march=native"
     - PYTHONHASHSEED=random
     - PIP_UPGRADE_STRATEGY=eager
-    # Not Yet. See https://github.com/NextThought/nti.externalization/issues/105
-    # - ZOPE_INTERFACE_STRICT_IRO=1
+    - ZOPE_INTERFACE_STRICT_IRO=1
 
 script:
   - coverage run -m zope.testrunner --test-path=src

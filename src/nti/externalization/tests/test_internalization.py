@@ -24,7 +24,7 @@ from ..interfaces import IClassObjectFactory
 from ..interfaces import IMimeObjectFactory
 
 from hamcrest import assert_that
-from hamcrest import contains
+from hamcrest import contains_exactly
 from hamcrest import contains_string
 from hamcrest import equal_to
 from hamcrest import greater_than_or_equal_to
@@ -665,7 +665,7 @@ class TestValidateFieldValue(CleanUp,
         setter, bag = self._callFUT(field, [O()])
 
         setter()
-        assert_that(bag, has_property('field', contains(is_(O))))
+        assert_that(bag, has_property('field', contains_exactly(is_(O))))
 
     def test_wrong_contained_type_object_field_adapts_fails(self):
         from zope.schema.interfaces import WrongContainedType

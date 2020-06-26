@@ -65,6 +65,9 @@ def cache_for(externalizer, ext_self): # type: (object, object) -> InterfaceCach
 
 
 def _cache_cleanUp(instances):
+    # XXX: On PyPy (3 only?) ``list(instances)`` has been
+    # seen to raise "RuntimeError: set changed size during iteration."
+    # We should probably try to run a gc.collect() before iterating it.
     for x in list(instances):
         x.__init__()
 
