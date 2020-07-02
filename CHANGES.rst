@@ -3,10 +3,34 @@
 =========
 
 
-1.1.4 (unreleased)
+2.0.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Change ``ILocatedExternalMapping``: Previously it extended the
+  legacy ``zope.interface.common.mapping.IFullMapping``. Now it
+  extends the modern ``zope.interface.common.collections.IMapping``.
+  Note that this does not require mutability unlike the older
+  interface. (The ``LocatedExternalDict`` class provided by this
+  package is fully mutable and implements ``IMutableMapping``. It also
+  continues to implement ``IFullMapping``, but use of that interface
+  is discouraged.)
+
+- Change ``ILocatedExternalSequence``: Previously it extended the
+  legacy ``zope.interface.common.sequence.ISequence``. Now it extends
+  the modern ``zope.interface.common.collections.ISequenceMapping``.
+  Note that this does not require mutability unlike the older
+  interface. (The ``LocatedExternalList`` class provided by this
+  package is fully mutable and implements ``IMutableSequence``.)
+
+- Fix the interface resolution order for ``LocatedExternalList``.
+  Previously, with zope.interface 5, it began implementing both
+  ``IMutableSequence`` (the new interface from
+  ``zope.interface.common.collections``) as well as the older
+  interface ``ISequence`` (from ``zope.interface.common.sequence``);
+  the two have inconsistent resolution orders. Now, it only implements
+  ``IMutableSequence`` and a subset of the legacy interfaces that do
+  not conflict. See `issue 105
+  <https://github.com/NextThought/nti.externalization/issues/105>`_.
 
 
 1.1.3 (2020-06-25)

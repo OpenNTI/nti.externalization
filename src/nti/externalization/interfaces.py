@@ -11,8 +11,9 @@ from __future__ import print_function
 
 from zope import interface
 from zope.component.interfaces import IFactory
-from zope.interface.common.mapping import IFullMapping
-from zope.interface.common.sequence import ISequence
+from zope.interface.common import collections as icollections
+from zope.interface.common import sequence as legacy_isequence
+from zope.interface.common import mapping as legacy_imapping
 from zope.interface.interfaces import IObjectEvent
 from zope.interface.interfaces import ObjectEvent
 from zope.lifecycleevent import IObjectModifiedEvent
@@ -142,22 +143,24 @@ class IExternalizedObject(interface.Interface):
     """
 
 
-class ILocatedExternalMapping(IExternalizedObject, ILocation, IFullMapping):
+class ILocatedExternalMapping(IExternalizedObject, ILocation, icollections.IMapping):
     """
     The externalization of an object as a dictionary, maintaining its location
     information.
     """
 
 
-class ILocatedExternalSequence(IExternalizedObject, ILocation, ISequence):
+class ILocatedExternalSequence(IExternalizedObject, ILocation, icollections.ISequence):
     """
     The externalization of an object as a sequence, maintaining its location
     information.
     """
 
-
+# This is defined in _base_interfaces for bootstrap reasons.
 interface.classImplements(LocatedExternalDict, ILocatedExternalMapping)
-
+# BWC: Also make the concrete class implement the legacy IFullMapping; the ILocatedExternalMapping
+# used to extend this.
+interface.classImplements(LocatedExternalDict, legacy_imapping.IFullMapping)
 
 @interface.implementer(ILocatedExternalSequence)
 class LocatedExternalList(list):
@@ -175,6 +178,14 @@ class LocatedExternalList(list):
     __parent__ = None
     __acl__ = ()
     mimeType = None
+
+# BWC: Also make the concrete class implement as much of the legacy
+# ISequence as possible (which ILocatedExternalSequence used to
+# extend). We cannot actually implement it, or the legacy IReadSequence,
+# because of interface resolution order conflicts.
+interface.classImplements(LocatedExternalList, legacy_isequence.IWriteSequence)
+interface.classImplements(LocatedExternalList, legacy_isequence.IFiniteSequence)
+
 
 # Representations as strings
 
