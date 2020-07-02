@@ -3,7 +3,7 @@
 =========
 
 
-2.0.0 (unreleased)
+2.0.0 (2020-07-02)
 ==================
 
 - Change ``ILocatedExternalMapping``: Previously it extended the
