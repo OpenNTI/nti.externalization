@@ -17,7 +17,7 @@
 
 - Change ``ILocatedExternalSequence``: Previously it extended the
   legacy ``zope.interface.common.sequence.ISequence``. Now it extends
-  the modern ``zope.interface.common.collections.ISequenceMapping``.
+  the modern ``zope.interface.common.collections.ISequence``.
   Note that this does not require mutability unlike the older
   interface. (The ``LocatedExternalList`` class provided by this
   package is fully mutable and implements ``IMutableSequence``.)
