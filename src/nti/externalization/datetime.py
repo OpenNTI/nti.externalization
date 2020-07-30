@@ -63,7 +63,7 @@ _input_type = (str if sys.version_info[0] >= 3 else basestring)
 @interface.implementer(IDate)
 def date_from_string(string):
     """
-    This adapter allows any field which comes in as a string is
+    This adapter allows any field which comes in as a string in
     IOS8601 format to be transformed into a date. The schema field
     must be an `zope.schema.Object` field with a type of
     `zope.interface.common.idatetime.IDate`.
@@ -143,7 +143,7 @@ def _as_utc_naive(dt, assume_local=True, local_tzname=None):
 @interface.implementer(IDateTime)
 def datetime_from_string(string, assume_local=False, local_tzname=None):
     """
-    This adapter allows any field which comes in as a string is
+    This adapter allows any field which comes in as a string in
     IOS8601 format to be transformed into a
     :class:`datetime.datetime`. The schema field should be an
     `nti.schema.field.Object` field with a type of
