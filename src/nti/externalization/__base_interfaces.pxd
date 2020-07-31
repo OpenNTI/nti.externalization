@@ -64,6 +64,6 @@ cpdef StandardInternalFields get_standard_internal_fields()
 cdef class ExternalizationPolicy(object):
     cdef readonly bint use_iso8601_for_unix_timestamp
 
-cdef ExternalizationPolicy _default_externalization_policy
+cdef ExternalizationPolicy DEFAULT_EXTERNALIZATION_POLICY
 
 cpdef ExternalizationPolicy get_default_externalization_policy()
