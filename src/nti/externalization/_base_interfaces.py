@@ -304,7 +304,7 @@ class ExternalizationPolicy(object):
         #: to "Created Time" and "Last Modified."
         self.use_iso8601_for_unix_timestamp = use_iso8601_for_unix_timestamp
 
-    def __repr__(self):
+    def __repr__(self): # pragma: no cover
         return "ExternalizationPolicy(use_iso8601_for_unix_timestamp=%s)" % (
             self.use_iso8601_for_unix_timestamp
         )
