@@ -11,6 +11,8 @@ from nti.externalization.__base_interfaces cimport get_standard_external_fields
 from nti.externalization.__base_interfaces cimport StandardExternalFields as SEF
 from nti.externalization.__base_interfaces cimport get_standard_internal_fields
 from nti.externalization.__base_interfaces cimport StandardInternalFields as SIF
+from nti.externalization.__base_interfaces cimport get_default_externalization_policy
+from nti.externalization.__base_interfaces cimport ExternalizationPolicy
 
 from nti.externalization.internalization._fields cimport validate_named_field_value
 from nti.externalization.internalization._factories cimport find_factory_for
@@ -24,6 +26,7 @@ cdef IInternalObjectIOFinder
 cdef IAnonymousObjectFactory
 cdef SEF StandardExternalFields
 cdef SIF StandardInternalFields
+cdef ExternalizationPolicy DEFAULT_EXTERNALIZATION_POLICY
 cdef validate_named_field_value
 cdef make_repr
 cdef isSyntheticKey

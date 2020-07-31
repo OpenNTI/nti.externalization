@@ -3,10 +3,20 @@
 =========
 
 
-2.0.1 (unreleased)
+2.1.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add support for "externalization policies." These are instances of
+  ``ExternalizationPolicy`` that can be used to tweak certain
+  low-level details of externalization without replacing
+  externalization objects wholesale. They are intended to have a very
+  low performance impact.
+
+  The only supported detail that can be changed right now is whether
+  the standard created and last modified fields are externalized as
+  Unix timestamps (the default) or as ISO 8601 strings.
+
+  See https://github.com/NextThought/nti.externalization/issues/109
 
 
 2.0.0 (2020-07-02)

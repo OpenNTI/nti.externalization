@@ -20,6 +20,7 @@ import six
 __all__ = [
     'NotGiven',
     'LocatedExternalDict',
+    'ExternalizationPolicy',
 ]
 
 class _NotGiven(object):
@@ -270,6 +271,44 @@ PRIMITIVES = six.string_types + (
 ) + _PRIMITIVE_NUMBER_TYPES
 
 
+class ExternalizationPolicy(object):
+    """
+    Adjustment knobs for making tweaks across an entire
+    externalization.
+
+    These knobs will tweak low-level details of the externalization
+    format, details that are often in a hot code path where overhead
+    should be kept to a minimum.
+
+    Instances of this class are used by registering them as named
+    components in the global site manager. Certain low-level functions
+    accept an optional *policy* argument that must be an instance of this class;
+    higher level functions accept a *policy_name* argument that is used to
+    find the registered component. If either argument is not given, then
+    `DEFAULT_EXTERNALIZATION_POLICY` is used instead.
+
+    Instances are immutable.
+
+    This class must not be subclassed; as such, there is no interface
+    for it, merely the class itself.
+    """
+
+    __slots__ = (
+        'use_iso8601_for_unix_timestamp',
+    )
+
+    def __init__(self, use_iso8601_for_unix_timestamp=False):
+        #: Should unix timestamp fields be output as their numeric value,
+        #: or be converted into an ISO 8601 timestamp string? By default,
+        #: the numeric value is output. This is known to specifically apply
+        #: to "Created Time" and "Last Modified."
+        self.use_iso8601_for_unix_timestamp = use_iso8601_for_unix_timestamp
+
+#: The default externalization policy.
+_default_externalization_policy = ExternalizationPolicy()
+
+def get_default_externalization_policy():
+    return _default_externalization_policy
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position
 import_c_accel(globals(), 'nti.externalization.__base_interfaces')

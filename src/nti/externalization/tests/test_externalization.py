@@ -74,6 +74,7 @@ except ImportError: # Python 2
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 # pylint: disable=attribute-defined-outside-init,inherit-non-class
+# pylint:disable=signature-differs
 
 does_not = is_not
 
@@ -393,6 +394,43 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
             self._A4 = None
             # notice no A5
 
+    class X(ExternalizableInstanceDict):
+        def __init__(self):
+            self.createdTime = 123456789
+            self.lastModified = 8675309
+
+    def to_str(ts): # pylint:disable=no-self-argument
+        from ..datetime import datetime_to_string
+        from datetime import datetime as DateTime
+        return datetime_to_string(DateTime.utcfromtimestamp(ts)).toExternalObject()
+    created_string = to_str(X().createdTime)
+    modified_string = to_str(X().lastModified)
+    del to_str
+
+    class CustomToExternalObject(X):
+        policy_name = None
+        def __init__(self):
+            TestExternalizableInstanceDict.X.__init__(self)
+            self._x = None
+
+        @property
+        def child(self): # pragma: no cover
+            return self._x
+
+        @child.setter
+        def child(self, new):
+            self._x = new
+
+        def toExternalObject(self, *args, **kwargs):
+            result = TestExternalizableInstanceDict.X.toExternalObject(self, *args, **kwargs)
+            # We deliberately don't pass the kwargs to the
+            # parent, in order to test the thread-local storage.
+            # (Or the policy_name)
+            if self.policy_name:
+                result['child'] = toExternalObject(self._x, policy_name=self.policy_name)
+            result['child'] = toExternalObject(self._x)
+            return result
+
     def test_simple_roundtrip(self):
         obj = self.C()
         # Things that are excluded by default
@@ -423,6 +461,50 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
         assert_that(ext, does_not(has_key('_A4')))
         assert_that(newObj.A1, is_(1))
         assert_that(newObj.A2, is_("2"))
+
+    def test_standard_dates_policy(self, kind=X):
+        from ..interfaces import ExternalizationPolicy
+        iso_policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
+
+        x = kind()
+        x.child = self.X()
+
+        # Default policy
+        ext = toExternalObject(x)
+        for ex in ext, ext['child']:
+            assert_that(ex['CreatedTime'], is_(x.createdTime))
+            assert_that(ex['Last Modified'], is_(x.lastModified))
+
+        # ISO policy
+        ext = toExternalObject(x, policy=iso_policy)
+        for ex in ext, ext['child']:
+            assert_that(ex['CreatedTime'], is_(self.created_string))
+            assert_that(ex['Last Modified'], is_(self.modified_string))
+
+    def test_standard_dates_policy_no_kwarg(self):
+        self.test_standard_dates_policy(self.CustomToExternalObject)
+
+    def test_registered_policy_name(self):
+        from ..interfaces import ExternalizationPolicy
+        iso_policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
+
+        component.provideUtility(iso_policy, name='iso_policy')
+        try:
+            x = self.CustomToExternalObject()
+            x.child = self.X()
+            x.policy_name = 'iso_policy'
+
+            # top level used default
+            ext = toExternalObject(x)
+            assert_that(ext['CreatedTime'], is_(x.createdTime))
+            assert_that(ext['Last Modified'], is_(x.lastModified))
+
+            # child used ISO policy
+            ext = ext['child']
+            assert_that(ext['CreatedTime'], is_(self.created_string))
+            assert_that(ext['Last Modified'], is_(self.modified_string))
+        finally:
+            component.getSiteManager().unregisterUtility(iso_policy, name='iso_policy')
 
 
 class TestToExternalObject(ExternalizationLayerTest):
@@ -526,6 +608,61 @@ class TestToExternalObject(ExternalizationLayerTest):
                     has_entry(StandardExternalFields.LAST_MODIFIED, is_(Number)))
         assert_that(ex_dic,
                     has_entry(StandardExternalFields.CREATED_TIME, is_(Number)))
+
+    def test_to_stand_dict_uses_dubcore_iso8601(self):
+        from ..interfaces import ExternalizationPolicy
+        from ..datetime import datetime_to_string
+        policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
+
+        @interface.implementer(dub_interfaces.IDCTimes)
+        class X(object):
+            created = datetime.datetime.now()
+            modified = created
+
+        assert_that(X(), verifiably_provides(dub_interfaces.IDCTimes))
+        expected_string = datetime_to_string(X.created).toExternalObject()
+
+        ex_dic = to_standard_external_dictionary(X(), policy=policy)
+        assert_that(ex_dic,
+                    has_entry(StandardExternalFields.LAST_MODIFIED, is_(expected_string)))
+        assert_that(ex_dic,
+                    has_entry(StandardExternalFields.CREATED_TIME, is_(expected_string)))
+
+    def test_to_stand_dict_prefers_direct_fields_iso8601(self):
+        from ..interfaces import ExternalizationPolicy
+        from ..datetime import datetime_to_string
+        policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
+
+        @interface.implementer(dub_interfaces.IDCTimes)
+        class X(object):
+            created = datetime.datetime.now()
+            modified = created
+            createdTime = lastModified = 8675309
+
+        assert_that(X(), verifiably_provides(dub_interfaces.IDCTimes))
+        dt = datetime.datetime.utcfromtimestamp(X.createdTime)
+        expected_string = datetime_to_string(dt).toExternalObject()
+        ex_dic = to_standard_external_dictionary(X(), policy=policy)
+        assert_that(ex_dic,
+                    has_entry(StandardExternalFields.LAST_MODIFIED, is_(expected_string)))
+        assert_that(ex_dic,
+                    has_entry(StandardExternalFields.CREATED_TIME, is_(expected_string)))
+
+    def test_to_stand_dict_prefers_direct_fields(self):
+        @interface.implementer(dub_interfaces.IDCTimes)
+        class X(object):
+            created = datetime.datetime.now()
+            modified = created
+            createdTime = 123456789
+            lastModified = 8675309
+
+        assert_that(X(), verifiably_provides(dub_interfaces.IDCTimes))
+
+        ex_dic = to_standard_external_dictionary(X())
+        assert_that(ex_dic,
+                    has_entry(StandardExternalFields.LAST_MODIFIED, is_(X.lastModified)))
+        assert_that(ex_dic,
+                    has_entry(StandardExternalFields.CREATED_TIME, is_(X.createdTime)))
 
 
     def test_stand_ext_props(self):

@@ -29,10 +29,12 @@ import BTrees.OOBTree
 import persistent
 
 from zope.component import queryAdapter
+from zope.component import getUtility
 from zope.interface.common.sequence import IFiniteSequence
 
 from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import PRIMITIVES
+from nti.externalization._base_interfaces import get_default_externalization_policy
 from nti.externalization._threadlocal import ThreadLocalManager
 from nti.externalization.extension_points import get_current_request
 
@@ -40,6 +42,7 @@ from nti.externalization.interfaces import IInternalObjectExternalizer
 from nti.externalization.interfaces import IExternalObjectDecorator
 from nti.externalization.interfaces import ILocatedExternalSequence
 from nti.externalization.interfaces import INonExternalizableReplacementFactory
+from nti.externalization.interfaces import IExternalizationPolicy
 
 from nti.externalization.externalization.replacers import DefaultNonExternalizableReplacer
 
@@ -50,13 +53,15 @@ from nti.externalization.externalization.decorate import decorate_external_objec
 logger = __import__('logging').getLogger(__name__)
 
 
+DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
+
 # It turns out that the name we use for externalization (and really the registry, too)
 # we must keep thread-local. We call into objects without any context,
 # and they call back into us, and otherwise we would lose
 # the name that was established at the top level.
 
 # Stores tuples (name, memos)
-_manager = ThreadLocalManager(default=lambda: (NotGiven, None))
+_manager = ThreadLocalManager(default=lambda: (NotGiven, None, DEFAULT_EXTERNALIZATION_POLICY))
 _manager_get = _manager.get
 _manager_pop = _manager.pop
 _manager_push = _manager.push
@@ -96,6 +101,7 @@ class _ExternalizationState(object):
         'decorate',
         'useCache',
         'decorate_callback',
+        'policy',
         '_kwargs',
     )
 
@@ -105,7 +111,8 @@ class _ExternalizationState(object):
                  default_non_externalizable_replacer,
                  decorate=True,
                  useCache=True,
-                 decorate_callback=None):
+                 decorate_callback=None,
+                 policy=DEFAULT_EXTERNALIZATION_POLICY):
         self.name = name
         # We take a similar approach to pickle.Pickler
         # for memoizing objects we've seen:
@@ -123,6 +130,8 @@ class _ExternalizationState(object):
         self.useCache = useCache
         self.decorate_callback = decorate_callback
 
+        self.policy = policy
+
         self._kwargs = None
 
     def as_kwargs(self):
@@ -130,7 +139,8 @@ class _ExternalizationState(object):
             self._kwargs = dict(
                 request=self.request, name=self.name,
                 decorate=self.decorate, useCache=self.useCache,
-                decorate_callback=self.decorate_callback
+                decorate_callback=self.decorate_callback,
+                policy=self.policy
             )
         return self._kwargs
 
@@ -257,7 +267,8 @@ def _to_external_object_state(obj, state, top_level=False):
         else:
             logger.warning("Recursive call to object %s.", obj)
             result = internal_to_standard_external_dictionary(obj,
-                                                              decorate=False)
+                                                              decorate=False,
+                                                              policy=state.policy)
 
             return _RecursiveCallState(result)
 
@@ -323,7 +334,9 @@ def to_external_object(
         # XXX: Why do we have this? It's only used when decorate is False,
         # which doesn't make much sense.
         decorate_callback=NotGiven,
-        default_non_externalizable_replacer=DefaultNonExternalizableReplacer
+        default_non_externalizable_replacer=DefaultNonExternalizableReplacer,
+        policy_name=NotGiven,
+        policy=NotGiven,
 ):
     """
     Translates the object into a form suitable for external
@@ -359,13 +372,20 @@ def to_external_object(
         separate out request or user specific code.
     :param decorate_callback: Callable to be invoked in case there is
         no decaration
+    :param policy: The :class:`~.ExternalizationPolicy` to use. Takes priority
+        over *policy_name*. If this is not given, the thread local state is consulted
+        for the current policy established by the root caller to this method;
+        if there is no such caller, then the :obj:`~.DEFAULT_EXTERNALIZATION_POLICY`
+        is used.
+    :param str policy_name: A shortcut for the first caller to specify
+        a named component.
     """
     # Catch the primitives up here, quickly. This catches
     # numbers, strings, and None.
     if isinstance(obj, PRIMITIVES):
         return obj
 
-    manager_top = _manager_get() # (name, memos)
+    manager_top = _manager_get() # (name, memos, policy)
     if name is NotGiven:
         name = manager_top[0]
     if name is NotGiven:
@@ -378,6 +398,12 @@ def to_external_object(
             FutureWarning
         )
 
+    if policy is NotGiven:
+        if policy_name is not NotGiven:
+            policy = getUtility(IExternalizationPolicy, policy_name)
+        else:
+            policy = manager_top[2]
+
     memos = manager_top[1]
     if memos is None:
         # Don't live beyond this dynamic function call
@@ -386,9 +412,9 @@ def to_external_object(
     state = _ExternalizationState(memos, name, catch_components, catch_component_action,
                                   request,
                                   default_non_externalizable_replacer,
-                                  decorate, useCache, decorate_callback)
+                                  decorate, useCache, decorate_callback, policy)
 
-    _manager_push((name, memos))
+    _manager_push((name, memos, policy))
 
     try:
         return _to_external_object_state(obj, state, top_level=True)

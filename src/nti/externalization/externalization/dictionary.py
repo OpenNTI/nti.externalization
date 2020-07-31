@@ -25,6 +25,7 @@ from nti.externalization.interfaces import IExternalMappingDecorator
 
 
 from nti.externalization._base_interfaces import get_standard_external_fields
+from nti.externalization._base_interfaces import get_default_externalization_policy
 
 
 from nti.externalization.externalization.standard_fields import get_last_modified_time
@@ -36,7 +37,7 @@ from nti.externalization.externalization.standard_fields import get_class
 from nti.externalization.externalization.decorate import decorate_external_object
 
 StandardExternalFields = get_standard_external_fields()
-
+DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 
 def internal_to_standard_external_dictionary(
         self,
@@ -44,6 +45,7 @@ def internal_to_standard_external_dictionary(
         decorate=True,
         request=NotGiven,
         decorate_callback=NotGiven,
+        policy=DEFAULT_EXTERNALIZATION_POLICY,
 ):
     # The real implementation of this function. Code in this
     # package should use this; code outside of this package *MUST NOT*
@@ -55,8 +57,8 @@ def internal_to_standard_external_dictionary(
 
     get_creator(self, None, result)
 
-    get_last_modified_time(self, None, result)
-    get_created_time(self, None, result)
+    get_last_modified_time(self, None, policy, result)
+    get_created_time(self, None, policy, result)
 
     get_container_id(self, None, result)
 
@@ -77,6 +79,7 @@ def to_standard_external_dictionary(
         decorate=True,
         request=NotGiven,
         decorate_callback=NotGiven,
+        policy=DEFAULT_EXTERNALIZATION_POLICY,
         # These are ignored, present for BWC
         name=NotGiven,
         useCache=NotGiven,
@@ -107,11 +110,15 @@ def to_standard_external_dictionary(
         None, then those values will be added to the dictionary
         created by this method. The keys and values in *mergeFrom*
         should already be external.
+    :keyword ExternalizationPolicy policy: The :class:`~.ExternalizationPolicy` to
+        use. Must not be None.
     :returns: A `.LocatedExternalDict`.
 
    .. versionchanged:: 1.0a1
       Arbitrary keyword arguments not used by this function are deprecated
       and produce a warning.
+    .. versionchanged:: 2.1
+       Add the *policy* keyword.
     """
 
     if kwargs or name is not NotGiven or useCache is not NotGiven or registry is not NotGiven: # pragma: no cover
@@ -126,6 +133,7 @@ def to_standard_external_dictionary(
         decorate,
         request,
         decorate_callback,
+        policy,
     )
 
 

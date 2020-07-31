@@ -118,7 +118,9 @@ if not PYPY:
                 'nti.externalization.' + mod_name,
                 sources=[source],
                 depends=deps,
-                define_macros=[('CYTHON_TRACE', '1')],
+                define_macros=[
+                #    ('CYTHON_TRACE', '1')
+                ],
             ))
 
     try:

@@ -47,12 +47,14 @@ from .factory import AnonymousObjectFactory
 
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
+from ._base_interfaces import get_default_externalization_policy
 from ._base_interfaces import NotGiven
 
 from ._interface_cache import cache_for
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
+DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 IDict_providedBy = IDict.providedBy
 IObject_providedBy = IObject.providedBy
 
@@ -91,7 +93,9 @@ class ExternalizableDictionaryMixin(object):
             mergeFrom=mergeFrom,
             decorate=kwargs.get('decorate', True),
             request=kwargs.get('request', NotGiven),
-            decorate_callback=kwargs.get('decorate_callback', NotGiven))
+            decorate_callback=kwargs.get('decorate_callback', NotGiven),
+            policy=kwargs.get("policy", DEFAULT_EXTERNALIZATION_POLICY),
+        )
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
         """
@@ -444,7 +448,7 @@ class ExternalizableInstanceDict(object):
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
         "See `ExternalizableDictionaryMixin.toExternalDictionary`"
-        return self.__make_io().toExternalDictionary(mergeFrom)
+        return self.__make_io().toExternalDictionary(mergeFrom, **kwargs)
 
     __repr__ = make_repr()
 
