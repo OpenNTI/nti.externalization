@@ -373,12 +373,13 @@ def to_external_object(
     :param decorate_callback: Callable to be invoked in case there is
         no decaration
     :param policy: The :class:`~.ExternalizationPolicy` to use. Takes priority
-        over *policy_name*. If this is not given, the thread local state is consulted
-        for the current policy established by the root caller to this method;
+        over *policy_name*. If this is not given (and neither is *policy_name*),
+        the thread local state is consulted
+        for the current policy established by the most recent caller to this method;
         if there is no such caller, then the :obj:`~.DEFAULT_EXTERNALIZATION_POLICY`
         is used.
-    :param str policy_name: A shortcut for the first caller to specify
-        a named component.
+    :param str policy_name: If no *policy* is given, then this is used to
+        lookup a utility. If this is used, the utility must exist.
     """
     # Catch the primitives up here, quickly. This catches
     # numbers, strings, and None.
