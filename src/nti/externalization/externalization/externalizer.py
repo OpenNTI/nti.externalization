@@ -257,11 +257,12 @@ def _to_external_object_state(obj, state, top_level=False):
     assert obj is not None # caught by primitives already.
 
     orig_obj_id = id(obj) # XXX: Relatively expensive on PyPy
+    cache_key = (orig_obj_id, state.policy)
     if state.useCache:
-        value = state.memo.get(orig_obj_id, None)
+        value = state.memo.get(cache_key, None)
         result = value[1] if value is not None else None
         if result is None:  # mark as in progress
-            state.memo[orig_obj_id] = (obj, _marker)
+            state.memo[cache_key] = (obj, _marker)
         elif result is not _marker:
             return result
         else:
@@ -306,7 +307,7 @@ def _to_external_object_state(obj, state, top_level=False):
         )
 
         if state.useCache:  # save result
-            state.memo[orig_obj_id] = (obj, result)
+            state.memo[cache_key] = (obj, result)
         return result
     except state.catch_components as t:
         if top_level or state.catch_component_action is None:
@@ -398,6 +399,7 @@ def to_external_object(
             "The registry argument is deprecated and ignored. Call in a correct site.",
             FutureWarning
         )
+
 
     if policy is NotGiven:
         if policy_name is not NotGiven:

@@ -423,12 +423,14 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
 
         def toExternalObject(self, *args, **kwargs):
             result = TestExternalizableInstanceDict.X.toExternalObject(self, *args, **kwargs)
-            # We deliberately don't pass the kwargs to the
-            # parent, in order to test the thread-local storage.
-            # (Or the policy_name)
             if self.policy_name:
                 result['child'] = toExternalObject(self._x, policy_name=self.policy_name)
-            result['child'] = toExternalObject(self._x)
+            else:
+                # We deliberately don't pass the kwargs to the
+                # function, in order to test the thread-local storage.
+                # (Or the policy_name)
+                result['child'] = toExternalObject(self._x)
+            result['default_child'] = toExternalObject(self._x)
             return result
 
     def test_simple_roundtrip(self):
@@ -500,9 +502,15 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
             assert_that(ext['Last Modified'], is_(x.lastModified))
 
             # child used ISO policy
-            ext = ext['child']
-            assert_that(ext['CreatedTime'], is_(self.created_string))
-            assert_that(ext['Last Modified'], is_(self.modified_string))
+            child = ext['child']
+            assert_that(child['CreatedTime'], is_(self.created_string))
+            assert_that(child['Last Modified'], is_(self.modified_string))
+
+            # next externalization used the default again
+            child = ext['default_child']
+            assert_that(child['CreatedTime'], is_(x.createdTime))
+            assert_that(child['Last Modified'], is_(x.lastModified))
+
         finally:
             component.getSiteManager().unregisterUtility(iso_policy, name='iso_policy')
 
