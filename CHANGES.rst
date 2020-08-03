@@ -3,7 +3,7 @@
 =========
 
 
-2.1.0 (unreleased)
+2.1.0 (2020-08-03)
 ==================
 
 - Add support for "externalization policies." These are instances of
