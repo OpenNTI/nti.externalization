@@ -118,7 +118,9 @@ if not PYPY:
                 'nti.externalization.' + mod_name,
                 sources=[source],
                 depends=deps,
-                define_macros=[('CYTHON_TRACE', '1')],
+                define_macros=[
+                #    ('CYTHON_TRACE', '1')
+                ],
             ))
 
     try:
@@ -145,7 +147,7 @@ if not PYPY:
 
 setup(
     name='nti.externalization',
-    version='2.0.1.dev0',
+    version='2.1.0.dev0',
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI Externalization",

@@ -14,6 +14,7 @@ from zope.component.interfaces import IFactory
 from zope.interface.common import collections as icollections
 from zope.interface.common import sequence as legacy_isequence
 from zope.interface.common import mapping as legacy_imapping
+import zope.interface.common.builtins as ibuiltins
 from zope.interface.interfaces import IObjectEvent
 from zope.interface.interfaces import ObjectEvent
 from zope.lifecycleevent import IObjectModifiedEvent
@@ -27,11 +28,20 @@ from ._base_interfaces import LocatedExternalDict
 from ._base_interfaces import get_standard_external_fields
 from ._base_interfaces import get_standard_internal_fields
 from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
+from ._base_interfaces import ExternalizationPolicy
+from ._base_interfaces import get_default_externalization_policy
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
+DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 
-MINIMAL_SYNTHETIC_EXTERNAL_KEYS = MINIMAL_SYNTHETIC_EXTERNAL_KEYS
+
+class IExternalizationPolicy(interface.Interface):
+    """
+    This isn't public, it's a marker for internal use.
+    """
+interface.classImplements(ExternalizationPolicy, IExternalizationPolicy)
+
 
 class IInternalObjectExternalizer(interface.Interface):
     """
@@ -52,7 +62,7 @@ class IInternalObjectExternalizer(interface.Interface):
         """
         Optional, see this :func:`~nti.externalization.externalization.to_external_object`.
         """
-IExternalObject = IInternalObjectExternalizer  # b/c aliase
+IExternalObject = IInternalObjectExternalizer  # b/c alias
 
 
 class INonExternalizableReplacement(interface.Interface):
@@ -418,8 +428,8 @@ class ObjectWillUpdateFromExternalEvent(ObjectEvent):
     external_value = None
     root = None
 
-    def __init__(self, object, external_value=None, root=None):
-        ObjectEvent.__init__(self, object)
+    def __init__(self, it, external_value=None, root=None):
+        ObjectEvent.__init__(self, it)
         self.external_value = external_value
         self.root = root
 
@@ -446,26 +456,58 @@ class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
         self.kwargs = kwargs
 
 
-class IIterable(interface.Interface):
-    """
-    Base interface for iterable types.
-    """
+#: Base interface for iterable types.
+#: .. versiondeprecated:: 2.1.0
+#:    Use `zope.interface.common.collections.IIterable` directly.
+#:    This is just an alias.`
+IIterable = icollections.IIterable
 
-    def __iter__():
-        """Return an iterator object.
-        """
-
-
-class IList(IIterable):
-    """
-    Marker interface for lists
-    """
-interface.classImplements(list, IList)
+#: Marker interface for lists.
+#: .. versiondeprecated:: 2.1.0
+#:    Use `zope.interface.common.builtins.IList` directly.
+#:    This is just an alias.`
+IList = ibuiltins.IList
 
 
 class _ILegacySearchModuleFactory(interface.Interface):
 
-    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ
+    def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ,signature-differs
         """
         Create and return the object.
         """
+
+__all__ = [
+    'ExternalizationPolicy',
+    'DEFAULT_EXTERNALIZATION_POLICY',
+    'LocatedExternalDict',
+    'MINIMAL_SYNTHETIC_EXTERNAL_KEYS',
+    'StandardExternalFields',
+    'StandardInternalFields',
+    'IInternalObjectExternalizer',
+    'INonExternalizableReplacement',
+    'INonExternalizableReplacementFactory',
+    'IExternalObjectDecorator',
+    'IExternalMappingDecorator',
+    'IExternalizedObject',
+    'ILocatedExternalMapping',
+    'ILocatedExternalSequence',
+    'LocatedExternalList',
+    'IExternalObjectRepresenter',
+    'IExternalRepresentationReader',
+    'IExternalObjectIO',
+    'EXT_REPR_JSON',
+    'EXT_REPR_YAML',
+    'IMimeObjectFactory',
+    'IClassObjectFactory',
+    'IAnonymousObjectFactory',
+    'IExternalizedObjectFactoryFinder',
+    'IExternalReferenceResolver',
+    'INamedExternalizedObjectFactoryFinder',
+    'IInternalObjectUpdater',
+    'IInternalObjectIO',
+    'IInternalObjectIOFinder',
+    'IObjectWillUpdateFromExternalEvent',
+    'ObjectWillUpdateFromExternalEvent',
+    'IObjectModifiedFromExternalEvent',
+    'ObjectModifiedFromExternalEvent',
+]

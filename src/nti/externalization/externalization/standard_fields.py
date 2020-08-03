@@ -10,6 +10,7 @@ from __future__ import print_function
 
 # pylint:disable=inconsistent-return-statements
 
+from datetime import datetime as DateTime
 from calendar import timegm as dt_tuple_to_unix
 
 from six import text_type
@@ -20,11 +21,13 @@ from zope.security.interfaces import IPrincipal
 
 from nti.externalization._base_interfaces import get_standard_external_fields
 from nti.externalization._base_interfaces import get_standard_internal_fields
+from nti.externalization._base_interfaces import get_default_externalization_policy
 
 from .fields import choose_field
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
+DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 
 _SYSTEM_USER_NAME = getattr(system_user, 'title').lower()
 SYSTEM_USER_NAME = _SYSTEM_USER_NAME # Export from cython to python
@@ -39,6 +42,18 @@ def datetime_to_unix_time(dt):
     if dt is not None:
         return dt_tuple_to_unix(dt.utctimetuple())
 
+_datetime_to_string = None
+
+def datetime_to_string(dt):
+    global _datetime_to_string # pylint:disable=global-statement
+    if _datetime_to_string is None:
+        from nti.externalization.datetime import datetime_to_string as dts
+        _datetime_to_string = dts
+    if dt is not None:
+        return _datetime_to_string(dt).toExternalObject()
+
+def timestamp_to_string(ts):
+    return datetime_to_string(DateTime.utcfromtimestamp(ts))
 
 _LAST_MOD_FIELDS = (
     StandardInternalFields.LAST_MODIFIED,
@@ -49,7 +64,8 @@ _LAST_MOD_SUP_FIELDS = (
     'modified',
 )
 
-def get_last_modified_time(context, default=None, _write_into=None):
+def get_last_modified_time(context, default=None, policy=DEFAULT_EXTERNALIZATION_POLICY,
+                           _write_into=None):
     """
     Find and return a number representing the time since the epoch
     in fractional seconds at which the ``context`` was last modified.
@@ -62,12 +78,14 @@ def get_last_modified_time(context, default=None, _write_into=None):
     # The _write_into argument is for the benefit of
     # to_standard_external_dictionary
     holder = _write_into if _write_into is not None else {}
-
     choose_field(holder, context, StandardExternalFields.LAST_MODIFIED,
-                 None,
+                 timestamp_to_string if policy.use_iso8601_for_unix_timestamp else None,
                  _LAST_MOD_FIELDS,
                  # sup_iface, sup_fields, sup_converter
-                 IDCTimes, _LAST_MOD_SUP_FIELDS, datetime_to_unix_time)
+                 IDCTimes, _LAST_MOD_SUP_FIELDS,
+                 (datetime_to_string
+                  if policy.use_iso8601_for_unix_timestamp
+                  else datetime_to_unix_time))
     return holder.get(StandardExternalFields.LAST_MODIFIED, default)
 
 
@@ -79,7 +97,9 @@ _CREATED_TIME_SUP_FIELDS = (
     'created',
 )
 
-def get_created_time(context, default=None, _write_into=None):
+def get_created_time(context, default=None,
+                     policy=DEFAULT_EXTERNALIZATION_POLICY,
+                     _write_into=None):
     """
     Find and return a number representing the time since the epoch
     in fractional seconds at which the ``context`` was created.
@@ -94,10 +114,13 @@ def get_created_time(context, default=None, _write_into=None):
     holder = _write_into if _write_into is not None else {}
 
     choose_field(holder, context, StandardExternalFields.CREATED_TIME,
-                 None,
+                 timestamp_to_string if policy.use_iso8601_for_unix_timestamp else None,
                  _CREATED_TIME_FIELDS,
                  # sup_iface, sup_fields, sup_converter
-                 IDCTimes, _CREATED_TIME_SUP_FIELDS, datetime_to_unix_time)
+                 IDCTimes, _CREATED_TIME_SUP_FIELDS,
+                 (datetime_to_string
+                  if policy.use_iso8601_for_unix_timestamp
+                  else datetime_to_unix_time))
 
     return holder.get(StandardExternalFields.CREATED_TIME, default)
 

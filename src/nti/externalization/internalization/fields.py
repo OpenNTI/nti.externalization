@@ -206,7 +206,7 @@ def _handle_WrongType(field_name, field, value):
     # If the type unambiguously implements an interface (one interface)
     # that's our target. IDate does this
     if len(implemented_by_type) != 1:
-        reraise(*exc_info)
+        reraise(*exc_info) # pragma: no cover
 
     schema = implemented_by_type[0]
 

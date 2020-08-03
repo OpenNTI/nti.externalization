@@ -52,6 +52,36 @@ class CommonTestMixins(object):
         assert_that(io._ext_replacement_getattr('no_such_attribute', None),
                     is_(none()))
 
+    def test_standard_dates_policy(self):
+        from ..interfaces import ExternalizationPolicy
+        from ..datetime import datetime_to_string
+        from datetime import datetime as DateTime
+
+        iso_policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
+
+        class X(object):
+            createdTime = 123456789
+            lastModified = 8675309
+
+        x = X()
+        io = self._makeOne()
+        io._ext_replacement = lambda: x
+        def to_str(ts):
+            return datetime_to_string(DateTime.utcfromtimestamp(ts)).toExternalObject()
+        created_string = to_str(X.createdTime)
+        modified_string = to_str(X.lastModified)
+
+        # Default policy
+        ext = io.toExternalDictionary()
+        assert_that(ext['CreatedTime'], is_(X.createdTime))
+        assert_that(ext['Last Modified'], is_(X.lastModified))
+
+        # ISO policy
+        ext = io.toExternalDictionary(policy=iso_policy)
+        assert_that(ext['CreatedTime'], is_(created_string))
+        assert_that(ext['Last Modified'], is_(modified_string))
+
+
 class TestAbstractDynamicObjectIO(CommonTestMixins,
                                   ExternalizationLayerTest):
 
@@ -490,7 +520,6 @@ class TestInterfaceObjectIO(CleanUp,
 
     def test_no_factory_for_dict_with_no_types(self):
         from zope.schema import Dict
-        from zope import component
 
         class I(interface.Interface):
             field = Dict(title=u'A blank field')
@@ -506,7 +535,6 @@ class TestInterfaceObjectIO(CleanUp,
     def test_no_factory_for_dict_with_non_object_value(self):
         from zope.schema import Dict
         from zope.schema import TextLine
-        from zope import component
 
         class I(interface.Interface):
             field = Dict(
@@ -525,7 +553,6 @@ class TestInterfaceObjectIO(CleanUp,
     def test_factory_for_dict_with_object_value(self):
         from zope.schema import Dict
         from zope.schema import Object
-        from zope import component
 
         class I2(interface.Interface):
             pass

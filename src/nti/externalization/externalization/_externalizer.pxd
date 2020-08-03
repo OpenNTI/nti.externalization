@@ -3,6 +3,8 @@ import cython
 
 from nti.externalization.externalization._dictionary cimport internal_to_standard_external_dictionary
 from nti.externalization.__base_interfaces cimport LocatedExternalDict as LED
+from nti.externalization.__base_interfaces cimport ExternalizationPolicy
+from nti.externalization.__base_interfaces cimport get_default_externalization_policy
 from nti.externalization.externalization._decorate cimport decorate_external_object
 
 # Imports
@@ -13,6 +15,7 @@ cdef numbers
 
 cdef queryAdapter
 cdef getAdapter
+cdef getUtility
 cdef IFiniteSequence
 
 cdef ThreadLocalManager
@@ -27,7 +30,8 @@ cdef INonExternalizableReplacer
 cdef DefaultNonExternalizableReplacer
 cdef NotGiven
 cdef IInternalObjectExternalizer
-
+cdef IExternalizationPolicy
+cdef ExternalizationPolicy DEFAULT_EXTERNALIZATION_POLICY
 
 # Constants
 cdef logger
@@ -56,6 +60,8 @@ cdef class _ExternalizationState(object):
     cdef bint useCache
     cdef decorate_callback
 
+    cdef ExternalizationPolicy policy
+
     cdef dict _kwargs
 
     cdef dict as_kwargs(self)
@@ -79,7 +85,9 @@ cpdef to_external_object(
     bint decorate=*,
     bint useCache=*,
     decorate_callback=*,
-    default_non_externalizable_replacer=*
+    default_non_externalizable_replacer=*,
+    policy_name=*,
+    policy=*
 )
 
 cdef LED _externalize_mapping(obj, _ExternalizationState state)

@@ -2,8 +2,13 @@
  ``nti.externalization.interfaces``: Interfaces and constants
 ==============================================================
 
-.. autoclass:: nti.externalization._base_interfaces.LocatedExternalDict
+
+.. automodule:: nti.externalization.interfaces
+..
+  For some reason, even though these are in __all__, they don't get
+  documented unless we list them explicitly.
+
 .. autoclass:: nti.externalization._base_interfaces.StandardExternalFields
    :member-order: bysource
 .. autoclass:: nti.externalization._base_interfaces.StandardInternalFields
-.. automodule:: nti.externalization.interfaces
+.. autodata:: nti.externalization._base_interfaces.DEFAULT_EXTERNALIZATION_POLICY

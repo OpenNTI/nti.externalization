@@ -59,3 +59,11 @@ cdef class StandardInternalFields(object):
 cdef StandardInternalFields _standard_internal_fields
 
 cpdef StandardInternalFields get_standard_internal_fields()
+
+@cython.final
+cdef class ExternalizationPolicy(object):
+    cdef readonly bint use_iso8601_for_unix_timestamp
+
+cdef ExternalizationPolicy DEFAULT_EXTERNALIZATION_POLICY
+
+cpdef ExternalizationPolicy get_default_externalization_policy()
