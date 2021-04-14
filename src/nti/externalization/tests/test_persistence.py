@@ -113,7 +113,7 @@ class TestPersistentExternalizableDict(unittest.TestCase):
 
     def test_to_external_dict(self):
         class Obj(object):
-            def toExternalObject(self, **kw):
+            def toExternalObject(self, **_kw):
                 return "hi"
         d = PersistentExternalizableDictionary(key=Obj())
         assert_that(d.toExternalDictionary(), is_({'key': 'hi'}))
@@ -173,7 +173,7 @@ class TestWeakRef(unittest.TestCase):
     def test_to_externalObject(self):
 
         class P(Persistent):
-            def toExternalObject(self, **kwargs):
+            def toExternalObject(self, **_kwargs):
                 return {'a': 42}
 
         wref = PWeakRef(P())
@@ -183,7 +183,7 @@ class TestWeakRef(unittest.TestCase):
     def test_to_externalOID(self):
 
         class P(Persistent):
-            def toExternalOID(self, **kwargs):
+            def toExternalOID(self, **_kwargs):
                 return b'abc'
 
         wref = PWeakRef(P())
@@ -316,7 +316,7 @@ class TestNoPickle(unittest.TestCase):
 
     def test_reduce_ex_emits_warning(self):
         class P(object):
-            def __reduce_ex__(self):
+            def __reduce_ex__(self, _protocol):
                 "Does nothing"
 
         self._check_emits_warning(P)

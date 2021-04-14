@@ -7,10 +7,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import perf
+import pyperf as perf
 
 from nti.externalization.singleton import Singleton
-from nti.externalization.singleton import SingletonMetaclass
 
 # These are defined to have __slots__ = ()
 class SingletonSubclass(Singleton):

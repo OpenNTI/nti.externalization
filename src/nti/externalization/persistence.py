@@ -123,7 +123,7 @@ def _weakRef_toExternalOID(self):
 PWeakRef.toExternalOID = _weakRef_toExternalOID
 
 
-class PersistentExternalizableDictionary(PersistentMapping,
+class PersistentExternalizableDictionary(PersistentMapping, # pylint:disable=too-many-ancestors
                                          ExternalizableDictionaryMixin):
     """
     Dictionary mixin that provides :meth:`toExternalDictionary` to
@@ -138,13 +138,15 @@ class PersistentExternalizableDictionary(PersistentMapping,
     """
 
     def toExternalDictionary(self, *args, **kwargs):
-        result = super(PersistentExternalizableDictionary, self).toExternalDictionary(self, *args, **kwargs)
+        result = super(PersistentExternalizableDictionary, self).toExternalDictionary(self,
+                                                                                      *args,
+                                                                                      **kwargs)
         for key, value in iteritems(self):
             result[key] = toExternalObject(value, *args, **kwargs)
         return result
 
 
-class PersistentExternalizableList(PersistentList):
+class PersistentExternalizableList(PersistentList): # pylint:disable=too-many-ancestors
     """
     List mixin that provides :meth:`toExternalList` to return a new list
     with each element in the sequence having been externalized with
@@ -172,7 +174,7 @@ class PersistentExternalizableList(PersistentList):
         return self
 
 
-class PersistentExternalizableWeakList(PersistentExternalizableList):
+class PersistentExternalizableWeakList(PersistentExternalizableList): # pylint:disable=too-many-ancestors
     """
     Stores :class:`persistent.Persistent` objects as weak references,
     invisibly to the user. Any weak references added to the list will
@@ -216,8 +218,8 @@ class PersistentExternalizableWeakList(PersistentExternalizableList):
     def __wrap(self, obj):
         return obj if isinstance(obj, PWeakRef) else PWeakRef(obj)
 
-    def remove(self, value):
-        super(PersistentExternalizableWeakList, self).remove(self.__wrap(PWeakRef(value)))
+    def remove(self, item):
+        super(PersistentExternalizableWeakList, self).remove(self.__wrap(PWeakRef(item)))
 
     def __setitem__(self, i, item):
         super(PersistentExternalizableWeakList, self).__setitem__(i, self.__wrap(PWeakRef(item)))

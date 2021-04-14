@@ -11,8 +11,8 @@ from __future__ import print_function
 
 import sys
 
-import perf
-from perf import perf_counter
+import pyperf
+from pyperf import perf_counter
 
 from zope.configuration import xmlconfig
 
@@ -85,7 +85,7 @@ def profile(loops=1000, obj=None):
         stats.print_stats(20)
 
 def vmprofile(loops=1000, obj=None):
-    import vmprof
+    import vmprof # pylint:disable=import-error
 
     if obj is None:
         obj = DerivedWithOneTextField()
@@ -119,9 +119,10 @@ def main(runner=None):
     obj = DerivedWithOneTextField()
     obj.text = u"This is some text"
 
-    assert obj.mimeType == 'application/vnd.nextthought.benchmarks.derivedwithonetextfield'
+    # pylint:disable=line-too-long
+    assert getattr(obj, 'mimeType') == 'application/vnd.nextthought.benchmarks.derivedwithonetextfield'
 
-    runner = runner or perf.Runner()
+    runner = runner or pyperf.Runner()
     runner.bench_time_func(__name__ + ": toExternalObject",
                            to_external_object_time_func,
                            obj,

@@ -22,7 +22,7 @@ from ..externalizer import _obj_has_usable_externalObject
 
 class WithToExternalObject(object):
 
-    def toExternalObject(self, **kwargs):
+    def toExternalObject(self, **_kwargs):
         return {'a': 42}
 
 
@@ -77,7 +77,7 @@ class TestFunctions(unittest.TestCase):
 
         o = Obj()
         interface.directlyProvides(o, IInternalObjectExternalizer)
-        o.toExternalObject = lambda *args, **kwargs: ''
+        o.toExternalObject = lambda *args, **kwargs: '' # pylint:disable=attribute-defined-outside-init
 
         assert_that(IInternalObjectExternalizer(o, None),
                     is_(same_instance(o)))

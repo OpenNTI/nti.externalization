@@ -182,7 +182,9 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         for mod_name in cls._ap_enumerate_module_names():
             mod = dottedname.resolve(package_name + '.' + mod_name)
             for potential_factory in cls._ap_find_potential_factories_in_module(mod):
-                cls._ap_handle_one_potential_factory_class(registry, package_name, potential_factory)
+                cls._ap_handle_one_potential_factory_class(registry,
+                                                           package_name,
+                                                           potential_factory)
         return registry
 
     @classmethod
@@ -210,7 +212,8 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
             most_derived.setTaggedValue('__external_default_implementation__',
                                         implementation_class)
 
-        ext_class_name = cls._ap_compute_external_class_name_from_concrete_class(implementation_class)
+        ext_class_name = cls._ap_compute_external_class_name_from_concrete_class(
+            implementation_class)
         # XXX: Checking for duplicates
         setattr(namespace,
                 ext_class_name,

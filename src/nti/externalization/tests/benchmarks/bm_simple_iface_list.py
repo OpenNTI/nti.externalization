@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import sys
 
-import perf
+import pyperf as perf
 
 
 from zope.configuration import xmlconfig

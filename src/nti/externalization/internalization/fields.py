@@ -124,7 +124,7 @@ _FieldProperty__set__valid.orig_func = _FieldProperty_orig_set
 # Detect the case that we're in Cython compiled code, where
 # we've already replaced the __set__ function with our own.
 if FieldProperty.__set__.__name__ == _FieldProperty__set__valid.__name__: # pragma: no cover
-    _FieldProperty_orig_set = FieldProperty.__set__.orig_func
+    _FieldProperty_orig_set = FieldProperty.__set__.orig_func # pylint:disable=no-member
     _FieldProperty__set__valid.org_func = _FieldProperty_orig_set
 
 FieldProperty.__set__ = _FieldProperty__set__valid
@@ -176,7 +176,7 @@ def _all_SchemaNotProvided(sequence):
 # in the traceback.) So we don't bother with the usual try/finally: del
 ###
 
-def _handle_SchemaNotProvided(field_name, field, value):
+def _handle_SchemaNotProvided(field_name, field, value): # pylint:disable=unused-argument
     # The object doesn't implement the required interface.
     # Can we adapt the provided object to the desired interface?
     # First, capture the details so we can reraise if needed
@@ -192,7 +192,7 @@ def _handle_SchemaNotProvided(field_name, field, value):
         # right. Raise the original SchemaValidationError.
         reraise(*exc_info)
 
-def _handle_WrongType(field_name, field, value):
+def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argument
     # Like SchemaNotProvided, but for a primitive type,
     # most commonly a date
     # Can we adapt?
@@ -224,7 +224,7 @@ def _handle_WrongType(field_name, field, value):
         raise
 
 
-def _handle_WrongContainedType(field_name, field, value):
+def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unused-argument
     # We failed to set a sequence. This would be of simple (non externalized)
     # types.
     # Try to adapt each value to what the sequence wants, just as above,

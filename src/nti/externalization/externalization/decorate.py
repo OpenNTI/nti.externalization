@@ -21,7 +21,7 @@ from nti.externalization.interfaces import IExternalMappingDecorator
 def decorate_external_object(do_decorate, call_if_not_decorate,
                              decorate_interface, decorate_meth_name,
                              original_object, external_object,
-                             registry, # ignored
+                             registry, # legacy, ignored. pylint:disable=unused-argument
                              request):
     if do_decorate:
         for decorator in subscribers((original_object,), decorate_interface):
@@ -43,7 +43,10 @@ def decorate_external_object(do_decorate, call_if_not_decorate,
 
     return external_object
 
-def decorate_external_mapping(original_object, external_object, registry, request):
+def decorate_external_mapping(original_object,
+                              external_object,
+                              registry, # legacy, ignored. pylint:disable=unused-argument
+                              request):
     # A convenience API exposed to Python in __init__.py
     return decorate_external_object(
         True, None,

@@ -187,21 +187,23 @@ class IAutoPackageExternalizationDirective(interface.Interface):
 def autoPackageExternalization(_context, root_interfaces, modules,
                                factory_modules=None, iobase=None,
                                register_legacy_search_module=False):
+    # TODO: Simplify this method; refactor inta parts
+    # pylint:disable=too-many-locals
     ext_module_name = root_interfaces[0].__module__
     package_name = ext_module_name.rsplit('.', 1)[0]
 
     root_interfaces = frozenset(root_interfaces)
     @classmethod
-    def _ap_enumerate_externalizable_root_interfaces(cls, unused_ifaces):
+    def _ap_enumerate_externalizable_root_interfaces(_cls, unused_ifaces):
         return root_interfaces
 
     module_names = frozenset([m.__name__.split('.')[-1] for m in modules])
     @classmethod
-    def _ap_enumerate_module_names(cls):
+    def _ap_enumerate_module_names(_cls):
         return module_names
 
     @classmethod
-    def _ap_find_package_name(cls):
+    def _ap_find_package_name(_cls):
         return package_name
 
     # Items in a class dict and its name need to be native strings

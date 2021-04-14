@@ -99,7 +99,7 @@ class IUserContactProfile(Interface):
                           min_length=0,
                           required=False)
 
-class IUserProfile(IProfileAvatarURL,
+class IUserProfile(IProfileAvatarURL, # pylint:disable=too-many-ancestors
                    IUserContactProfile,
                    IFriendlyNamed,
                    IRootInterface):

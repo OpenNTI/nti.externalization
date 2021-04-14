@@ -57,10 +57,10 @@ class TestToExternalOID(CleanUp,
         @implementer(IIntIds)
         class IntIds(object):
 
-            def queryId(self, obj):
+            def queryId(self, _obj):
                 return None
 
-            def register(self, obj):
+            def register(self, _obj):
                 return 1
 
         class Persistent(object):

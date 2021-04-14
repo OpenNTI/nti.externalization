@@ -394,7 +394,7 @@ class IInternalObjectIO(IInternalObjectExternalizer, IInternalObjectUpdater):
     in external forms. This is convenient for keeping code organized.
     """
 
-class IInternalObjectIOFinder(INamedExternalizedObjectFactoryFinder,
+class IInternalObjectIOFinder(INamedExternalizedObjectFactoryFinder, # pylint:disable=too-many-ancestors
                               IInternalObjectIO):
     """
     Like `IInternalObjectIO`, but this object also gets the chance to find factories

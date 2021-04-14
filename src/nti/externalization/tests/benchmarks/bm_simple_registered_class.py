@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import warnings
 
-import perf
+import pyperf as perf
 from zope.configuration import xmlconfig
 
 from nti.externalization.externalization import toExternalObject
@@ -19,7 +19,7 @@ from nti.externalization.internalization import update_from_external_object
 import nti.externalization.tests.benchmarks
 from nti.externalization.tests.benchmarks.objects import SimplestPossibleObject
 
-# pylint:disable=arguments-differ
+# pylint:disable=arguments-differ,unused-argument
 
 class NoArgs(SimplestPossibleObject):
 

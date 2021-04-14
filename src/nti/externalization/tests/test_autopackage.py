@@ -29,6 +29,7 @@ from hamcrest import contains_string
 # pylint: disable=W0212,R0904
 # pylint: disable=no-member
 # pylint: disable=inherit-non-class
+# pylint: disable=abstract-method
 
 class TestAutoPackageIO(unittest.TestCase):
 

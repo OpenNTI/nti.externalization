@@ -20,7 +20,7 @@ cdef interface
 cdef IInternalObjectUpdater
 cdef IInternalObjectIO
 cdef INamedExternalizedObjectFactoryFinder
-cdef notify
+cdef notify_event
 cdef ObjectWillUpdateFromExternalEvent
 
 # optimizations

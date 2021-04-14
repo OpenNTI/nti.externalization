@@ -38,7 +38,7 @@ import string
 try:
     maketrans = str.maketrans
 except AttributeError: # Python 2
-    from string import maketrans
+    from string import maketrans # pylint:disable=no-name-in-module
 
 translate = str.translate
 

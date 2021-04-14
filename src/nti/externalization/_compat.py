@@ -84,7 +84,7 @@ def import_c_accel(globs, cname):
     if 'import_c_accel' in globs:
         del globs['import_c_accel']
 
-def release_remove_cflags(data): # pragma: no cover
+def release_remove_cflags(data): # pragma: no cover pylint:disable=unused-argument
     """
     Strip CFLAGS and other compile settings that
     may not be portable.

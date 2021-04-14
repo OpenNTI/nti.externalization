@@ -60,7 +60,7 @@ class TestWithRepr(unittest.TestCase):
         assert_that(r, is_("<HI>"))
 
     def test_raises_POSError(self):
-        def raise_(self):
+        def raise_(unused_instance):
             from ZODB.POSException import ConnectionStateError
             raise ConnectionStateError()
 
@@ -307,7 +307,7 @@ class TestJson(AbstractRepresenterTestMixin,
             def __init__(self, obj):
                 self.obj = obj
 
-            def toExternalObject(self, **kw):
+            def toExternalObject(self, **_kw):
                 return self.obj
 
         component.getGlobalSiteManager().registerAdapter(
