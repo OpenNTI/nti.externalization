@@ -81,11 +81,10 @@ SEQUENCE_TYPES = (
 
 #: The types that we will treat as mappings for externalization purposes. These
 #: all map onto a dict.
-MAPPING_TYPES = (
-    persistent.mapping.PersistentMapping,
-    BTrees.OOBTree.OOBTree,
-    Mapping
-)
+#: .. versionchanged:: 2.2.0
+#:     Now only the ABC Mapping is included. Previously BTrees and PersistentMapping
+#:     were special cased. But with BTrees 4.8.0, this is no longer needed.
+MAPPING_TYPES = (Mapping,)
 
 
 

@@ -8,6 +8,8 @@
 
 - Add support for Python 3.9.
 
+- Depend on BTrees 4.8 and above. This simplifies externalization
+  checks. See `issue 111 <https://github.com/NextThought/nti.externalization/issues/111>`_.
 
 2.1.0 (2020-08-03)
 ==================
