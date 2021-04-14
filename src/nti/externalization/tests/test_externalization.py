@@ -821,6 +821,29 @@ class TestToExternalObject(ExternalizationLayerTest):
         s = to_json_representation_externalized(result)
         assert_that(s, is_('{"Class": "O", "Creator": "creator"}'))
 
+    def test_externalize_OOBTree(self):
+        from BTrees import family64
+        bt = family64.OO.BTree()
+        bt['key'] = 'value'
+        result = toExternalObject(bt)
+        assert_that(result, is_(dict))
+        assert_that(result, is_({'Class': 'OOBTree', 'key': 'value'}))
+
+    def test_externalize_PersistentMapping(self):
+        from persistent.mapping import PersistentMapping
+        pm = PersistentMapping()
+        pm['key'] = 'value'
+        result = toExternalObject(pm)
+        assert_that(result, is_(dict))
+        assert_that(result, is_({'Class': 'PersistentMapping', 'key': 'value'}))
+
+    def test_externalize_IIBTree(self):
+        from BTrees import family64
+        bt = family64.II.BTree()
+        bt[1] = 2
+        result = toExternalObject(bt)
+        assert_that(result, is_(dict))
+        assert_that(result, is_({'Class': 'LLBTree', 1: 2}))
 
 @NoPickle
 class DoNotPickleMe(object):
