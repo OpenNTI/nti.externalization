@@ -72,7 +72,7 @@ def date_from_string(string):
     programattic input, you probably want to use a custom field that
     uses :func:`zope.datetime.parse` in its ``fromUnicode`` method.
 
-    >>> IDate('1982-01-31')
+    >>> date_from_string('1982-01-31')
     datetime.date(1982, 1, 31)
     """
     # This:
@@ -208,6 +208,8 @@ class date_to_string(object):
 
     >>> import datetime
     >>> from nti.externalization.externalization import to_external_object
+    >>> from zope import component
+    >>> component.provideAdapter(date_to_string)
     >>> to_external_object(datetime.date(1982, 1, 31))
     '1982-01-31'
     """

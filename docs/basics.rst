@@ -64,7 +64,7 @@ Getting Started
 ===============
 
 In its simplest form, there are two functions you'll use to
-externalize and internalize objects::
+externalize and internalize objects:
 
   >>> from nti.externalization import to_external_object
   >>> from nti.externalization import update_from_external_object

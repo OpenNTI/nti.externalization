@@ -62,6 +62,7 @@ class SingletonMetaclass(type):
     The original constructor is also cached to allow subclasses to access it
     and have their own instance.
 
+    >>> from nti.externalization.singleton import Singleton
     >>> class TopSingleton(Singleton):
     ...    def __init__(self):
     ...        print("I am never called")

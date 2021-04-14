@@ -119,7 +119,7 @@ if not PYPY:
                 sources=[source],
                 depends=deps,
                 define_macros=[
-                #    ('CYTHON_TRACE', '1')
+                    #    ('CYTHON_TRACE', '1')
                 ],
             ))
 
@@ -147,7 +147,7 @@ if not PYPY:
 
 setup(
     name='nti.externalization',
-    version='2.1.1.dev0',
+    version='2.2.0.dev0',
     author='Jason Madden',
     author_email='jason@nextthought.com',
     description="NTI Externalization",
@@ -165,6 +165,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
@@ -177,12 +178,12 @@ setup(
     ext_modules=ext_modules,
     tests_require=TESTS_REQUIRE,
     install_requires=[
-        'BTrees >= 4.7.1',
+        'BTrees >= 4.8.0', # Registers BTrees as Mapping automatically.
         'PyYAML >= 5.1',
         'ZODB >= 5.5.1',
         'isodate',
         'nti.schema >= 1.14.0',
-        'persistent >= 4.6.4',
+        'persistent >= 4.7.0',
         'pytz',
         'setuptools',
         'simplejson',
@@ -207,7 +208,7 @@ setup(
     extras_require={
         'test': TESTS_REQUIRE,
         'docs': [
-            'Sphinx',
+            'Sphinx < 4', # Sphinx 4 breaks repoze.sphinx.autointerface 0.8
             'repoze.sphinx.autointerface',
             'sphinx_rtd_theme',
         ],
