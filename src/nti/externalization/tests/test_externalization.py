@@ -305,7 +305,7 @@ class TestDecorators(CleanUp,
             def __init__(self, result):
                 pass
 
-            def decorateExternalMapping(self, orig_object, result):
+            def decorateExternalMapping(self, _orig_object, result):
                 result['decorated'] = True
 
         @component.adapter(object, IRequest)
@@ -314,7 +314,7 @@ class TestDecorators(CleanUp,
             def __init__(self, result, request):
                 pass
 
-            def decorateExternalMapping(self, orig_object, result):
+            def decorateExternalMapping(self, _orig_object, result):
                 result['req_decorated'] = True
 
 
@@ -712,7 +712,7 @@ class TestToExternalObject(ExternalizationLayerTest):
 
     def test_mapping_of_non_primitives(self):
         class Foo(object):
-            def toExternalObject(self, **kwargs):
+            def toExternalObject(self, **_kwargs):
                 return 42
         assert_that(toExternalObject({'key': Foo()}),
                     is_({'key': 42}))
@@ -784,7 +784,7 @@ class TestToExternalObject(ExternalizationLayerTest):
         class O(object):
             ext_obj = None
 
-            def toExternalObject(self, **kwargs):
+            def toExternalObject(self, **_kwargs):
                 return {"Hi": 42,
                         "kid": toExternalObject(self.ext_obj)}
 
@@ -810,7 +810,7 @@ class TestToExternalObject(ExternalizationLayerTest):
             def __str__(self):
                 return "creator"
 
-            def toExternalObject(self, *args, **kwargs):
+            def toExternalObject(self, *_args, **_kwargs):
                 return to_standard_external_dictionary(self)
 
         result = toExternalObject(O())

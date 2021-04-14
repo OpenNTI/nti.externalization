@@ -16,6 +16,10 @@ import threading
 class ThreadLocalManager(threading.local):
 
     def __init__(self, default):
+        # This is called once in each thread, the first time the object
+        # is used in the thread. The super class does nothing. We use lots
+        # of threads/greenlets, so save the time.
+        # pylint:disable=super-init-not-called
         self.stack = []
         self.default = default
 

@@ -85,6 +85,8 @@ class StandardExternalFields(object):
     Two special values are collections of metadata, not strings: `ALL`
     and `EXTERNAL_KEYS`.
     """
+    # We're a namespace object, meant to have instance attributes.
+    # pylint:disable=too-many-instance-attributes
     __slots__ = (
         'CLASS',
         'CONTAINER_ID',

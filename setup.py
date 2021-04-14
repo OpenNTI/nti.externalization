@@ -215,6 +215,12 @@ setup(
         'benchmarks': [
             'pyperf',
         ],
+        'lint': [
+            # 3 seems to break things, at least as far as
+            # emacs flycheck is concerned.
+            'pylint < 3',
+            'pyperf', # to avoid missing module errors
+        ]
     },
     entry_points=entry_points,
 )

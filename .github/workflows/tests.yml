@@ -44,6 +44,15 @@ jobs:
       uses: AndreMiras/coveralls-python-action@develop
       with:
         parallel: true
+    - name: Lint (Python 3.9)
+      if: matrix.python-version == 3.9 && startsWith(runner.os, 'Linux')
+      # We only need to do this on one version, and it should be Python 3, because
+      # pylint has stopped updating for Python 2.
+      # We do this here rather than a separate job to avoid the compilation overhead.
+      # TODO: Revisit this when we have caching of that part.
+      run: |
+        pip install -U -e .[lint]
+        python -m pylint --limit-inference-results=1 --rcfile=.pylintrc nti.externalization
 
   coveralls_finish:
     needs: test

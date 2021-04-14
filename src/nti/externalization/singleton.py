@@ -82,7 +82,7 @@ class SingletonMetaclass(type):
     False
     """
 
-    def __new__(mcs, name, bases, cls_dict):
+    def __new__(mcs, name, bases, cls_dict): # pylint:disable=bad-mcs-classmethod-argument
         cls_dict['__slots__'] = ()  # no ivars
         cls_dict['__init__'] = lambda *args: None
 

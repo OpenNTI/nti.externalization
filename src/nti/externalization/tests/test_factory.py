@@ -11,12 +11,8 @@ from __future__ import print_function
 import doctest
 import unittest
 
-from nti.testing import base
-from nti.testing import matchers
 
 from hamcrest import assert_that
-from hamcrest import has_entry
-from hamcrest import has_key
 from hamcrest import is_
 from hamcrest import is_not
 from hamcrest import has_property

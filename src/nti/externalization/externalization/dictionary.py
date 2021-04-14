@@ -121,7 +121,12 @@ def to_standard_external_dictionary(
        Add the *policy* keyword.
     """
 
-    if kwargs or name is not NotGiven or useCache is not NotGiven or registry is not NotGiven: # pragma: no cover
+    if (
+            kwargs
+            or name is not NotGiven
+            or useCache is not NotGiven
+            or registry is not NotGiven
+    ): # pragma: no cover
         for _ in range(3):
             warnings.warn(
                 "Passing unused arguments to to_standard_external_dictionary will be an error",

@@ -25,7 +25,6 @@ else: # pragma: no cover
 from collections import defaultdict
 from weakref import WeakKeyDictionary
 
-import BTrees.OOBTree
 import persistent
 
 from zope.component import queryAdapter

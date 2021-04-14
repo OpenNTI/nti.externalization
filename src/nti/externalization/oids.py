@@ -60,7 +60,8 @@ def to_external_oid(self, default=None, add_to_connection=False,
 
     :return: A :class:`bytes` string.
     """
-
+    # TODO: Simplify
+    # pylint:disable=too-many-branches
     try:
         return self.toExternalOID() or default
     except AttributeError:

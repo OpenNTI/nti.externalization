@@ -173,7 +173,7 @@ def find_factory_for(externalized_object, registry=NotGiven):
     factory_finder = IExternalizedObjectFactoryFinder(externalized_object, None)
 
     if factory_finder is not None:
-        return factory_finder.find_factory(externalized_object)
+        return factory_finder.find_factory(externalized_object) # pylint:disable=too-many-function-args
 
     # We do it this way instead of using
     # ``default_externalized_object_factory_finder`` as the default in

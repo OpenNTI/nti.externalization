@@ -14,7 +14,6 @@ from __future__ import print_function
 
 import unittest
 from hamcrest import assert_that
-from hamcrest import is_
 from hamcrest import has_key
 from hamcrest import has_entry
 

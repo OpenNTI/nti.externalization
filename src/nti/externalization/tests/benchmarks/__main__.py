@@ -11,7 +11,7 @@ import glob
 import os
 import os.path
 
-import perf
+import pyperf as perf
 from zope.dottedname import resolve as dottedname
 
 here = os.path.dirname(__file__)

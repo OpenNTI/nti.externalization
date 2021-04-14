@@ -31,7 +31,7 @@ is_not = does_not
 # pylint: disable=inherit-non-class,attribute-defined-outside-init,abstract-method
 # pylint:disable=no-value-for-parameter,too-many-function-args
 
-class CommonTestMixins(object):
+class CommonTestMixin(object):
 
     def _makeOne(self, context=None):
         raise NotImplementedError()
@@ -82,7 +82,7 @@ class CommonTestMixins(object):
         assert_that(ext['Last Modified'], is_(modified_string))
 
 
-class TestAbstractDynamicObjectIO(CommonTestMixins,
+class TestAbstractDynamicObjectIO(CommonTestMixin,
                                   ExternalizationLayerTest):
 
     def _makeOne(self, context=None):
@@ -124,11 +124,11 @@ class TestAbstractDynamicObjectIO(CommonTestMixins,
     def test_ext_dict_sets_parent_on_replacement_value(self):
 
         class InnerDict(object):
-            def toExternalObject(self, **kw):
+            def toExternalObject(self, **_kw):
                 return {'key': 42}
 
         class InnerList(object):
-            def toExternalObject(self, **kw):
+            def toExternalObject(self, **_kw):
                 return [76]
 
         inst = self._makeOne()
@@ -194,14 +194,14 @@ class TestAbstractDynamicObjectIO(CommonTestMixins,
         assert_that(inst, has_property('id', 'id'))
 
 class TestInterfaceObjectIO(CleanUp,
-                            CommonTestMixins,
+                            CommonTestMixin,
                             unittest.TestCase):
 
     def _getTargetClass(self):
         from nti.externalization.datastructures import InterfaceObjectIO
         return InterfaceObjectIO
 
-    def _makeOne(self, context=None, iface_upper_bound=interface.Interface):
+    def _makeOne(self, context=None, iface_upper_bound=interface.Interface): # pylint:disable=arguments-differ
         return self._getTargetClass()(context, iface_upper_bound=iface_upper_bound)
 
     def test_repr(self):
@@ -392,7 +392,7 @@ class TestInterfaceObjectIO(CleanUp,
                     is_({'Class': 'Batman'}))
 
         # The actual interface gets passed if it is a callable
-        def callable_ext_class_name(iface, ext_self):
+        def callable_ext_class_name(iface, _ext_self):
             if iface is IDick:
                 return 'Boy Wonder'
             return 'Dark Knight'
@@ -642,7 +642,7 @@ class TestModuleScopedInterfaceObjectIO(TestInterfaceObjectIO):
         assert_that(io, has_property('_iface', IGrandChild))
 
 
-class TestExternalizableInstanceDict(CommonTestMixins,
+class TestExternalizableInstanceDict(CommonTestMixin,
                                      unittest.TestCase):
 
     def _getTargetClass(self):

@@ -26,11 +26,9 @@ from nti.externalization.tests import ExternalizationLayerTest
 from nti.externalization.tests import externalizes
 
 from hamcrest import assert_that
-from hamcrest import calling
 from hamcrest import has_property
 from hamcrest import is_
 from hamcrest import none
-from hamcrest import raises
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904

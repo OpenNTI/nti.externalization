@@ -25,7 +25,7 @@ import warnings
 from persistent.interfaces import IPersistent
 from six import iteritems
 from zope import interface
-from zope.event import notify
+from zope.event import notify as notify_event
 
 from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization._base_interfaces import NotGiven
@@ -174,7 +174,7 @@ else:
 
 class DefaultInternalObjectFactoryFinder(object):
 
-    def find_factory_for_named_value(self, name, value):
+    def find_factory_for_named_value(self, name, value): # pylint:disable=unused-argument
         return find_factory_for(value)
 
 
@@ -187,6 +187,7 @@ def update_from_external_object(containedObject, externalObject,
                                 require_updater=False,
                                 notify=True,
                                 pre_hook=None):
+    # pylint:disable=line-too-long
     """
     update_from_external_object(containedObject, externalObject, context=None, require_updater=False, notify=True)
 
@@ -389,7 +390,7 @@ def _update_from_external_object(containedObject, externalObject, args):
 
 
     if updater is not None:
-        notify(ObjectWillUpdateFromExternalEvent(containedObject, externalObject, args.root))
+        notify_event(ObjectWillUpdateFromExternalEvent(containedObject, externalObject, args.root))
         _invoke_updater(containedObject, externalObject, updater, external_keys, args)
 
     return containedObject

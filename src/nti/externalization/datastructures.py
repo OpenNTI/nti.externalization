@@ -153,7 +153,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     _ext_primitive_out_ivars_ = frozenset()
     _prefer_oid_ = False
 
-    def find_factory_for_named_value(self, key, value):
+    def find_factory_for_named_value(self, key, value): # pylint:disable=unused-argument
         """
         Uses `.find_factory_for` to locate a factory.
 
@@ -274,7 +274,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     def toExternalObject(self, mergeFrom=None, *args, **kwargs):
         return self.toExternalDictionary(mergeFrom, *args, **kwargs)
 
-    def _ext_accept_update_key(self, k, ext_self, ext_keys):
+    def _ext_accept_update_key(self, k, ext_self, ext_keys): # pylint:disable=unused-argument
         """
         Returns whether or not this key should be accepted for setting
         on the object, or silently ignored.
@@ -284,7 +284,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         """
         return k not in self._excluded_in_ivars_ and k in ext_keys
 
-    def _ext_accept_external_id(self, ext_self, parsed):
+    def _ext_accept_external_id(self, ext_self, parsed): # pylint:disable=unused-argument
         """
         If the object we're updating does not have an ``id`` set, but there is an
         ``ID`` in the external object, should we be able to use it?
@@ -569,6 +569,9 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             field_type = getattr(field, '_type', None)
             if field_type is not None:
                 if isinstance(field_type, tuple):
+                    # Cython doesn't like a generator here
+                    # ("local variable 'field_type' referenced before assignment")
+                    # pylint:disable=use-a-generator
                     if all([issubclass(x, _primitives) for x in field_type]):
                         result.add(n)
                 elif issubclass(field_type, _primitives):
@@ -656,8 +659,9 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
         """
         factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value)
-        if factory is None:
+        if factory is None: # pylint:disable=too-many-nested-blocks
             # Is there a factory on the field?
+            # TODO: Simplify this.
             try:
                 field = self._iface[key]
                 # See zcml.py:anonymousObjectFactoryDirective.
@@ -679,7 +683,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
                 if (
                         factory is None
-                        and IDict_providedBy(field)
+                        and IDict_providedBy(field) # pylint:disable=no-value-for-parameter
                         and isinstance(value, dict)
                         and IObject_providedBy(field.value_type)
                 ):
@@ -689,7 +693,9 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                     # requires the user to use a ZCML directive for each such
                     # dict field.
                     value_schema = field.value_type.schema
-                    default_impl = value_schema.queryTaggedValue('__external_default_implementation__')
+                    default_impl = value_schema.queryTaggedValue(
+                        '__external_default_implementation__'
+                    )
                     if default_impl is not None:
                         # Add MimeType if it's missing, so we can find the correct factories and
                         # updaters.
@@ -731,7 +737,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                     e.args = (errors[0][0],)
                 raise
 
-    def toExternalObject(self, mergeFrom=None, **kwargs):
+    def toExternalObject(self, mergeFrom=None, **kwargs): # pylint:disable=arguments-differ
         ext_class_name = None
         # Walk up the tree, checking each one to see if ``__external__class_name__`` exists
         # and wants to provide a value. The walking up is what ``queryTaggedValue`` would do,

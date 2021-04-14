@@ -11,6 +11,7 @@ include tox.ini
 include *.txt
 include .isort.cfg
 include pyproject.toml
+include .pylintrc
 exclude .nti_cover_package
 
 recursive-include .github *

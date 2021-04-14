@@ -30,7 +30,7 @@ from nti.externalization.internalization import updater
 
 class CreateCount(object):
     created = 0
-    def __init__(self, context):
+    def __init__(self, _context):
         type(self).created += 1
 
 @interface.implementer(interfaces.IInternalObjectIOFinder)
@@ -39,7 +39,7 @@ class NEOFF(CreateCount):
     created = 0
     found = 0
 
-    def find_factory_for_named_value(self, *args):
+    def find_factory_for_named_value(self, *_args):
         NEOFF.found += 1
 
 class DomainObject(object):
@@ -50,7 +50,7 @@ class DomainObject(object):
 class CorrectUpdater(CreateCount):
     created = 0
     updated = 0
-    def updateFromExternalObject(self, *args):
+    def updateFromExternalObject(self, *_args):
         CorrectUpdater.updated += 1
 
 
@@ -61,7 +61,7 @@ class WorkingExternalizedObjectFactoryFinder(object):
     def __init__(self, context):
         pass
 
-    def find_factory(self, ext):
+    def find_factory(self, _ext):
         return DomainObject
 
 class TestUpdater(CleanUp,

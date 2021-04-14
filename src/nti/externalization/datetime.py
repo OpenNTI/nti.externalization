@@ -56,9 +56,10 @@ def _parse_with(func, string):
         e = InvalidValue(*e.args).with_field_and_value(None, string)
         six.reraise(InvalidValue, e, sys.exc_info()[2])
 
-_input_type = (str if sys.version_info[0] >= 3 else basestring)
+_input_type = (str if sys.version_info[0] >= 3 else basestring) # pylint:disable=undefined-variable
 # XXX: This should really be either unicode or str on Python 2. We need to *know*
-# what our input type is. All the tests pass on Python 3 with this registered to 'str'.
+# what our input type is. All the tests pass on Python 3 with this registered to 'str',
+# so we're never passing ``bytes``
 @component.adapter(_input_type)
 @interface.implementer(IDate)
 def date_from_string(string):

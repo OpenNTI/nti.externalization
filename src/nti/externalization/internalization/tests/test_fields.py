@@ -133,7 +133,7 @@ class TestValidateFieldValue(unittest.TestCase):
         class OnlyBytes(Field):
             _type = bytes
 
-            def fromBytes(self, value):
+            def fromBytes(self, _value):
                 return b'from bytes'
 
         class IFoo(interface.Interface):
