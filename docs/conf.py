@@ -42,6 +42,7 @@ rqmt = pkg_resources.require('nti.externalization')[0]
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'repoze.sphinx.autointerface',

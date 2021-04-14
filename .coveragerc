@@ -1,5 +1,7 @@
 [run]
 source = nti.externalization
+# New in 5.0; required for the GHA coveralls submission.
+relative_files = True
 omit =
     */flycheck_*py
     */benchmarks/*py

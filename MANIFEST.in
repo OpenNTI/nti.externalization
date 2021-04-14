@@ -8,10 +8,12 @@ include TODO
 include babel.cfg
 include nose2.cfg
 include tox.ini
-include .travis.yml
 include *.txt
 include .isort.cfg
+include pyproject.toml
 exclude .nti_cover_package
+
+recursive-include .github *
 recursive-include docs *.py
 recursive-include docs *.rst
 recursive-include docs Makefile
