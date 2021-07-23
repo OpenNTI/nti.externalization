@@ -40,6 +40,7 @@ Let's continue with the example address we used :ref:`before <autoPackageIO>`.
 
 
    >>> import nti.externalization.tests.benchmarks
+   >>> from zope.configuration import xmlconfig
    >>> _ = xmlconfig.file('configure.zcml', nti.externalization.tests.benchmarks)
    >>> from nti.externalization.tests.benchmarks.objects import Address
    >>> from nti.externalization.tests.benchmarks.objects import UserProfile
@@ -57,7 +58,7 @@ work in a sensitive system and we need to redact the addresses of
 users to meet security concerns. Notice that decorators are usually
 stateless, so it is faster to make them inherit from `.Singleton`.
 
-.. code-block:: python
+.. testcode::
 
    from zope.interface import implementer
    from zope.component import adapter
@@ -77,20 +78,24 @@ stateless, so it is faster to make them inherit from `.Singleton`.
 
 We'll register our adapter and externalize:
 
+.. doctest::
+   :pyversion: > 3.3
+
+   >>> from nti.externalization import to_external_object
    >>> from zope import component
    >>> component.provideSubscriptionAdapter(PrivateAddressDecorator)
    >>> from pprint import pprint
    >>> pprint(to_external_object(home_address))
-    {u'Class': 'Address',
-     u'MimeType': 'application/vnd.nextthought.benchmarks.address',
-     'country': u'USA',
-     'full_name': u'Steve Jobs'}
+   {'Class': 'Address',
+    'MimeType': 'application/vnd.nextthought.benchmarks.address',
+    'country': 'USA',
+    'full_name': 'Steve Jobs'}
 
 
 If we provide a request, adapters for the (object, request) are also
 found:
 
-.. code-block:: python
+.. testcode::
 
    class Request(object):
       url = 'http://example.com/path/'
@@ -109,13 +114,16 @@ We can now provide a request when we externalize (if no request
 argument is given, the hook function `.get_current_request` is used to
 look for a request):
 
+.. doctest::
+   :pyversion: > 3.3
+
    >>> component.provideSubscriptionAdapter(LinkAddressDecorator)
    >>> pprint(to_external_object(home_address, request=Request()))
-    {u'Class': 'Address',
-     u'MimeType': 'application/vnd.nextthought.benchmarks.address',
-     'country': u'USA',
-     'full_name': u'Steve Jobs',
-     'href': 'http://example.com/path/address'}
+   {'Class': 'Address',
+    'MimeType': 'application/vnd.nextthought.benchmarks.address',
+    'country': 'USA',
+    'full_name': 'Steve Jobs',
+    'href': 'http://example.com/path/address'}
 
 IExternalMappingDecorator
 -------------------------
