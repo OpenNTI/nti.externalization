@@ -367,7 +367,7 @@ They are implemented in ``objects.py`` very simply (as above):
 
 .. ignore-next-block
 
-.. testcode::
+.. code-block:: python
 
    from zope import interface
    from zope.schema.fieldproperty import createFieldProperties
@@ -387,18 +387,19 @@ They are implemented in ``objects.py`` very simply (as above):
    class UserProfile(SchemaConfigured):
         createFieldProperties(interfaces.IUserProfile)
 
-
-Finally, the ZCML file contains one directive that ties everything together:
-
-.. literalinclude:: ../src/nti/externalization/tests/benchmarks/profileconfigure.zcml
-   :language: xml
-
 .. But these really need to come from the objects package.
 .. doctest::
    :hide:
 
    >>> from nti.externalization.tests.benchmarks.objects import Address
    >>> from nti.externalization.tests.benchmarks.objects import UserProfile
+
+
+Finally, the ZCML file contains one directive that ties everything together:
+
+.. literalinclude:: ../src/nti/externalization/tests/benchmarks/profileconfigure.zcml
+   :language: xml
+
 
 If we configure this file, we can create and update addresses. We'll
 do so through their container object, the ``UserProfile``, thus
