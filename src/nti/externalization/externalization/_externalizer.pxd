@@ -37,7 +37,7 @@ cdef ExternalizationPolicy DEFAULT_EXTERNALIZATION_POLICY
 cdef logger
 
 cdef _manager, _manager_get, _manager_pop, _manager_push
-cpdef tuple PRIMITIVES
+cdef tuple PRIMITIVES
 cdef _marker
 
 cdef tuple SEQUENCE_TYPES
