@@ -393,11 +393,12 @@ Finally, the ZCML file contains one directive that ties everything together:
 .. literalinclude:: ../src/nti/externalization/tests/benchmarks/profileconfigure.zcml
    :language: xml
 
+.. But these really need to come from the objects package.
 .. doctest::
    :hide:
 
-   from nti.externalization.tests.benchmarks.objects import Address
-   from nti.externalization.tests.benchmarks.objects import UserProfile
+   >>> from nti.externalization.tests.benchmarks.objects import Address
+   >>> from nti.externalization.tests.benchmarks.objects import UserProfile
 
 If we configure this file, we can create and update addresses. We'll
 do so through their container object, the ``UserProfile``, thus
