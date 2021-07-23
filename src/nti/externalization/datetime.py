@@ -73,6 +73,7 @@ def date_from_string(string):
     programattic input, you probably want to use a custom field that
     uses :func:`zope.datetime.parse` in its ``fromUnicode`` method.
 
+    >>> from nti.externalization.datetime import date_from_string
     >>> date_from_string('1982-01-31')
     datetime.date(1982, 1, 31)
     """
@@ -161,6 +162,7 @@ def datetime_from_string(string, assume_local=False, local_tzname=None):
 
     When used as an adapter, no parameters are accepted.
 
+    >>> from zope.interface.common.idatetime import IDateTime
     >>> IDateTime('1982-01-31T00:00:00Z')
     datetime.datetime(1982, 1, 31, 0, 0)
 
@@ -190,6 +192,7 @@ def datetime_from_timestamp(value):
 
     This is a registered adapter for both integers and floats.
 
+    >>> from zope.interface.common.idatetime import IDateTime
     >>> IDateTime(123456)
     datetime.datetime(1970, 1, 2, 10, 17, 36)
     >>> IDateTime(654321.0)
@@ -209,6 +212,7 @@ class date_to_string(object):
 
     >>> import datetime
     >>> from nti.externalization.externalization import to_external_object
+    >>> from nti.externalization.datetime import date_to_string
     >>> from zope import component
     >>> component.provideAdapter(date_to_string)
     >>> to_external_object(datetime.date(1982, 1, 31))
@@ -283,6 +287,7 @@ def duration_from_string(value):
     Produce a :class:`datetime.timedelta` from a ISO8601 format duration
     string.
 
+    >>> from zope.interface.common.idatetime import ITimeDelta
     >>> ITimeDelta('P0D')
     datetime.timedelta(0)
     """

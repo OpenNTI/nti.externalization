@@ -42,6 +42,7 @@ You can manually register factories from particular modules using
 
 Lets look at the factories registered for our address:
 
+   >>> from zope.configuration import xmlconfig
    >>> from zope import component
    >>> from nti.externalization.interfaces import IMimeObjectFactory
    >>> import nti.externalization.tests.benchmarks

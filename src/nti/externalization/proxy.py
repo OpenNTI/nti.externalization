@@ -48,6 +48,7 @@ def removeAllProxies(proxy):
     :mod:`zope.container.contained`, and :mod:`Acquisition`,
     if they are installed.
 
+    >>> from nti.externalization.proxy import removeAllProxies
     >>> from zope.container.contained import ContainedProxy
     >>> obj = object()
     >>> proxy = ContainedProxy(obj)

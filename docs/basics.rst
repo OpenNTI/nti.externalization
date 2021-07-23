@@ -71,7 +71,7 @@ externalize and internalize objects:
 
 We can define an object that we want to externalize:
 
-.. code-block:: python
+.. testcode::
 
    class InternalObject(object):
 
@@ -102,7 +102,7 @@ And we can externalize it with
 
 If we want to update it, we need to write the corresponding method:
 
-.. code-block:: python
+.. testcode::
 
    class UpdateInternalObject(InternalObject):
 
@@ -158,7 +158,7 @@ external representation, the two interfaces are joined together in
 `nti.externalization.interfaces.IInternalObjectIO`. Let's create a new
 internal object:
 
-.. code-block:: python
+.. testcode::
 
    class InternalObject(object):
        def __init__(self, id=''):
@@ -173,7 +173,7 @@ internal object:
 
 Now we will write an ``IInternalObjectIO`` adapter for it:
 
-.. code-block:: python
+.. testcode::
 
    from zope.interface import implementer
    from zope.component import adapter
@@ -232,7 +232,7 @@ based on the schemas an object implements.
 
 Let's start by writing a simple schema.
 
-.. code-block:: python
+.. testcode::
 
     from zope.interface import Interface
     from zope.interface import taggedValue
@@ -261,7 +261,7 @@ Let's start by writing a simple schema.
 
 And now an implementation of that interface.
 
-.. code-block:: python
+.. testcode::
 
    from nti.schema.fieldproperty import createDirectFieldProperties
    from nti.schema.schema import SchemaConfigured
@@ -273,7 +273,7 @@ And now an implementation of that interface.
 Externalizing based on the schema is done with `.InterfaceObjectIO`.
 We'll create a subclass to configure it.
 
-.. code-block:: python
+.. testcode::
 
    from nti.externalization.datastructures import InterfaceObjectIO
 
@@ -294,14 +294,14 @@ Now we can register and use it as before:
    ...    country=u'USA')
    >>> external = to_external_object(address)
    >>> pprint(external)
-   {u'Class': 'Address',
-     'city': u'Cupertino',
-     'country': u'USA',
-     'full_name': u'Steve Jobs',
-     'postal_code': u'95014',
-     'state': u'CA',
-     'street_address_1': u'One Infinite Loop',
-     'street_address_2': None}
+   {'Class': 'Address',
+    'city': 'Cupertino',
+    'country': 'USA',
+    'full_name': 'Steve Jobs',
+    'postal_code': '95014',
+    'state': 'CA',
+    'street_address_1': 'One Infinite Loop',
+    'street_address_2': None}
 
 Oops, One Infinte Loop was Apple's old address. They've since moved
 into `their new headquarters`_:
@@ -367,7 +367,13 @@ They are implemented in ``objects.py`` very simply (as above):
 
 .. ignore-next-block
 
-.. code-block:: python
+.. testcode::
+
+   from zope import interface
+   from zope.schema.fieldproperty import createFieldProperties
+   from nti.schema.eqhash import EqHash
+   from nti.externalization.representation import WithRepr
+   from nti.externalization.tests.benchmarks import interfaces
 
    @interface.implementer(interfaces.IAddress)
    @EqHash('full_name', 'street_address_1', 'postal_code')
@@ -387,6 +393,11 @@ Finally, the ZCML file contains one directive that ties everything together:
 .. literalinclude:: ../src/nti/externalization/tests/benchmarks/profileconfigure.zcml
    :language: xml
 
+.. doctest::
+   :hide:
+
+   from nti.externalization.tests.benchmarks.objects import Address
+   from nti.externalization.tests.benchmarks.objects import UserProfile
 
 If we configure this file, we can create and update addresses. We'll
 do so through their container object, the ``UserProfile``, thus
@@ -423,33 +434,32 @@ demonstrating that nested schemas and objects are possible.
    ... )
    >>> external = to_external_object(user_profile)
    >>> pprint(external)
-   {u'Class': 'UserProfile',
-     u'MimeType': 'application/vnd.nextthought.benchmarks.userprofile',
-     'addresses': {u'home': {u'Class': 'Address',
-                             u'MimeType': 'application/vnd.nextthought.benchmarks.address',
-                             'city': u'Salem',
-                             'country': u'USA',
-                             'full_name': u'Steve Jobs',
-                             'postal_code': u'6666',
-                             'state': u'MA',
-                             'street_address_1': u'1313 Mockingbird Lane',
-                             'street_address_2': None},
-                   u'work': {u'Class': 'Address',
-                             u'MimeType': 'application/vnd.nextthought.benchmarks.address',
-                             'city': u'Cupertino',
-                             'country': u'USA',
-                             'full_name': u'Apple',
-                             'postal_code': u'55555',
-                             'state': u'CA',
-                             'street_address_1': u'1 Infinite Loop',
-                             'street_address_2': None}},
-     'alias': u'Steve',
-     'avatarURL': 'http://apple.com/steve.png',
-     'backgroundURL': 'https://apple.com/bg.jpeg',
-     'contact_emails': {u'home': u'steve.jobs@gmail.com',
-                        u'work': u'steve@apple.com'},
-     'phones': {u'home': u'405-555-1212', u'work': u'405-555-2323'},
-     'realname': u'Steve Jobs'}
+   {'Class': 'UserProfile',
+    'MimeType': 'application/vnd.nextthought.benchmarks.userprofile',
+    'addresses': {'home': {'Class': 'Address',
+                           'MimeType': 'application/vnd.nextthought.benchmarks.address',
+                           'city': 'Salem',
+                           'country': 'USA',
+                           'full_name': 'Steve Jobs',
+                           'postal_code': '6666',
+                           'state': 'MA',
+                           'street_address_1': '1313 Mockingbird Lane',
+                           'street_address_2': None},
+                  'work': {'Class': 'Address',
+                           'MimeType': 'application/vnd.nextthought.benchmarks.address',
+                           'city': 'Cupertino',
+                           'country': 'USA',
+                           'full_name': 'Apple',
+                           'postal_code': '55555',
+                           'state': 'CA',
+                           'street_address_1': '1 Infinite Loop',
+                           'street_address_2': None}},
+    'alias': 'Steve',
+    'avatarURL': 'http://apple.com/steve.png',
+    'backgroundURL': 'https://apple.com/bg.jpeg',
+    'contact_emails': {'home': 'steve.jobs@gmail.com', 'work': 'steve@apple.com'},
+    'phones': {'home': '405-555-1212', 'work': '405-555-2323'},
+    'realname': 'Steve Jobs'}
 
 Notice that there are some additional bits of data in the external
 form that are not specified in the interface. Here, that's ``Class``
@@ -460,7 +470,7 @@ Let's make a change to the work address:
     >>> external['addresses'][u'work']['street_address_1'] = u'One Apple Park Way'
     >>> _ = update_from_external_object(user_profile, external)
     >>> user_profile.addresses['work'].street_address_1
-    u'One Apple Park Way'
+    'One Apple Park Way'
 
 Importantly, note that, by default, the nested objects are created
 fresh and *not* mutated.

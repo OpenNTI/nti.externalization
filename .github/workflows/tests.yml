@@ -37,7 +37,14 @@ jobs:
     - name: Test
       run: |
         coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress
+    - name: Sphinx DocTests
+      if: matrix.python-version != 2.7 && matrix.python-version != 'pypy2'
+      # These do still run on Python 2 (test_docs.py) but they need an output normalizer,
+      # which Sphinx doesn't easily do. We could add :pyversion: directives everywhere,
+      # but that seems like overkill
+      run: |
         coverage run -a -m sphinx -b doctest -d docs/_build/doctrees docs docs/_build/doctests
+
     - name: Submit to Coveralls
       # This is a container action, which only runs on Linux.
       uses: AndreMiras/coveralls-python-action@develop
