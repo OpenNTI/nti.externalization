@@ -132,6 +132,7 @@ _CREATOR_FIELDS = (
 
 
 def _system_user_converter(value):
+    # pylint:disable=no-value-for-parameter
     if IPrincipal_providedBy(value) and value.id == _SYSTEM_USER_ID:
         # Catch the system user
         value = SYSTEM_USER_NAME

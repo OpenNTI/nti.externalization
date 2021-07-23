@@ -69,6 +69,7 @@ def from_external_string(key):
     """
     Turn the string in *key* into an integer.
 
+    >>> from nti.externalization.integer_strings import from_external_string
     >>> from_external_string('xkr')
     6773
 
@@ -107,6 +108,7 @@ def to_external_string(integer):
     """
     Turn an integer into a native string representation.
 
+    >>> from nti.externalization.integer_strings import to_external_string
     >>> to_external_string(123)
     'xk'
     >>> to_external_string(123456789)

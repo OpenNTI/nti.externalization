@@ -214,7 +214,7 @@ def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argumen
         return schema(value)
     except (LookupError, TypeError):
         # No registered adapter, darn
-        raise reraise(*exc_info)
+        reraise(*exc_info)
     except ValidationError as e:
         # Found an adapter, but it does its own validation,
         # and that validation failed (eg, IDate below)
@@ -247,7 +247,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
         # to raise the original error. If we could adapt,
         # but the converter does its own validation (e.g., fromObject)
         # then we want to let that validation error rise
-        raise reraise(*exc_info)
+        reraise(*exc_info)
 
     # Now try to validate the converted value
     try:
@@ -256,7 +256,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
         # Nope. TypeError means we couldn't adapt, and a
         # validation error means we could adapt, but it still wasn't
         # right. Raise the original SchemaValidationError.
-        raise reraise(*exc_info)
+        reraise(*exc_info)
 
     return value
 
@@ -339,7 +339,7 @@ def validate_named_field_value(self, iface, field_name, value):
     """
     field_name = _as_native_str(field_name)
     field = iface[field_name]
-    if IField_providedBy(field):
+    if IField_providedBy(field): # pylint:disable=no-value-for-parameter
         return validate_field_value(self, field_name, field, value)
 
     return SetattrSet(self, field_name, value)

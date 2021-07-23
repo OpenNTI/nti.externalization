@@ -14,6 +14,7 @@ from __future__ import print_function
 try:
     from collections.abc import MutableSequence
 except ImportError: # Python 2
+    # pylint:disable=deprecated-class
     from collections import MutableSequence
     from collections import MutableMapping
 else: # pragma: no cover
@@ -310,7 +311,7 @@ def _find_INamedExternalizedObjectFactoryFinder(containedObject):
         # InternalObjectIO is there and also provides INamedExternalizedObjectFactoryFinder;
         # if so, there's a bad ZCML registration.
         updater = IInternalObjectIO(containedObject, None)
-        if INamedExternalizedObjectFactoryFinder.providedBy(updater):
+        if INamedExternalizedObjectFactoryFinder.providedBy(updater): # pylint:disable=no-value-for-parameter
             warnings.warn(
                 "The adapter %r was registered as IInternalObjectIO when it should be "
                 "IInternalObjectIOFinder; a provides= ZCML directive is probably outdated. "
@@ -336,7 +337,7 @@ def _update_from_external_object(containedObject, externalObject, args):
 
     # TODO: Should the current user impact on this process?
 
-    if IPersistent_providedBy(containedObject):
+    if IPersistent_providedBy(containedObject): # pylint:disable=no-value-for-parameter
         # pylint:disable=protected-access
         containedObject._v_updated_from_external_source = externalObject
 
@@ -367,7 +368,7 @@ def _update_from_external_object(containedObject, externalObject, args):
             # Update the sequence in-place
             _update_sequence(v, args, k, find_factory_for_named_value)
         else:
-            factory = find_factory_for_named_value(k, v)
+            factory = find_factory_for_named_value(k, v) # pylint:disable=assignment-from-no-return, too-many-function-args
             if factory is not None:
                 new_obj = _invoke_factory(factory, v)
                 externalObject[k] = _update_from_external_object(new_obj, v, args)

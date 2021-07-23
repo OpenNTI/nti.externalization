@@ -17,6 +17,7 @@ from __future__ import print_function
 try:
     from collections.abc import MutableSequence
 except ImportError: # Python 2
+    # pylint:disable=deprecated-class
     from collections import MutableSequence
 
 

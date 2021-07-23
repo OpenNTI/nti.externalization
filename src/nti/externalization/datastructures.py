@@ -592,7 +592,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             is_method = interface.interfaces.IMethod.providedBy
             cache.ext_all_possible_keys = frozenset([
                 n for n in iface.names(all=True)
-                if (not is_method(iface[n])
+                if (not is_method(iface[n]) # pylint:disable=no-value-for-parameter
                     and not iface[n].queryTaggedValue('_ext_excluded_out', False))
             ])
         return cache.ext_all_possible_keys
@@ -685,7 +685,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                         factory is None
                         and IDict_providedBy(field) # pylint:disable=no-value-for-parameter
                         and isinstance(value, dict)
-                        and IObject_providedBy(field.value_type)
+                        and IObject_providedBy(field.value_type) # pylint:disable=no-value-for-parameter
                 ):
                     # If is no factory found, check to see if the
                     # schema field is a Dict with a complex value type, and if

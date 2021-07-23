@@ -18,6 +18,7 @@ import warnings
 try:
     from collections.abc import Set
 except ImportError: # Python 2
+    # pylint:disable=deprecated-class
     from collections import Set
     from collections import Mapping
 else: # pragma: no cover

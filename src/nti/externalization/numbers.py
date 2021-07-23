@@ -29,6 +29,7 @@ class second_chance_number_externalizer(object):
 
 # Depending on the order of imports, these may or may not have
 # been declared already.
+# pylint:disable=no-value-for-parameter
 if not IRational.providedBy(fractions.Fraction('1/3')): # pragma: no cover
     interface.classImplements(fractions.Fraction, IRational)
 
