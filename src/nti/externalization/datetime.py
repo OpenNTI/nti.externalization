@@ -163,6 +163,9 @@ def datetime_from_string(string, assume_local=False, local_tzname=None):
     When used as an adapter, no parameters are accepted.
 
     >>> from zope.interface.common.idatetime import IDateTime
+    >>> from zope.component import provideAdapter
+    >>> from nti.externalization.datetime import datetime_from_string
+    >>> provideAdapter(datetime_from_string)
     >>> IDateTime('1982-01-31T00:00:00Z')
     datetime.datetime(1982, 1, 31, 0, 0)
 
@@ -193,6 +196,10 @@ def datetime_from_timestamp(value):
     This is a registered adapter for both integers and floats.
 
     >>> from zope.interface.common.idatetime import IDateTime
+    >>> from zope.component import provideAdapter
+    >>> from nti.externalization.datetime import datetime_from_timestamp
+    >>> provideAdapter(datetime_from_timestamp, (int,))
+    >>> provideAdapter(datetime_from_timestamp, (float,))
     >>> IDateTime(123456)
     datetime.datetime(1970, 1, 2, 10, 17, 36)
     >>> IDateTime(654321.0)
@@ -235,8 +242,11 @@ class datetime_to_string(object):
     Registered as an adapter from `zope.interface.common.idatetime.IDateTime`
     to `~nti.externalization.interfaces.IInternalObjectExternalizer`.
 
+    >>> from zope.component import provideAdapter
     >>> import datetime
     >>> from nti.externalization import to_external_object
+    >>> from nti.externalization.datetime import datetime_to_string
+    >>> provideAdapter(datetime_to_string)
     >>> to_external_object(datetime.datetime(1982, 1, 31))
     '1982-01-31T00:00:00Z'
 
@@ -269,7 +279,10 @@ class duration_to_string(object):
     to `~nti.externalization.interfaces.IInternalObjectExternalizer`.
 
     >>> import datetime
+    >>> from zope.component import provideAdapter
     >>> from nti.externalization import to_external_object
+    >>> from nti.externalization.datetime import duration_to_string
+    >>> provideAdapter(duration_to_string)
     >>> to_external_object(datetime.timedelta(weeks=16))
     'P112D'
     """
@@ -288,6 +301,9 @@ def duration_from_string(value):
     string.
 
     >>> from zope.interface.common.idatetime import ITimeDelta
+    >>> from zope.component import provideAdapter
+    >>> from nti.externalization.datetime import duration_from_string
+    >>> provideAdapter(duration_from_string)
     >>> ITimeDelta('P0D')
     datetime.timedelta(0)
     """

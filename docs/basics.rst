@@ -284,7 +284,6 @@ We'll create a subclass to configure it.
 
 Now we can register and use it as before:
 
-
    >>> component.provideAdapter(AddressIO)
    >>> address = Address(full_name=u'Steve Jobs',
    ...    street_address_1=u'One Infinite Loop',
@@ -387,12 +386,6 @@ They are implemented in ``objects.py`` very simply (as above):
    class UserProfile(SchemaConfigured):
         createFieldProperties(interfaces.IUserProfile)
 
-.. But these really need to come from the objects package.
-.. doctest::
-   :hide:
-
-   >>> from nti.externalization.tests.benchmarks.objects import Address
-   >>> from nti.externalization.tests.benchmarks.objects import UserProfile
 
 
 Finally, the ZCML file contains one directive that ties everything together:

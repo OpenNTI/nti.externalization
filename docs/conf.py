@@ -223,3 +223,8 @@ autoclass_content = 'both'
 # This causes the order in __all__ to be ignored :(
 # autodoc_member_order = 'bysource'
 # autodoc_member_order = 'groupwise'
+
+doctest_global_cleanup = """
+from zope.testing import cleanup
+cleanup.cleanUp()
+"""

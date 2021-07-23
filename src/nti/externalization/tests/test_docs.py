@@ -54,7 +54,7 @@ def test_suite():
         'internalization.rst',
     )
     paths = [os.path.join(docs, f) for f in files_to_test]
-    kwargs = {'tearDown': lambda _: cleanup.cleanUp}
+    kwargs = {'tearDown': lambda _: cleanup.cleanUp()}
     m = manuel.ignore.Manuel()
     m += manuel.doctest.Manuel(checker=checker, optionflags=(
         doctest.NORMALIZE_WHITESPACE
