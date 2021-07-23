@@ -43,6 +43,9 @@ cdef class ExternalizableDictionaryMixin(object):
     # cpdef ivars/methods) without causing metaclass problems.
     pass
 
+cdef class StandardInternalObjectExternalizer(ExternalizableDictionaryMixin):
+    pass
+
 cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef _ext_replacement(self)
     cpdef frozenset _ext_all_possible_keys(self)

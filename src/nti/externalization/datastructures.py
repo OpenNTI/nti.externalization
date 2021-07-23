@@ -60,6 +60,7 @@ IObject_providedBy = IObject.providedBy
 
 __all__ = [
     'ExternalizableDictionaryMixin',
+    'StandardInternalObjectExternalizer',
     'AbstractDynamicObjectIO',
     'ExternalizableInstanceDict',
     'InterfaceObjectIO',
@@ -106,6 +107,33 @@ class ExternalizableDictionaryMixin(object):
         return self._ext_standard_external_dictionary(self._ext_replacement(),
                                                       mergeFrom=mergeFrom,
                                                       **kwargs)
+
+
+class StandardInternalObjectExternalizer(ExternalizableDictionaryMixin):
+    """
+    An adapter that can be used to implement
+    :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`.
+
+    The result of externalizing is the standard external dictionary.
+
+    This can be registered as-is, or subclassed to add additional
+    items in the external dictionary. In that case, always begin by
+    calling this implemention first and updating the result.
+
+    .. versionadded:: 2.3.0
+    """
+
+    def __init__(self, context):
+        self.context = context
+
+    def _ext_replacement(self):
+        """
+        Returns this adapter's *context* argument.
+        """
+        return self.context
+
+    def toExternalObject(self, **kwargs):
+        return self.toExternalDictionary(**kwargs)
 
 
 class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):

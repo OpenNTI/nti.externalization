@@ -58,7 +58,7 @@ jobs:
       # TODO: Revisit this when we have caching of that part.
       run: |
         pip install -U -e .[lint]
-        python -m pylint --limit-inference-results=1 --rcfile=.pylintrc nti.externalization
+        python -m pylint --rcfile=.pylintrc nti.externalization
 
   coveralls_finish:
     needs: test

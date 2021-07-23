@@ -71,6 +71,10 @@ externalize and internalize objects:
 
 We can define an object that we want to externalize:
 
+.. caution:: The examples in this section are not representative of
+             best practices or preferred patterns. Please keep
+             reading.
+
 .. testcode::
 
    class InternalObject(object):
@@ -86,12 +90,6 @@ We can define an object that we want to externalize:
        def __repr__(self):
            return '<%s %r letter=%r number=%d>' % (
                self.__class__.__name__, self._id, self._field1, self._field2)
-
-.. caution::
-
-   The signature for ``toExternalObject`` is poorly defined right now.
-   The suitable keyword arguments should be enumerated and documented,
-   but they are not. See https://github.com/NextThought/nti.externalization/issues/54
 
 And we can externalize it with
 `~nti.externalization.to_external_object`:
@@ -179,20 +177,42 @@ Now we will write an ``IInternalObjectIO`` adapter for it:
    from zope.component import adapter
 
    from nti.externalization.interfaces import IInternalObjectIO
+   from nti.externalization.datastructures import StandardInternalObjectExternalizer
 
    @implementer(IInternalObjectIO)
    @adapter(InternalObject)
-   class InternalObjectIO(object):
+   class InternalObjectIO(StandardInternalObjectExternalizer):
        def __init__(self, context):
            self.context = context
 
        def toExternalObject(self, **kwargs):
-          return {'Letter': self.context._field1, 'Number': self.context._field2}
+          result = super(InternalObjectIO, self).toExternalObject(**kwargs)
+          result.update({
+              'Letter': self.context._field1,
+              'Number': self.context._field2
+          })
+          return result
 
        def updateFromExternalObject(self, external_object, context=None):
             self.context._field1 = external_object['Letter']
             self.context._field2 = external_object['Number']
 
+.. tip::
+
+   It is a best practice for custom externalizers to either extend an
+   existing datastructure, typically
+   `~.StandardInternalObjectExternalizer` for simple cases (as in the
+   example above), *or* to begin with ``result =
+   to_standard_external_dictionary(self.context)`` and update that
+   mapping in place. (The ``StandardInternalObjectExternalizer`` calls
+   `~.to_standard_external_dictionary` under the covers.)
+
+
+.. caution::
+
+   The signature for ``toExternalObject`` is poorly defined right now.
+   The suitable keyword arguments should be enumerated and documented,
+   but they are not. See https://github.com/NextThought/nti.externalization/issues/54
 
 We can register the adapter (normally this would be done in ZCML) and
 use it:
@@ -213,7 +233,7 @@ register it manually.
   >>> internal
   <InternalObject 'original' letter='a' number=42>
   >>> pprint(to_external_object(internal))
-  {'Letter': 'a', 'Number': 42}
+  {'Class': 'InternalObject', 'Letter': 'a', 'Number': 42}
   >>> update_from_external_object(internal, {'Letter': 'b', 'Number': 3})
   <InternalObject 'original' letter='b' number=3>
 
@@ -270,7 +290,7 @@ And now an implementation of that interface.
    class Address(SchemaConfigured):
         createDirectFieldProperties(IAddress)
 
-Externalizing based on the schema is done with `.InterfaceObjectIO`.
+Externalizing (and updating!) based on the schema is done with `.InterfaceObjectIO`.
 We'll create a subclass to configure it.
 
 .. testcode::
