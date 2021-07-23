@@ -237,7 +237,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
                     ext_class_name)
                 implementation_class.mime_type = implementation_class.mimeType
 
-            if not IContentTypeAware.implementedBy(implementation_class):
+            if not IContentTypeAware.implementedBy(implementation_class): # pylint:disable=no-value-for-parameter
                 # well it does now
                 interface.classImplements(implementation_class,
                                           IContentTypeAware)

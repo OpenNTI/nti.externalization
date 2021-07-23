@@ -74,7 +74,8 @@ disable=wrong-import-position,
     import-outside-toplevel,
     self-assigning-variable,
     raise-missing-from,
-    super-with-arguments
+    super-with-arguments,
+    too-many-ancestors
 
 [FORMAT]
 max-line-length=100

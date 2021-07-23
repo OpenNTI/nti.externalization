@@ -16,7 +16,7 @@ from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
-
+# pylint:disable=no-value-for-parameter
 
 class TestSingleton(ExternalizationLayerTest):
 

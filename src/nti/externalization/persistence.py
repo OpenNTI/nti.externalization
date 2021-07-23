@@ -20,7 +20,7 @@ from __future__ import print_function
 try:
     from collections.abc import Sequence
 except ImportError: # Python 2
-    from collections import Sequence
+    from collections import Sequence # pylint:disable=deprecated-class
 
 try:
     from itertools import izip

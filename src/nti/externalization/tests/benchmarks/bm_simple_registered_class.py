@@ -19,7 +19,8 @@ from nti.externalization.internalization import update_from_external_object
 import nti.externalization.tests.benchmarks
 from nti.externalization.tests.benchmarks.objects import SimplestPossibleObject
 
-# pylint:disable=arguments-differ,unused-argument
+# pylint:disable=arguments-renamed,unused-argument
+# pylint:disable=arguments-differ
 
 class NoArgs(SimplestPossibleObject):
 

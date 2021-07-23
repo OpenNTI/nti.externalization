@@ -27,6 +27,7 @@ class Externalizes(BaseMatcher):
 
     def _matches(self, item):
         ext_obj = toExternalObject(item)
+        # pylint:disable=no-value-for-parameter
         result = ext_obj is not None and \
                  not INonExternalizableReplacement.providedBy(ext_obj)
         if result and self.matcher is not None:
@@ -47,7 +48,7 @@ class Externalizes(BaseMatcher):
             mismatch_description.append_text('externalized to none')
         else:
             text = 'was '
-            if INonExternalizableReplacement.providedBy(ext_obj):
+            if INonExternalizableReplacement.providedBy(ext_obj): # pylint:disable=no-value-for-parameter
                 text += 'replaced by '
             mismatch_description.append_text(text).append_description_of(ext_obj)
 
