@@ -10,7 +10,9 @@ from __future__ import division
 from __future__ import print_function
 
 from zope import interface
+
 from zope.component.interfaces import IFactory
+from zope.deprecation import deprecated
 from zope.interface.common import collections as icollections
 from zope.interface.common import sequence as legacy_isequence
 from zope.interface.common import mapping as legacy_imapping
@@ -62,7 +64,6 @@ class IInternalObjectExternalizer(interface.Interface):
         """
         Optional, see this :func:`~nti.externalization.externalization.to_external_object`.
         """
-IExternalObject = IInternalObjectExternalizer  # b/c alias
 
 
 class INonExternalizableReplacement(interface.Interface):
@@ -86,8 +87,6 @@ class INonExternalizableReplacementFactory(interface.Interface):
                 interface.
         """
 
-INonExternalizableReplacer = INonExternalizableReplacementFactory
-
 
 class IExternalObjectDecorator(interface.Interface):
     """
@@ -100,12 +99,12 @@ class IExternalObjectDecorator(interface.Interface):
     specific order, and so must operate by mutating the external
     object.
 
-    These are called *after* :class:`.IExternalMappingDecorator`.
+    These are called *after* :class:`.IExternalStandardDictionaryDecorator`.
     """
 
     def decorateExternalObject(origial, external):
         """
-        Decorate the externalized object (which is probably a mapping,
+        Decorate the externalized object (which is almost certainly a mapping,
         though this is not guaranteed).
 
         :param original: The object that is being externalized.
@@ -118,18 +117,24 @@ class IExternalObjectDecorator(interface.Interface):
         """
 
 
-class IExternalMappingDecorator(interface.Interface):
+class IExternalStandardDictionaryDecorator(interface.Interface):
     """
     Used as a subscription adapter (of the object or the object and
     request) to provide additional information to the externalization
     of an object after it has been externalized by the primary
     implementation of
-    :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`.
+    :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`
+    (which in turn *must* have invoked :func:`~.to_standard_external_dictionary`).
+
     Allows for a separation of concerns. These are called in no
     specific order, and so must operate by mutating the external
     object.
 
     These are called *before* :class:`.IExternalObjectDecorator`.
+
+    .. versionchanged:: 2.3.0
+       Previously this was called ``IExternalMappingDecorator``;
+       that name remains as a backward compatibility alias.
     """
 
     def decorateExternalMapping(original, external):
@@ -456,19 +461,55 @@ class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
         self.kwargs = kwargs
 
 
+####
+# Deprecated backwards compatibility aliases.
+# Do *NOT* list these in __all__; *do* list them
+# in interfaces.rst and *do* add them to the call to
+# zope.deprecation.
+###
+
 #: Base interface for iterable types.
-#: .. versiondeprecated:: 2.1.0
-#:    Use `zope.interface.common.collections.IIterable` directly.
-#:    This is just an alias.`
+#:
+#: .. deprecated:: 2.1.0
+#:    Use :class:`zope.interface.common.collections.IIterable` directly.
+#:    This is just an alias.
 IIterable = icollections.IIterable
 
 #: Marker interface for lists.
-#: .. versiondeprecated:: 2.1.0
-#:    Use `zope.interface.common.builtins.IList` directly.
-#:    This is just an alias.`
+#:
+#: .. deprecated:: 2.1.0
+#:    Use :class:`zope.interface.common.builtins.IList` directly.
+#:    This is just an alias.
 IList = ibuiltins.IList
 
+#: Backwards compatibility alias.
+#:
+#: .. deprecated:: 2.0.0
+#:    Use `IInternalObjectExternalizer` directly.
+IExternalObject = IInternalObjectExternalizer
+#: Backwards compatibility alias.
+#:
+#: .. deprecated:: 2.0.0
+#:    Use `INonExternalizableReplacement` directly.
+INonExternalizableReplacer = INonExternalizableReplacementFactory
 
+#: Backwards compatibility alias.
+#:
+#: .. deprecated:: 2.3.0
+#:    Use `IExternalStandardDictionaryDecorator` directly.
+IExternalMappingDecorator = IExternalStandardDictionaryDecorator
+
+deprecated(('IIterable',
+            'IList',
+            'IExternalObject',
+            'INonExternalizableReplacer',
+            'IExternalMappingDecorator',),
+           "This name is deprecated; see the documentation for replacement."
+           )
+
+####
+# Internal use only; do not document or list in __all__.
+####
 class _ILegacySearchModuleFactory(interface.Interface):
 
     def __call__(*args, **kwargs): # pylint:disable=no-method-argument,arguments-differ,signature-differs
@@ -487,7 +528,7 @@ __all__ = [
     'INonExternalizableReplacement',
     'INonExternalizableReplacementFactory',
     'IExternalObjectDecorator',
-    'IExternalMappingDecorator',
+    'IExternalStandardDictionaryDecorator',
     'IExternalizedObject',
     'ILocatedExternalMapping',
     'ILocatedExternalSequence',

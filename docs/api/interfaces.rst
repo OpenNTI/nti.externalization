@@ -12,3 +12,12 @@
    :member-order: bysource
 .. autoclass:: nti.externalization._base_interfaces.StandardInternalFields
 .. autodata:: nti.externalization._base_interfaces.DEFAULT_EXTERNALIZATION_POLICY
+
+Deprecated Names
+================
+
+.. autodata:: nti.externalization.interfaces.IList
+.. autodata:: nti.externalization.interfaces.IIterable
+.. autodata:: nti.externalization.interfaces.IExternalObject
+.. autodata:: nti.externalization.interfaces.INonExternalizableReplacer
+.. autodata:: nti.externalization.interfaces.IExternalMappingDecorator

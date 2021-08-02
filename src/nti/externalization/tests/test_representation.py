@@ -296,7 +296,7 @@ class TestJson(AbstractRepresenterTestMixin,
         assert_that(result, is_('{}'))
 
     def test_second_pass(self):
-        from ..interfaces import IExternalObject
+        from ..interfaces import IInternalObjectExternalizer as IExternalObject
         from zope import component
 
         json = self._makeOne()

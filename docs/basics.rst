@@ -183,7 +183,9 @@ Now we will write an ``IInternalObjectIO`` adapter for it:
    @adapter(InternalObject)
    class InternalObjectIO(StandardInternalObjectExternalizer):
        def __init__(self, context):
-           self.context = context
+           super().__init__(context)
+           # Setting this is optional, if we don't like the default
+           self.__external_class_name__ = 'ExternalObject'
 
        def toExternalObject(self, **kwargs):
           result = super(InternalObjectIO, self).toExternalObject(**kwargs)
@@ -228,12 +230,12 @@ Because we don't have a Python package to put this ZCML in, we'll
 register it manually.
 
   >>> from zope import component
-  >>> component.provideAdapter(InternalObjectIO)
+  >>> component.provideAdapter(InternalObjectIO, provides=IInternalObjectIO)
   >>> internal = InternalObject('original')
   >>> internal
   <InternalObject 'original' letter='a' number=42>
   >>> pprint(to_external_object(internal))
-  {'Class': 'InternalObject', 'Letter': 'a', 'Number': 42}
+  {'Class': 'ExternalObject', 'Letter': 'a', 'Number': 42}
   >>> update_from_external_object(internal, {'Letter': 'b', 'Number': 3})
   <InternalObject 'original' letter='b' number=3>
 
@@ -247,7 +249,7 @@ others:
   >>> internal.creator = u'sjohnson'
   >>> internal.createdTime = 123456
   >>> pprint(to_external_object(internal))
-  {'Class': 'InternalObject',
+  {'Class': 'ExternalObject',
    'CreatedTime': 123456,
    'Creator': 'sjohnson',
    'Letter': 'b',

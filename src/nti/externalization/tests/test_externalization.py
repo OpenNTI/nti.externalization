@@ -39,7 +39,7 @@ from ..externalization import toExternalObject
 from ..externalization.standard_fields import get_creator
 from ..interfaces import EXT_REPR_JSON
 from ..interfaces import EXT_REPR_YAML
-from ..interfaces import IExternalObject
+from ..interfaces import IInternalObjectExternalizer as IExternalObject
 from ..interfaces import IExternalObjectDecorator
 from ..interfaces import LocatedExternalDict
 from ..interfaces import LocatedExternalList
@@ -288,7 +288,7 @@ class TestDecorators(CleanUp,
                      unittest.TestCase):
 
     def test_decorate_external_mapping(self):
-        from nti.externalization.interfaces import IExternalMappingDecorator
+        from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
         from nti.externalization.externalization import decorate_external_mapping
         class IRequest(interface.Interface):
             pass
@@ -299,7 +299,7 @@ class TestDecorators(CleanUp,
 
 
         @component.adapter(object)
-        @interface.implementer(IExternalMappingDecorator)
+        @interface.implementer(IExternalStandardDictionaryDecorator)
         class Decorator(object):
 
             def __init__(self, result):
@@ -309,7 +309,7 @@ class TestDecorators(CleanUp,
                 result['decorated'] = True
 
         @component.adapter(object, IRequest)
-        @interface.implementer(IExternalMappingDecorator)
+        @interface.implementer(IExternalStandardDictionaryDecorator)
         class RequestDecorator(object):
             def __init__(self, result, request):
                 pass

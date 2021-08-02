@@ -44,7 +44,9 @@ cdef class ExternalizableDictionaryMixin(object):
     pass
 
 cdef class StandardInternalObjectExternalizer(ExternalizableDictionaryMixin):
-    pass
+    cdef public context
+    cdef public bint __external_can_create__
+    cdef public str __external_class_name__
 
 cdef class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
     cpdef _ext_replacement(self)
