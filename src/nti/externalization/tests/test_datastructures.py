@@ -16,6 +16,7 @@ from nti.externalization.tests import ExternalizationLayerTest
 
 from nti.testing.matchers import is_false
 from nti.testing.matchers import is_true
+from nti.testing.matchers import verifiably_provides
 
 from hamcrest import assert_that
 from hamcrest import has_property
@@ -756,3 +757,50 @@ class TestExternalizableInstanceDict(CommonTestMixin,
 
         # And marked as changed
         assert_that(m, has_property('_p_changed', True))
+
+
+class TestStandardInternalObjectExternalizer(unittest.TestCase):
+
+    def test_provides(self):
+        from nti.externalization.interfaces import IInternalObjectExternalizer
+        from nti.externalization.datastructures import StandardInternalObjectExternalizer
+        o = StandardInternalObjectExternalizer(object())
+        assert_that(o, verifiably_provides(IInternalObjectExternalizer))
+
+    def test_subclass(self):
+        from nti.externalization.interfaces import IInternalObjectExternalizer
+        from nti.externalization.datastructures import StandardInternalObjectExternalizer
+        from nti.externalization._compat import PURE_PYTHON
+
+        class X(StandardInternalObjectExternalizer):
+            def __init__(self, context):
+                StandardInternalObjectExternalizer.__init__(self, context)
+                self.__external_class_name__ = 'Foo'
+
+        class Ext(object):
+            creator = 'sjohnson'
+
+        o = X(Ext())
+        assert_that(o, verifiably_provides(IInternalObjectExternalizer))
+
+        ext = o.toExternalObject()
+        assert_that(ext, is_({
+            'Class': 'Foo',
+            'Creator': 'sjohnson',
+        }))
+
+        # Now non-native-strs
+        ext = Ext()
+        ext.creator = u'sjohnson'
+        o.context = ext
+
+        if not PURE_PYTHON:
+            # XXX: pure-python mode allows anything.
+            with self.assertRaises(TypeError):
+                o.__external_class_name__ = u'Foo' if bytes is str else b'Foo'
+
+        ext = o.toExternalObject()
+        assert_that(ext, is_({
+            'Class': 'Foo',
+            'Creator': 'sjohnson',
+        }))

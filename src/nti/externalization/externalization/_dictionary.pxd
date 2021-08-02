@@ -26,7 +26,7 @@ cdef component
 
 
 cdef set_external_identifiers
-cdef IExternalMappingDecorator
+cdef IExternalStandardDictionaryDecorator
 
 cdef NotGiven
 

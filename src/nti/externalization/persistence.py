@@ -37,7 +37,7 @@ from zope import interface
 
 from nti.externalization.datastructures import ExternalizableDictionaryMixin
 from nti.externalization.externalization import toExternalObject
-from nti.externalization.interfaces import IExternalObject
+from nti.externalization.interfaces import IInternalObjectExternalizer
 from nti.externalization.oids import toExternalOID
 from nti.externalization.proxy import removeAllProxies
 
@@ -114,7 +114,7 @@ def _weakRef_toExternalObject(self):
     return toExternalObject(val) if val is not None else None
 
 PWeakRef.toExternalObject = _weakRef_toExternalObject
-interface.classImplements(PWeakRef, IExternalObject)
+interface.classImplements(PWeakRef, IInternalObjectExternalizer)
 
 
 def _weakRef_toExternalOID(self):

@@ -23,7 +23,7 @@ from zope import interface
 from zope.dublincore.interfaces import IDCDescriptiveProperties
 from zope.dublincore.interfaces import IDCExtended
 
-from nti.externalization.interfaces import IExternalMappingDecorator
+from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.singleton import Singleton
 
@@ -36,7 +36,7 @@ __all__ = [
 # but only provide a subset of the properties. (mostly due to programming errors).
 # Hence the use of getattr below, to protect against this.
 @component.adapter(IDCExtended)
-@interface.implementer(IExternalMappingDecorator)
+@interface.implementer(IExternalStandardDictionaryDecorator)
 class DCExtendedExternalMappingDecorator(Singleton):
     """
     Adds the extended properties of dublincore to external objects as
@@ -48,7 +48,7 @@ class DCExtendedExternalMappingDecorator(Singleton):
         only field that ever gets populated.
 
     Implements
-    `~nti.externalization.interfaces.IExternalMappingDecorator` for
+    `~nti.externalization.interfaces.IExternalStandardDictionaryDecorator` for
     :class:`zope.dublincore.interfaces.IDCExtended` objects.
     """
 
@@ -61,14 +61,14 @@ class DCExtendedExternalMappingDecorator(Singleton):
 
 
 @component.adapter(IDCDescriptiveProperties)
-@interface.implementer(IExternalMappingDecorator)
+@interface.implementer(IExternalStandardDictionaryDecorator)
 class DCDescriptivePropertiesExternalMappingDecorator(Singleton):
     """
     Supports the 'DCTitle' and 'DCDescription' fields, as defined in
     :class:`zope.dublincore.interfaces.IDCDescriptiveProperties`.
 
     Implements
-    `~nti.externalization.interfaces.IExternalMappingDecorator`.
+    `~nti.externalization.interfaces.IExternalStandardDictionaryDecorator`.
     """
 
     def decorateExternalMapping(self, original, external):

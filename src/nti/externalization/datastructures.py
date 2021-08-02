@@ -28,6 +28,7 @@ from zope.schema.interfaces import IObject
 
 from nti.schema.interfaces import find_most_derived_interface
 
+from .interfaces import IInternalObjectExternalizer
 from .interfaces import IInternalObjectIO
 from .interfaces import IInternalObjectIOFinder
 from .interfaces import IAnonymousObjectFactory
@@ -60,6 +61,7 @@ IObject_providedBy = IObject.providedBy
 
 __all__ = [
     'ExternalizableDictionaryMixin',
+    'StandardInternalObjectExternalizer',
     'AbstractDynamicObjectIO',
     'ExternalizableInstanceDict',
     'InterfaceObjectIO',
@@ -106,6 +108,49 @@ class ExternalizableDictionaryMixin(object):
         return self._ext_standard_external_dictionary(self._ext_replacement(),
                                                       mergeFrom=mergeFrom,
                                                       **kwargs)
+
+
+class StandardInternalObjectExternalizer(ExternalizableDictionaryMixin):
+    """
+    An *adapter* that can be used to implement
+    :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`.
+
+    The result of externalizing is the standard external dictionary
+    for this adapter's *context* argument.
+
+    This can be registered as-is, or subclassed to add additional
+    items in the external dictionary. In that case, always begin by
+    calling this implemention first and updating the result.
+
+    .. versionadded:: 2.3.0
+    """
+
+    def __init__(self, context):
+        """
+        The constructor sets ``__external_can_create__`` to `False` (because
+        creating from just an externalizer makes no sense) and
+        ``__external_class_name__`` to `None` (if you override this value,
+        it will replace the ``Class`` value in the returned dictionary;
+        it *must* be a native `str`).
+        """
+        self.context = context
+        self.__external_can_create__ = False
+        self.__external_class_name__ = None
+
+    def _ext_replacement(self):
+        """
+        Returns this adapter's *context* argument.
+        """
+        return self.context
+
+    def toExternalObject(self, **kwargs):
+        result = self.toExternalDictionary(**kwargs)
+        if self.__external_class_name__:
+            result[StandardExternalFields.CLASS] = self.__external_class_name__
+        return result
+
+interface.classImplements(StandardInternalObjectExternalizer,
+                          IInternalObjectExternalizer)
 
 
 class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
@@ -169,7 +214,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
     def _ext_all_possible_keys(self):
         """
-        This method must return a frozenset of native strings.
+        This method must return a `frozenset` of native strings.
         """
         raise NotImplementedError()
 
@@ -463,8 +508,6 @@ class _AnonymousDictFactory(AnonymousObjectFactory):
     @staticmethod
     def default_factory(value):
         return value
-
-
 
 
 class InterfaceObjectIO(AbstractDynamicObjectIO):

@@ -15,7 +15,7 @@ from zope.component import subscribers
 
 from nti.externalization.extension_points import get_current_request
 from nti.externalization._base_interfaces import NotGiven
-from nti.externalization.interfaces import IExternalMappingDecorator
+from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
 
 
 def decorate_external_object(do_decorate, call_if_not_decorate,
@@ -50,7 +50,7 @@ def decorate_external_mapping(original_object,
     # A convenience API exposed to Python in __init__.py
     return decorate_external_object(
         True, None,
-        IExternalMappingDecorator, 'decorateExternalMapping',
+        IExternalStandardDictionaryDecorator, 'decorateExternalMapping',
         original_object, external_object,
         None, request
     )

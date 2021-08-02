@@ -1,6 +1,6 @@
 cdef get_current_request
 cdef NotGiven
-cdef IExternalMappingDecorator
+cdef IExternalStandardDictionaryDecorator
 cdef subscribers
 
 cpdef decorate_external_object(bint do_decorate, call_if_not_decorate,

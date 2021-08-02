@@ -21,7 +21,7 @@ from nti.externalization._base_interfaces import NotGiven
 
 
 from nti.externalization.extension_points import set_external_identifiers
-from nti.externalization.interfaces import IExternalMappingDecorator
+from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
 
 
 from nti.externalization._base_interfaces import get_standard_external_fields
@@ -64,7 +64,7 @@ def internal_to_standard_external_dictionary(
 
     decorate_external_object(
         decorate, decorate_callback,
-        IExternalMappingDecorator, 'decorateExternalMapping',
+        IExternalStandardDictionaryDecorator, 'decorateExternalMapping',
         self, result,
         None, # unused registry
         request
@@ -88,7 +88,7 @@ def to_standard_external_dictionary(
     """to_standard_external_dictionary(self, mergeFrom=None, decorate=True, request=NotGiven)
 
     Returns a dictionary representing the standard externalization of
-    the object. This function takes care of many of the standard external fields:
+    the object *self*. This function takes care of many of the standard external fields:
 
     * External identifiers like `.StandardExternalFields.OID` and `.StandardExternalFields.NTIID`
       using `.set_external_identifiers`.
@@ -100,24 +100,34 @@ def to_standard_external_dictionary(
       (from the ``mimeType`` attribute of the object).
 
     If the object has any
-    :class:`~nti.externalization.interfaces.IExternalMappingDecorator`
+    :class:`~nti.externalization.interfaces.IExternalStandardDictionaryDecorator`
     subscribers registered for it, they will be called to decorate the
     result of this method before it returns (**unless** *decorate* is
-    set to False; only do this if you know what you are doing! )
+    set to `False`; only do this if you know what you are doing! )
+    This is the only part of :mod:`nti.externalization` that invokes this
+    decorator.
 
-    :keyword dict mergeFrom:
-        For convenience, if *mergeFrom* is not
-        None, then those values will be added to the dictionary
-        created by this method. The keys and values in *mergeFrom*
-        should already be external.
-    :keyword ExternalizationPolicy policy: The :class:`~.ExternalizationPolicy` to
-        use. Must not be None.
-    :returns: A `.LocatedExternalDict`.
+    Custom externalization should begin by calling this function, or,
+    preferably, by using an existing externalizer (which invokes this
+    function, such as :class:`~.StandardInternalObjectExternalizer` or
+    :class:`~.InterfaceObjectIO` ) or subclassing such an existing
+    type and mutating the dictionary returned from super's
+    ``toExternalObject`` in your own implementation.
+
+   :keyword dict mergeFrom: For convenience, if *mergeFrom* is not
+       `None`, then values it contains will be added to the dictionary
+       created by this method. The keys and values in *mergeFrom*
+       should already be external.
+   :type mergeFrom: dict
+   :keyword ExternalizationPolicy policy: The :class:`~.ExternalizationPolicy` to
+       use. Must not be None.
+   :returns: A `.LocatedExternalDict`. For further externalization,
+       this object should be mutated in place.
 
    .. versionchanged:: 1.0a1
       Arbitrary keyword arguments not used by this function are deprecated
       and produce a warning.
-    .. versionchanged:: 2.1
+   .. versionchanged:: 2.1
        Add the *policy* keyword.
     """
 

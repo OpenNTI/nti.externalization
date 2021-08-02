@@ -71,6 +71,10 @@ externalize and internalize objects:
 
 We can define an object that we want to externalize:
 
+.. caution:: The examples in this section are not representative of
+             best practices or preferred patterns. Please keep
+             reading.
+
 .. testcode::
 
    class InternalObject(object):
@@ -86,12 +90,6 @@ We can define an object that we want to externalize:
        def __repr__(self):
            return '<%s %r letter=%r number=%d>' % (
                self.__class__.__name__, self._id, self._field1, self._field2)
-
-.. caution::
-
-   The signature for ``toExternalObject`` is poorly defined right now.
-   The suitable keyword arguments should be enumerated and documented,
-   but they are not. See https://github.com/NextThought/nti.externalization/issues/54
 
 And we can externalize it with
 `~nti.externalization.to_external_object`:
@@ -179,20 +177,44 @@ Now we will write an ``IInternalObjectIO`` adapter for it:
    from zope.component import adapter
 
    from nti.externalization.interfaces import IInternalObjectIO
+   from nti.externalization.datastructures import StandardInternalObjectExternalizer
 
    @implementer(IInternalObjectIO)
    @adapter(InternalObject)
-   class InternalObjectIO(object):
+   class InternalObjectIO(StandardInternalObjectExternalizer):
        def __init__(self, context):
-           self.context = context
+           super().__init__(context)
+           # Setting this is optional, if we don't like the default
+           self.__external_class_name__ = 'ExternalObject'
 
        def toExternalObject(self, **kwargs):
-          return {'Letter': self.context._field1, 'Number': self.context._field2}
+          result = super(InternalObjectIO, self).toExternalObject(**kwargs)
+          result.update({
+              'Letter': self.context._field1,
+              'Number': self.context._field2
+          })
+          return result
 
        def updateFromExternalObject(self, external_object, context=None):
             self.context._field1 = external_object['Letter']
             self.context._field2 = external_object['Number']
 
+.. tip::
+
+   It is a best practice for custom externalizers to either extend an
+   existing datastructure, typically
+   `~.StandardInternalObjectExternalizer` for simple cases (as in the
+   example above), *or* to begin with ``result =
+   to_standard_external_dictionary(self.context)`` and update that
+   mapping in place. (The ``StandardInternalObjectExternalizer`` calls
+   `~.to_standard_external_dictionary` under the covers.)
+
+
+.. caution::
+
+   The signature for ``toExternalObject`` is poorly defined right now.
+   The suitable keyword arguments should be enumerated and documented,
+   but they are not. See https://github.com/NextThought/nti.externalization/issues/54
 
 We can register the adapter (normally this would be done in ZCML) and
 use it:
@@ -208,14 +230,37 @@ Because we don't have a Python package to put this ZCML in, we'll
 register it manually.
 
   >>> from zope import component
-  >>> component.provideAdapter(InternalObjectIO)
+  >>> component.provideAdapter(InternalObjectIO, provides=IInternalObjectIO)
   >>> internal = InternalObject('original')
   >>> internal
   <InternalObject 'original' letter='a' number=42>
   >>> pprint(to_external_object(internal))
-  {'Letter': 'a', 'Number': 42}
+  {'Class': 'ExternalObject', 'Letter': 'a', 'Number': 42}
   >>> update_from_external_object(internal, {'Letter': 'b', 'Number': 3})
   <InternalObject 'original' letter='b' number=3>
+
+Notice that the external form included the ``Class`` key; this is one
+of the `~._base_interfaces.StandardExternalFields`
+automatically recognized by the built-in externalizers, whose value is
+taken from the corresponding key named in
+`~._base_interfaces.StandardInternalFields`. There are
+others:
+
+  >>> internal.creator = u'sjohnson'
+  >>> internal.createdTime = 123456
+  >>> pprint(to_external_object(internal))
+  {'Class': 'ExternalObject',
+   'CreatedTime': 123456,
+   'Creator': 'sjohnson',
+   'Letter': 'b',
+   'Number': 3}
+
+.. note:: Notice how the names of the internal fields, ``creator`` and
+          ``createdTime`` because ``Creator`` and ``CreatedTime`` in
+          the external object. The convention used by this library is
+          that fields that cannot be modified directly by the client
+          are always capitalized. Your custom externalizers and
+          interface definitions should follow this convention.
 
 By using adapters like this, we can separate out externalization from
 our core logic. Of course, that's still a lot of manual code to write.
@@ -270,7 +315,7 @@ And now an implementation of that interface.
    class Address(SchemaConfigured):
         createDirectFieldProperties(IAddress)
 
-Externalizing based on the schema is done with `.InterfaceObjectIO`.
+Externalizing (and updating!) based on the schema is done with `.InterfaceObjectIO`.
 We'll create a subclass to configure it.
 
 .. testcode::

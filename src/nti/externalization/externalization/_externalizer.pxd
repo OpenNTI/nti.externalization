@@ -21,7 +21,7 @@ cdef IFiniteSequence
 cdef ThreadLocalManager
 cdef get_current_request
 cdef set_external_identifiers
-cdef IExternalMappingDecorator
+cdef IExternalStandardDictionaryDecorator
 cdef IExternalObject
 cdef IExternalObjectDecorator
 cdef ILocatedExternalSequence

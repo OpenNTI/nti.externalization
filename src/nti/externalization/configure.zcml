@@ -13,11 +13,11 @@
     -->
     <include package="." file="meta.zcml" />
 
-    <subscriber provides=".interfaces.IExternalMappingDecorator"
+    <subscriber provides=".interfaces.IExternalStandardDictionaryDecorator"
                 for="zope.dublincore.interfaces.IDCExtended"
                 factory=".dublincore.DCExtendedExternalMappingDecorator" />
 
-    <subscriber provides=".interfaces.IExternalMappingDecorator"
+    <subscriber provides=".interfaces.IExternalStandardDictionaryDecorator"
                 for="zope.dublincore.interfaces.IDCDescriptiveProperties"
                 factory=".dublincore.DCDescriptivePropertiesExternalMappingDecorator" />
 
@@ -33,7 +33,7 @@
              provides=".interfaces.ILocatedExternalSequence"
              factory=".interfaces.LocatedExternalList" />
 
-    <adapter for=".interfaces.IList"
+    <adapter for="zope.interface.common.builtins.IList"
              provides=".interfaces.ILocatedExternalSequence"
              factory=".interfaces.LocatedExternalList" />
 

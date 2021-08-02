@@ -125,11 +125,11 @@ look for a request):
     'full_name': 'Steve Jobs',
     'href': 'http://example.com/path/address'}
 
-IExternalMappingDecorator
--------------------------
+IExternalStandardDictionaryDecorator
+------------------------------------
 
 There is also
-`~nti.externalization.interfaces.IExternalMappingDecorator`. It is
+`~nti.externalization.interfaces.IExternalStandardDictionaryDecorator`. It is
 called by `.to_standard_external_dictionary`. Typically that's *well
 before* most of the object-specific fields have been filled in (e.g.,
 from the object schema), and it is always before
