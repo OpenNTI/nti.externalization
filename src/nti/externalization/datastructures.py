@@ -111,10 +111,11 @@ class ExternalizableDictionaryMixin(object):
 
 class StandardInternalObjectExternalizer(ExternalizableDictionaryMixin):
     """
-    An adapter that can be used to implement
+    An *adapter* that can be used to implement
     :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`.
 
-    The result of externalizing is the standard external dictionary.
+    The result of externalizing is the standard external dictionary
+    for this adapter's *context* argument.
 
     This can be registered as-is, or subclassed to add additional
     items in the external dictionary. In that case, always begin by
@@ -197,7 +198,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
     def _ext_all_possible_keys(self):
         """
-        This method must return a frozenset of native strings.
+        This method must return a `frozenset` of native strings.
         """
         raise NotImplementedError()
 

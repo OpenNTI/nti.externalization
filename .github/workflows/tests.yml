@@ -37,6 +37,7 @@ jobs:
     - name: Test
       run: |
         coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress
+        PURE_PYTHON=1 coverage run -a -m zope.testrunner --test-path=src  --auto-color --auto-progress
     - name: Sphinx DocTests
       if: matrix.python-version != 2.7 && matrix.python-version != 'pypy2'
       # These do still run on Python 2 (test_docs.py) but they need an output normalizer,
@@ -44,6 +45,7 @@ jobs:
       # but that seems like overkill
       run: |
         coverage run -a -m sphinx -b doctest -d docs/_build/doctrees docs docs/_build/doctests
+        PURE_PYTHON=1 coverage run -a -m sphinx -b doctest -d docs/_build/doctrees docs docs/_build/doctests
 
     - name: Submit to Coveralls
       # This is a container action, which only runs on Linux.

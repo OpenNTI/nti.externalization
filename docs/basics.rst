@@ -237,6 +237,29 @@ register it manually.
   >>> update_from_external_object(internal, {'Letter': 'b', 'Number': 3})
   <InternalObject 'original' letter='b' number=3>
 
+Notice that the external form included the ``Class`` key; this is one
+of the `~._base_interfaces.StandardExternalFields`
+automatically recognized by the built-in externalizers, whose value is
+taken from the corresponding key named in
+`~._base_interfaces.StandardInternalFields`. There are
+others:
+
+  >>> internal.creator = u'sjohnson'
+  >>> internal.createdTime = 123456
+  >>> pprint(to_external_object(internal))
+  {'Class': 'InternalObject',
+   'CreatedTime': 123456,
+   'Creator': 'sjohnson',
+   'Letter': 'b',
+   'Number': 3}
+
+.. note:: Notice how the names of the internal fields, ``creator`` and
+          ``createdTime`` because ``Creator`` and ``CreatedTime`` in
+          the external object. The convention used by this library is
+          that fields that cannot be modified directly by the client
+          are always capitalized. Your custom externalizers and
+          interface definitions should follow this convention.
+
 By using adapters like this, we can separate out externalization from
 our core logic. Of course, that's still a lot of manual code to write.
 
