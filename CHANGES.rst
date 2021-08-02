@@ -3,7 +3,7 @@
 =========
 
 
-2.3.0 (unreleased)
+2.3.0 (2021-08-02)
 ==================
 
 - Add a new base class, ``StandardInternalObjectExternalizer``. See
