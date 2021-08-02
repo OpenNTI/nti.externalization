@@ -770,6 +770,7 @@ class TestStandardInternalObjectExternalizer(unittest.TestCase):
     def test_subclass(self):
         from nti.externalization.interfaces import IInternalObjectExternalizer
         from nti.externalization.datastructures import StandardInternalObjectExternalizer
+        from nti.externalization._compat import PURE_PYTHON
 
         class X(StandardInternalObjectExternalizer):
             def __init__(self, context):
@@ -791,9 +792,12 @@ class TestStandardInternalObjectExternalizer(unittest.TestCase):
         # Now non-native-strs
         ext = Ext()
         ext.creator = u'sjohnson'
-        with self.assertRaises(TypeError):
-            o.__external_class_name__ = u'Foo' if bytes is str else b'Foo'
         o.context = ext
+
+        if not PURE_PYTHON:
+            # XXX: pure-python mode allows anything.
+            with self.assertRaises(TypeError):
+                o.__external_class_name__ = u'Foo' if bytes is str else b'Foo'
 
         ext = o.toExternalObject()
         assert_that(ext, is_({
