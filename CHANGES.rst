@@ -3,11 +3,25 @@
 =========
 
 
-2.2.1 (unreleased)
+2.3.0 (unreleased)
 ==================
 
-- Nothing changed yet.
-
+- Add a new base class, ``StandardInternalObjectExternalizer``. See
+  `PR 120
+  <https://github.com/NextThought/nti.externalization/pull/120>`_ and
+  `issue 117 <https://github.com/NextThought/nti.externalization/issues/117>`_.
+- Rename ``IExternalMappingDecorator`` to
+  ``IExternalStandardDictionaryDecorator`` to emphasize that it is
+  only used if you (directly or through a super class) call
+  ``to_standard_external_dictionary``. A compatibility alias remains.
+  See `PR 120
+  <https://github.com/NextThought/nti.externalization/pull/120>`_ and
+  `issue 118
+  <https://github.com/NextThought/nti.externalization/issues/118>`_.
+- Docs-deprecated aliases in ``nti.externalization.interfaces`` now also
+  emit deprecation warnings at runtime.
+- Other documentation improvements. Sphinx can now run all the
+  doctests (on Python 3); many doctests are still run an Python 2.
 
 2.2.0 (2021-04-14)
 ==================
