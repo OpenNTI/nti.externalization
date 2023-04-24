@@ -62,7 +62,7 @@ ext_modules = []
 # We use the support from Cython 28 to be able to parallel compile
 # and cythonize modules to a different name with a leading _.
 # This list is derived from the profile of bm_simple_iface
-# https://github.com/NextThought/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
+# https://github.com/OpenNTI/nti.externalization/commit/0bc4733aa8158acd0d23c14de2f9347fb698c040
 if not PYPY:
     def _source(m, ext):
         m = m.replace('.', '/')
@@ -159,6 +159,7 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
@@ -169,7 +170,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
-    url="https://github.com/NextThought/nti.externalization",
+    url="https://github.com/OpenNTI/nti.externalization",
     zip_safe=True,
     packages=find_packages('src'),
     package_dir={'': 'src'},
