@@ -30,6 +30,7 @@ __all__ = [
     'ParsedOID',
 ]
 
+
 def to_external_oid(self, default=None, add_to_connection=False,
                     add_to_intids=False, use_cache=True):
     # Override the signature to *not* document use_cache.
@@ -60,8 +61,10 @@ def to_external_oid(self, default=None, add_to_connection=False,
 
     :return: A :class:`bytes` string.
     """
+    # pylint:disable=too-many-positional-arguments,too-complex
     # TODO: Simplify
     # pylint:disable=too-many-branches
+    # _p_oid: pylint:disable=protected-access
     try:
         return self.toExternalOID() or default
     except AttributeError:
@@ -91,7 +94,7 @@ def to_external_oid(self, default=None, add_to_connection=False,
             except TypeError:
                 return default
 
-            jar.add(self)
+            jar.add(self) # pylint:disable=too-many-function-args
             oid = self._p_oid
         else:
             return default
@@ -119,7 +122,7 @@ def to_external_oid(self, default=None, add_to_connection=False,
             intid = intutility.register(self)
         if intid is not None:
             if not jar:
-                oid = oid + b':'  # Ensure intid is always the third part
+                oid += b':'  # Ensure intid is always the third part
             oid = oid + b':' + bytes_(to_external_string(intid))
 
     try:

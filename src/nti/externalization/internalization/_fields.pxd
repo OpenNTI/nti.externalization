@@ -7,7 +7,7 @@ import cython
 cdef sys
 
 cdef text_type
-cdef reraise
+
 
 cdef implementedBy
 

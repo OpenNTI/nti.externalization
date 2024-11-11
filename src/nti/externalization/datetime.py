@@ -22,7 +22,6 @@ import time
 
 import isodate
 import pytz
-import six
 
 from zope import component
 from zope import interface
@@ -53,8 +52,10 @@ def _parse_with(func, string):
     try:
         return func(string)
     except isodate.ISO8601Error as e:
-        e = InvalidValue(*e.args).with_field_and_value(None, string)
-        six.reraise(InvalidValue, e, sys.exc_info()[2])
+        raise InvalidValue(*e.args).with_field_and_value(
+            None, string
+        ).with_traceback(e.__traceback__) from e
+
 
 _input_type = (str if sys.version_info[0] >= 3 else basestring) # pylint:disable=undefined-variable
 # XXX: This should really be either unicode or str on Python 2. We need to *know*
@@ -123,7 +124,7 @@ def _local_tzinfo(local_tzname=None):
                   else time.timezone)
 
         add = '+' if offset > 0 else ''
-        local_tzname = 'Etc/GMT' + add + str((offset // 60 // 60))
+        local_tzname = 'Etc/GMT' + add + str((offset // 60 // 60)) # pylint:disable=redefined-variable-type
         tzinfo = pytz.timezone(local_tzname)
     return tzinfo
 

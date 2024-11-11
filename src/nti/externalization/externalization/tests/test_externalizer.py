@@ -58,7 +58,7 @@ class TestFunctions(unittest.TestCase):
             def __init__(self):
                 self.conforms = []
 
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 self.conforms.append(iface)
 
         o = Obj()

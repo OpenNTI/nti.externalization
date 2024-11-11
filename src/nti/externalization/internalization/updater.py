@@ -24,7 +24,6 @@ import warnings
 
 
 from persistent.interfaces import IPersistent
-from six import iteritems
 from zope import interface
 from zope.event import notify as notify_event
 
@@ -94,13 +93,8 @@ def _get_update_signature(updater):
     if spec is None:
         try:
             func = updater.updateFromExternalObject
-            if hasattr(inspect, 'getfullargspec'):
-                # Python 3. getargspec() is deprecated.
-                argspec = inspect.getfullargspec(func) # pylint:disable=no-member
-                keywords = argspec.varkw
-            else: # Python 2
-                argspec = inspect.getargspec(func) # pylint:disable=deprecated-method
-                keywords = argspec.keywords
+            argspec = inspect.getfullargspec(func) # pylint:disable=no-member
+            keywords = argspec.varkw
             args = argspec.args
             defaults = argspec.defaults
         except TypeError: # pragma: no cover (This is hard to catch in pure-python coverage mode)
@@ -122,7 +116,7 @@ def _get_update_signature(updater):
                     # update(ext)
                     spec = _UPDATE_ARGS_ONE
             else:
-                if len(args) == 3:
+                if len(args) == 3: # pylint:disable=else-if-used
                     # update(ext, context, **kwargs) or update(ext, dataserver, **kwargs)
                     spec = _UPDATE_ARGS_TWO
                 elif keywords.startswith("unused") or keywords.startswith('_'):
@@ -188,7 +182,7 @@ def update_from_external_object(containedObject, externalObject,
                                 require_updater=False,
                                 notify=True,
                                 pre_hook=None):
-    # pylint:disable=line-too-long
+    # pylint:disable=line-too-long, too-many-positional-arguments
     """
     update_from_external_object(containedObject, externalObject, context=None, require_updater=False, notify=True)
 
@@ -310,7 +304,7 @@ def _find_INamedExternalizedObjectFactoryFinder(containedObject):
         # Ok, check to see if an instance of the old root interface
         # InternalObjectIO is there and also provides INamedExternalizedObjectFactoryFinder;
         # if so, there's a bad ZCML registration.
-        updater = IInternalObjectIO(containedObject, None)
+        updater = IInternalObjectIO(containedObject, None) # pylint:disable=redefined-variable-type
         if INamedExternalizedObjectFactoryFinder.providedBy(updater): # pylint:disable=no-value-for-parameter
             warnings.warn(
                 "The adapter %r was registered as IInternalObjectIO when it should be "
@@ -356,7 +350,7 @@ def _update_from_external_object(containedObject, externalObject, args):
     # We have to save the list of keys, it's common that they get popped during the update
     # process, and then we have no descriptions to send
     external_keys = []
-    for k, v in iteritems(externalObject):
+    for k, v in externalObject.items():
         external_keys.append(k)
         if isinstance(v, PRIMITIVES):
             continue
@@ -384,7 +378,7 @@ def _update_from_external_object(containedObject, externalObject, args):
         # IInternalObjectUpdater to be registered at two different levels
         # of specificity, so we need to look up IInternalObjectUpdater,
         # not test if it's provided by what we already have.
-        if args.require_updater and not isinstance(containedObject, dict):
+        if args.require_updater and not isinstance(containedObject, dict): # pylint:disable=else-if-used
             updater = IInternalObjectUpdater(containedObject)
         else:
             updater = IInternalObjectUpdater(containedObject, None)

@@ -22,7 +22,7 @@ from hamcrest.core.base_matcher import BaseMatcher
 class Externalizes(BaseMatcher):
 
     def __init__(self, matcher=None):
-        super(Externalizes, self).__init__()
+        super().__init__()
         self.matcher = matcher
 
     def _matches(self, item):

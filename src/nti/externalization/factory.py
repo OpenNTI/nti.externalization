@@ -62,9 +62,9 @@ class ObjectFactory(Factory):
     #: constructor.
     default_factory = None
     #: The default title, if none is given to the constructor.
-    default_title = u''
+    default_title = ''
     #: The default description, if none is given to the constructor.
-    default_description = u''
+    default_description = ''
 
     def __init__(self, callable=None, title='', description='', interfaces=None):
         callable = callable if callable is not None else self.default_factory

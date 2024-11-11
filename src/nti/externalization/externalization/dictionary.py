@@ -47,6 +47,7 @@ def internal_to_standard_external_dictionary(
         decorate_callback=NotGiven,
         policy=DEFAULT_EXTERNALIZATION_POLICY,
 ):
+    # pylint:disable=too-many-positional-arguments
     # The real implementation of this function. Code in this
     # package should use this; code outside of this package *MUST NOT*
     # use this---just pass the correct args to to_standard_external_dictionary.
@@ -130,7 +131,7 @@ def to_standard_external_dictionary(
    .. versionchanged:: 2.1
        Add the *policy* keyword.
     """
-
+    # pylint:disable=too-many-positional-arguments
     if (
             kwargs
             or name is not NotGiven

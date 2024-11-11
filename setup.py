@@ -3,7 +3,7 @@ import sys
 import codecs
 
 from setuptools import setup
-from setuptools import find_packages
+from setuptools import find_namespace_packages
 from setuptools import Extension
 
 PYPY = hasattr(sys, 'pypy_version_info')
@@ -18,10 +18,10 @@ entry_points = {
 }
 
 TESTS_REQUIRE = [
-    'fudge',
     'nti.testing',
     'zope.testrunner',
     'manuel',
+    'pyperf',
 ]
 
 
@@ -38,7 +38,7 @@ def _dummy_cythonize(extensions, **_kwargs):
         sources = []
         for sfile in extension.sources:
             path, ext = os.path.splitext(sfile)
-            if ext in ('.pyx', '.py'):
+            if ext in {'.pyx', '.py'}:
                 ext = '.c'
                 sfile = path + ext
             sources.append(sfile)
@@ -130,7 +130,7 @@ if not PYPY:
             compiler_directives={
                 #'linetrace': True,
                 'infer_types': True,
-                'language_level': '3str',
+                'language_level': '3',
                 'always_allow_keywords': False,
                 'nonecheck': False,
             },
@@ -160,35 +160,30 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     url="https://github.com/OpenNTI/nti.externalization",
     zip_safe=True,
-    packages=find_packages('src'),
+    packages=find_namespace_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    namespace_packages=['nti'],
     ext_modules=ext_modules,
-    tests_require=TESTS_REQUIRE,
     install_requires=[
-        'BTrees >= 4.8.0', # Registers BTrees as Mapping automatically.
+        'nti.schema >= 1.17.0',
+
         'PyYAML >= 5.1',
         'ZODB >= 5.5.1',
         'isodate',
-        'nti.schema >= 1.14.0',
         'persistent >= 4.7.0',
         'pytz',
-        'setuptools',
-        'simplejson',
-        'six >= 1.11.0', # for the reference cycle fix in reraise()
+        'simplejson >= 3.19',
         'transaction >= 2.2',
         'zope.component >= 4.6.1',
         'zope.configuration >= 4.4.0',
@@ -205,23 +200,19 @@ setup(
         'zope.proxy >= 4.3.5',
         'zope.schema >= 6.0.0',
         'zope.security >= 5.1.1',
+        'BTrees >= 4.8.0', # Registers BTrees as Mapping automatically.
     ],
     extras_require={
         'test': TESTS_REQUIRE,
         'docs': [
-            'Sphinx < 4', # Sphinx 4 breaks repoze.sphinx.autointerface 0.8
+            'Sphinx',
             'repoze.sphinx.autointerface',
             'sphinx_rtd_theme',
         ],
         'benchmarks': [
             'pyperf',
         ],
-        'lint': [
-            # 3 seems to break things, at least as far as
-            # emacs flycheck is concerned.
-            'pylint < 3',
-            'pyperf', # to avoid missing module errors
-        ]
     },
     entry_points=entry_points,
+    python_requires=">=3.10",
 )

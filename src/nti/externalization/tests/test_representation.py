@@ -10,10 +10,10 @@ from __future__ import print_function
 # stdlib imports
 import re
 import unittest
+from unittest.mock import patch as Patch
 
 from persistent import Persistent
 
-import fudge
 
 from . import ExternalizationLayerTest
 from .. import representation
@@ -21,8 +21,6 @@ from .. import representation
 from hamcrest import assert_that
 from hamcrest import contains_string
 from hamcrest import is_
-
-logger = __import__('logging').getLogger(__name__)
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -236,17 +234,17 @@ class AbstractRepresenterTestMixin(object):
     def test_unicode(self):
         rep = self._makeOne()
 
-        result = rep.dump(u"Hi")
+        result = rep.dump("Hi")
         assert_that(result, is_(self._simpleStringRepr('Hi')))
 
         result = rep.load(result)
-        assert_that(result, is_(u'Hi'))
+        assert_that(result, is_('Hi'))
 
 
 class TestYaml(AbstractRepresenterTestMixin,
                ExternalizationLayerTest):
 
-    FORMAT = u'yaml'
+    FORMAT = 'yaml'
 
     def _getTargetClass(self):
         return representation.YamlRepresenter
@@ -261,7 +259,7 @@ class TestYaml(AbstractRepresenterTestMixin,
 class TestJson(AbstractRepresenterTestMixin,
                ExternalizationLayerTest):
 
-    FORMAT = u'json'
+    FORMAT = 'json'
 
     def _getTargetClass(self):
         return representation.JsonRepresenter
@@ -274,22 +272,22 @@ class TestJson(AbstractRepresenterTestMixin,
 
         json = self._makeOne()
         bio = io.BytesIO() if str is bytes else io.StringIO()
-        json.dump(u"hi", bio)
+        json.dump("hi", bio)
 
         assert_that(bio.getvalue(), is_('"hi"'))
 
     def test_load_bytes(self):
         json = self._makeOne()
         result = json.load(b'"hi"')
-        assert_that(result, is_(u"hi"))
+        assert_that(result, is_("hi"))
 
-    @fudge.patch('simplejson.loads')
+    @Patch('simplejson.loads', autospec=True)
     def test_loads_returns_bytes(self, loads):
-        loads.expects_call().returns(b'bytes')
+        loads.return_value = b'bytes'
 
         json = self._makeOne()
         result = json.load(b'hi')
-        assert_that(result, is_(u'bytes'))
+        assert_that(result, is_('bytes'))
 
     def test_to_json_representation(self):
         result = representation.to_json_representation({})

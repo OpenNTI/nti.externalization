@@ -39,7 +39,7 @@ def main(runner=None):
     xmlconfig.file('configure.zcml', nti.externalization.tests.benchmarks)
 
     obj = HasListOfDerived()
-    obj.the_objects = [DerivedWithOneTextField(text=u"This is some text " + str(i))
+    obj.the_objects = [DerivedWithOneTextField(text="This is some text " + str(i))
                        for i in range(10)]
 
     if '--profile' in sys.argv:

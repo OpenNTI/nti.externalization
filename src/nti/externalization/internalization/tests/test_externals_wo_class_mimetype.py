@@ -41,7 +41,7 @@ class TestExternals(CleanUp,
 
     def test_single_object_field_names_match_non_primitive(self):
         class INestedThing(interface.Interface):
-            value = Int(title=u"An integer")
+            value = Int(title="An integer")
 
         class IRoot(interface.Interface):
             field = Object(INestedThing)
@@ -82,7 +82,7 @@ class TestExternals(CleanUp,
 
     def test_sequence_object_field_names_match_non_primitive(self):
         class INestedThing(interface.Interface):
-            value = Int(title=u"An integer")
+            value = Int(title="An integer")
 
         class IRoot(interface.Interface):
             field = List(Object(INestedThing))
@@ -124,7 +124,7 @@ class TestExternals(CleanUp,
 
     def test_nested_single_object_field_names_match_non_primitive(self):
         class INestedThing(interface.Interface):
-            value = Int(title=u"An integer")
+            value = Int(title="An integer")
 
         class IMiddleThing(interface.Interface):
             nested = Object(INestedThing)
@@ -257,11 +257,11 @@ class IOBase(object):
 
 
 class IGlobalNestedThing(interface.Interface):
-    value = Int(title=u"An integer")
+    value = Int(title="An integer")
 
 class IGlobalMiddleThing(interface.Interface):
     nested = Object(IGlobalNestedThing)
-    nested_dict = Dict(title=u'a dict',
+    nested_dict = Dict(title='a dict',
                        value_type=Object(IGlobalNestedThing))
 
 class IGlobalRoot(interface.Interface):

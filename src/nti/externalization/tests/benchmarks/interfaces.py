@@ -47,7 +47,7 @@ class ISimplestPossibleObject(Interface):
 
 class IDerivedWithOneTextField(IRootInterface):
 
-    text = TextLine(title=u"Some text", required=True)
+    text = TextLine(title="Some text", required=True)
 
     taggedValue('__external_class_name__',
                 'DerivedWithOneTextField')

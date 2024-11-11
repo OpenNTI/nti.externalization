@@ -183,26 +183,24 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "http://docs.pylonsproject.org/projects/pyramid/en/latest/": None,
-    #'https://ntiwref.readthedocs.io/en/latest': None,
-    'http://docs.python.org/': None,
-    'http://ntischema.readthedocs.io/en/latest/': None,
-    'http://ntizodb.readthedocs.io/en/latest/': None,
-    'http://persistent.readthedocs.io/en/latest': None,
-    'http://zodb.readthedocs.io/en/latest': None,
-
-    'http://zopecomponent.readthedocs.io/en/latest': None,
-    'http://zopecontainer.readthedocs.io/en/latest': None,
-    'http://zopedatetime.readthedocs.io/en/latest': None,
-    'http://zopedublincore.readthedocs.io/en/latest': None,
-    'http://zopeevent.readthedocs.io/en/latest': None,
-    'http://zopehookable.readthedocs.io/en/latest': None,
-    'http://zopeinterface.readthedocs.io/en/latest': None,
-    'http://zopeintid.readthedocs.io/en/latest/': None,
-    'http://zopemimetype.readthedocs.io/en/latest/': None,
-    'http://zopeproxy.readthedocs.io/en/latest': None,
-    'http://zopeschema.readthedocs.io/en/latest/': None,
-    'http://zopelifecycleevent.readthedocs.io/en/latest/': None,
+    'a': ('http://docs.pylonsproject.org/projects/pyramid/en/latest/', None),
+    'b': ('http://docs.python.org/', None),
+    'c': ('http://ntischema.readthedocs.io/en/latest/', None),
+    'd': ('http://ntizodb.readthedocs.io/en/latest/', None),
+    'e': ('http://persistent.readthedocs.io/en/latest', None),
+    'f': ('http://zodb.readthedocs.io/en/latest', None),
+    'g': ('http://zopecomponent.readthedocs.io/en/latest', None),
+    'h': ('http://zopecontainer.readthedocs.io/en/latest', None),
+    'i': ('http://zopedatetime.readthedocs.io/en/latest', None),
+    'j': ('http://zopedublincore.readthedocs.io/en/latest', None),
+    'k': ('http://zopeevent.readthedocs.io/en/latest', None),
+    'l': ('http://zopehookable.readthedocs.io/en/latest', None),
+    'm': ('http://zopeinterface.readthedocs.io/en/latest', None),
+    'n': ('http://zopeintid.readthedocs.io/en/latest/', None),
+    'o': ('http://zopemimetype.readthedocs.io/en/latest/', None),
+    'p': ('http://zopeproxy.readthedocs.io/en/latest', None),
+    'q': ('http://zopeschema.readthedocs.io/en/latest/', None),
+    'r': ('http://zopelifecycleevent.readthedocs.io/en/latest/', None)
 }
 
 extlinks = {

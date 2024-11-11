@@ -25,6 +25,7 @@ from zope.location import ILocation
 
 
 # pylint:disable=inherit-non-class,no-method-argument,no-self-argument
+# pylint:disable=too-many-ancestors
 
 from ._base_interfaces import LocatedExternalDict
 from ._base_interfaces import get_standard_external_fields
@@ -189,7 +190,7 @@ class LocatedExternalList(list):
     `mimeType` value of None.
     """
 
-    __name__ = u''
+    __name__ = ''
     __parent__ = None
     __acl__ = ()
     mimeType = None
@@ -246,10 +247,10 @@ class IExternalObjectIO(IExternalObjectRepresenter,
 
 
 #: Constant requesting JSON format data
-EXT_REPR_JSON = u'json'
+EXT_REPR_JSON = 'json'
 
 #: Constant requesting YAML format data
-EXT_REPR_YAML = u'yaml'
+EXT_REPR_YAML = 'yaml'
 
 
 # Creating and updating new and existing objects given external forms
@@ -457,7 +458,7 @@ class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
     external_value = None
 
     def __init__(self, obj, *descriptions, **kwargs):
-        super(ObjectModifiedFromExternalEvent, self).__init__(obj, *descriptions)
+        super().__init__(obj, *descriptions)
         self.kwargs = kwargs
 
 

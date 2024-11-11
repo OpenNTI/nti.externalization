@@ -64,7 +64,7 @@ def profile(loops=1000, obj=None):
 
     if obj is None:
         obj = DerivedWithOneTextField()
-        obj.text = u'This is some text'
+        obj.text = 'This is some text'
 
     ext = toExternalObject(obj)
 
@@ -89,7 +89,7 @@ def vmprofile(loops=1000, obj=None):
 
     if obj is None:
         obj = DerivedWithOneTextField()
-        obj.text = u'This is some text'
+        obj.text = 'This is some text'
 
     ext = toExternalObject(obj)
 
@@ -117,7 +117,7 @@ def main(runner=None):
         return
 
     obj = DerivedWithOneTextField()
-    obj.text = u"This is some text"
+    obj.text = "This is some text"
 
     # pylint:disable=line-too-long
     assert getattr(obj, 'mimeType') == 'application/vnd.nextthought.benchmarks.derivedwithonetextfield'

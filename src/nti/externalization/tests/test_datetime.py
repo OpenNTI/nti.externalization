@@ -97,7 +97,7 @@ class TestDatetime(ExternalizationLayerTest):
             # Now with an invalid local_tzname
             assert_that(datetime_from_string('2014-01-20T00:00',
                                              assume_local=True,
-                                             local_tzname=('dne')),
+                                             local_tzname='dne'),
                         is_(IDateTime('2014-01-20T06:00Z')))
 
         # Same result for the canonical name, don't need to be in

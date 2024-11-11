@@ -13,7 +13,6 @@ from __future__ import print_function
 from datetime import datetime as DateTime
 from calendar import timegm as dt_tuple_to_unix
 
-from six import text_type
 
 from zope.dublincore.interfaces import IDCTimes
 from zope.security.management import system_user
@@ -139,7 +138,7 @@ def _system_user_converter(value):
     else:
         # This is a likely recursion point, we want to be
         # sure we don't do that.
-        value = text_type(value)
+        value = str(value)
     return value
 
 

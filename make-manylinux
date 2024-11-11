@@ -1,0 +1,83 @@
+#!/bin/bash
+# Initially based on a snippet from the greenlet project.
+# This needs to be run from the root of the project.
+# To update: docker pull quay.io/pypa/manylinux2014_x86_64
+set -euo pipefail
+export PYTHONUNBUFFERED=1
+export PYTHONDONTWRITEBYTECODE=1
+# Use a fixed hash seed for reproducibility
+export PYTHONHASHSEED=8675309
+export CI=1
+export TRAVIS=true
+# Don't get warnings about Python 2 support being deprecated. We
+# know. The env var works for pip 20.
+export PIP_NO_PYTHON_VERSION_WARNING=1
+export PIP_NO_WARN_SCRIPT_LOCATION=1
+
+
+if [ -d /project ] && [ -d /opt/python ]; then
+    # Running inside docker
+    export DATA_SSL_MANYLINUX=1
+    # Install build deps.
+    if [ -e /usr/bin/yum ]; then
+        # manylinux
+        yum -y install openssl-devel
+    fi
+    if [ -e /sbin/apk ]; then
+        # muslinux
+        apk add openssl-dev
+        apk add libc-dev
+    fi
+    # Build for speed (we're going to test this anyway) and without assertions.
+    # Note: -Ofast includes -ffast-math which affects process-wide floating-point flags (e.g. can affect numpy).
+    # It may also violate standards compliance in a few ways. Rather than opt-out with -fno-fast-math,
+    # we use O3, which has neither of those problems.
+    export CFLAGS="-O3 -DNDEBUG"
+    # Build in an isolated directory
+    mkdir /tmp/build
+    cd /tmp/build
+    git config --global --add safe.directory /project/.git
+    git clone /project project
+    cd project
+
+    mkdir -p /project/wheelhouse
+    OPATH="$PATH"
+    which auditwheel
+    echo @@@@@@@@@@@@@@@@@@@@@@
+    echo Will build /opt/python/cp{39,310,311}* /opt/python/pp{39,}*
+
+    for variant in `ls -d /opt/python/cp{313,310,311,312}*`; do
+        if [ "$variant" = "/opt/python/cp313-cp313t" ]; then
+            echo "Skipping no-gil build. The GIL is required."
+            continue
+        fi
+        export PATH="$variant/bin:$OPATH"
+        echo "Building $variant $(python --version)"
+
+
+        python -mpip install -U pip
+        python -mpip install -U build
+        # Build the wheel
+        python -mbuild -w
+        WHL=$(ls dist/*whl)
+
+
+        # XXX: The name of the wheel doesn't match the name of the project
+        PATH="$OPATH" auditwheel repair $WHL
+        WHL=$(ls wheelhouse/nti.externalization*whl)
+        cp $WHL /project/wheelhouse
+        ls -l /project/wheelhouse
+
+        rm -rf build
+        rm -rf wheelhouse
+
+    done
+
+    exit 0
+fi
+
+# Mount the current directory as /project
+# Can't use -i on Travis with arm64, "input device not a tty"
+sname=$(basename "$0")
+docker run --rm -e PIP_INDEX_URL -v "$(pwd)/:/project"  "${DOCKER_IMAGE:-quay.io/pypa/manylinux2014_x86_64}" /project/"$sname"
+ls -l wheelhouse

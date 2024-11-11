@@ -241,20 +241,10 @@ class TestNoPickle(unittest.TestCase):
         import pickle
         pickle.dumps(obj)
 
-    def _persist_cpickle(self, obj):
-        try:
-            import cPickle
-        except ImportError: # pragma: no cover
-            # Python 3
-            raise TypeError("Not allowed to pickle")
-        else: # pragma: no cover
-            cPickle.dumps(obj)
-
     def _all_persists_fail(self, factory):
 
         for meth in (self._persist_zodb,
-                     self._persist_pickle,
-                     self._persist_cpickle):
+                     self._persist_pickle,):
             __traceback_info__ = meth
             assert_that(calling(meth).with_args(factory()),
                         raises(TypeError, "Not allowed to pickle"))
@@ -303,20 +293,20 @@ class TestNoPickle(unittest.TestCase):
     def test_getstate_emits_warning(self):
         class P(object):
             def __getstate__(self):
-                "Does nothing"
+                """Nothing"""
 
         self._check_emits_warning(P)
 
     def test_reduce_emits_warning(self):
         class P(object):
             def __reduce__(self):
-                "Does nothing"
+                """Nothing"""
 
         self._check_emits_warning(P)
 
     def test_reduce_ex_emits_warning(self):
         class P(object):
             def __reduce_ex__(self, _protocol):
-                "Does nothing"
+                """Nothing"""
 
         self._check_emits_warning(P)

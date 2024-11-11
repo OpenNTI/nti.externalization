@@ -146,7 +146,7 @@ class TestFunctions(ExternalizationLayerTest):
 
         result = {}
         set_external_identifiers(T(), result)
-        assert_that(result, is_({'OID': u'abc', 'NTIID': u'abc'}))
+        assert_that(result, is_({'OID': 'abc', 'NTIID': 'abc'}))
 
     def test_to_external_representation_none_handling(self):
         d = {'a': 1, 'None': None}
@@ -158,9 +158,9 @@ class TestFunctions(ExternalizationLayerTest):
         l = LocatedExternalList()
         l.append(LocatedExternalDict(k='v'))
 
-        class SubUnicode(type(u'abc')):
+        class SubUnicode(type('abc')):
             pass
-        l.append(LocatedExternalDict(k2=SubUnicode(u'foo')))
+        l.append(LocatedExternalDict(k2=SubUnicode('foo')))
 
         assert_that(to_external_representation(l, EXT_REPR_YAML),
                     is_('[{k: v}, {k2: foo}]\n'))
@@ -243,7 +243,7 @@ class TestFunctions(ExternalizationLayerTest):
                 raise POSKeyError(name)
 
         with self.assertRaises(POSKeyError):
-            choose_field({}, Raises(), u'ext_name',
+            choose_field({}, Raises(), 'ext_name',
                          fields=('a', 'b'))
 
     def test_choose_field_system_user_not_special(self):
@@ -797,7 +797,7 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(result,
                     is_({'Hi': 42,
                          'kid': {'Hi': 42,
-                                 'kid': {u'Class': 'O'}}}))
+                                 'kid': {'Class': 'O'}}}))
 
     def test_recursive_call_on_creator(self):
         # Make sure that we properly handle recursive calls on a

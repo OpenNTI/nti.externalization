@@ -17,8 +17,6 @@ from __future__ import print_function
 import numbers
 import warnings
 
-import six
-from six import iteritems
 from zope import interface
 from zope import schema
 from zope.component import getUtility
@@ -274,8 +272,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         return self._ext_primitive_out_ivars_
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
-        result = super(AbstractDynamicObjectIO, self).toExternalDictionary(mergeFrom=mergeFrom,
-                                                                           **kwargs)
+        result = super().toExternalDictionary(mergeFrom=mergeFrom, **kwargs)
         ext_self = self._ext_replacement()
         primitive_ext_keys = self._ext_primitive_keys()
         for k in self._ext_keys():
@@ -346,7 +343,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
 
         ext_self = self._ext_replacement()
         ext_keys = self._ext_all_possible_keys()
-        for k, v in iteritems(parsed):
+        for k, v in parsed.items():
             if not self._ext_accept_update_key(k, ext_self, ext_keys):
                 continue
             __traceback_info__ = (k, v)
@@ -419,7 +416,7 @@ class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
             if not isinstance(key, str):
                 # fixup
                 if hasattr(ext_self, '_p_changed'):
-                    ext_self._p_changed = 1
+                    ext_self._p_changed = 1 # pylint:disable=protected-access
                 for k in list(ext_dict):
                     if not isinstance(k, str):
                         new_k = k.encode('ascii') if not isinstance(k, bytes) else k.decode('ascii')
@@ -438,6 +435,9 @@ class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
         setattr(ext_self, k, value)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
+        # If we're compiled by cython and this method is a cpdef method, the
+        # needed __class__ cell isn't defined to use super().
+        # pylint:disable=super-with-arguments
         return (
             super(_ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys)
             or (self._update_accepts_type_attrs and hasattr(ext_self, k))
@@ -473,7 +473,7 @@ class ExternalizableInstanceDict(object):
     _prefer_oid_ = AbstractDynamicObjectIO._prefer_oid_
 
     def _ext_replacement(self):
-        "See `ExternalizableDictionaryMixin._ext_replacement`."
+        """See `ExternalizableDictionaryMixin._ext_replacement`."""
         return self
 
     def __make_io(self):
@@ -484,15 +484,15 @@ class ExternalizableInstanceDict(object):
         return getattr(self.__make_io(), name)
 
     def updateFromExternalObject(self, parsed, *unused_args, **unused_kwargs):
-        "See `~.IInternalObjectIO.updateFromExternalObject`"
+        """See `~.IInternalObjectIO.updateFromExternalObject`"""
         self.__make_io().updateFromExternalObject(parsed)
 
     def toExternalObject(self, mergeFrom=None, *args, **kwargs):
-        "See `~.IInternalObjectIO.toExternalObject`. Calls `toExternalDictionary`."
+        """See `~.IInternalObjectIO.toExternalObject`. Calls `toExternalDictionary`."""
         return self.toExternalDictionary(mergeFrom, *args, **kwargs)
 
     def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
-        "See `ExternalizableDictionaryMixin.toExternalDictionary`"
+        """See `ExternalizableDictionaryMixin.toExternalDictionary`"""
         return self.__make_io().toExternalDictionary(mergeFrom, **kwargs)
 
     __repr__ = make_repr()
@@ -500,7 +500,7 @@ class ExternalizableInstanceDict(object):
 
 interface.classImplements(ExternalizableInstanceDict, IInternalObjectIO)
 
-_primitives = six.string_types + (numbers.Number, bool)
+_primitives = (str, numbers.Number, bool)
 
 class _AnonymousDictFactory(AnonymousObjectFactory):
     __external_factory_wants_arg__ = True
@@ -617,6 +617,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                     # pylint:disable=use-a-generator
                     if all([issubclass(x, _primitives) for x in field_type]):
                         result.add(n)
+                # pylint:disable-next=confusing-consecutive-elif
                 elif issubclass(field_type, _primitives):
                     result.add(n)
 
@@ -800,7 +801,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
             mergeFrom = mergeFrom if mergeFrom is not None else {}
             mergeFrom[StandardExternalFields.CLASS] = ext_class_name
 
-        result = super(InterfaceObjectIO, self).toExternalObject(mergeFrom=mergeFrom, **kwargs)
+        result = super().toExternalObject(mergeFrom=mergeFrom, **kwargs)
         return result
 
 
@@ -832,12 +833,17 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         # If the upper bound is given, then let the super class handle it all.
         # Presumably the user has given the correct branch to search.
 
+        # If we're compiled by cython and this method is a cpdef method, the
+        # needed __class__ cell isn't defined to use super().
+        # pylint:disable=super-with-arguments
         if iface_upper_bound is not None:
             return super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(
-                ext_self, iface_upper_bound)
+                ext_self,
+                iface_upper_bound)
 
         most_derived = super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(
-            ext_self, interface.Interface)
+            ext_self,
+            interface.Interface)
 
         # In theory, this is now the most derived interface.
         # If we have a graph that is not a tree, though, it may not be.

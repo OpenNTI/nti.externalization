@@ -3,10 +3,14 @@
 =========
 
 
-2.3.1 (unreleased)
+2.4.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Drop support for anything older than Python 3.10.
+- Use native namespace packages.
+- Start publishing manylinux binary wheels.
+- Remove some legacy code for Python 2 support to enable compiling
+  with Cython 3.1.
 
 
 2.3.0 (2021-08-02)

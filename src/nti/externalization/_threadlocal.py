@@ -29,8 +29,7 @@ class ThreadLocalManager(threading.local):
     set = push  # b/c
 
     def pop(self):
-        if self.stack:
-            return self.stack.pop()
+        return self.stack.pop() if self.stack else None
 
     def get(self):
         stack = self.stack

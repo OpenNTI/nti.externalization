@@ -14,7 +14,6 @@ from __future__ import division
 from __future__ import print_function
 
 import decimal
-import six
 
 
 __all__ = [
@@ -56,7 +55,7 @@ class LocatedExternalDict(dict):
 
     def __init__(self, *args, **kwargs): # pylint:disable=super-init-not-called
         dict_init(self, *args, **kwargs)
-        self.__name__ = u''
+        self.__name__ = ''
         self.__parent__ = None
         self.__acl__ = ()
         self.mimeType = None
@@ -110,39 +109,39 @@ class StandardExternalFields(object):
 
     def __init__(self):
         #: An id
-        self.ID = u'ID'
+        self.ID = 'ID'
         #: An identifier specific to this exact object instance
-        self.OID = u'OID'
+        self.OID = 'OID'
         #: A hyperlink to reach this object
-        self.HREF = u'href'
+        self.HREF = 'href'
         #: An integer uniquely identifying the object in some scope
-        self.INTID = u'INTID'
+        self.INTID = 'INTID'
         #: A structured identifier similar to a hyperlink
-        self.NTIID = u'NTIID'
+        self.NTIID = 'NTIID'
         #: The name of the creator of the object
-        self.CREATOR = u'Creator'
+        self.CREATOR = 'Creator'
         #: The name of the container holding the object
-        self.CONTAINER_ID = u'ContainerId'
+        self.CONTAINER_ID = 'ContainerId'
         #: The floating point value giving the Unix epoch time
         #: of the object's creation
-        self.CREATED_TIME = u'CreatedTime'
+        self.CREATED_TIME = 'CreatedTime'
         #: The floating point value giving the Unix epoch time
         #: of the last modification of the object
-        self.LAST_MODIFIED = u'Last Modified'
+        self.LAST_MODIFIED = 'Last Modified'
         #: 'Class': The class of the object. If the object provides
         #: ``__external_class_name__`` it will be used to populate this.
-        self.CLASS = u'Class'
+        self.CLASS = 'Class'
         #: A dictionary mapping "rel" to more hrefs.
-        self.LINKS = u'Links'
+        self.LINKS = 'Links'
         #: The MIME type of this object
-        self.MIMETYPE = u'MimeType'
+        self.MIMETYPE = 'MimeType'
         #: A list or dictionary of external objects contained within
         #: this object
-        self.ITEMS = u'Items'
+        self.ITEMS = 'Items'
         #: A counter
-        self.TOTAL = u'Total'
+        self.TOTAL = 'Total'
         #: The total number of items contained in this object
-        self.ITEM_COUNT = u'ItemCount'
+        self.ITEM_COUNT = 'ItemCount'
 
         self._ALL_ATTR_NAMES = frozenset((s for s in StandardExternalFields.__slots__
                                           if not s.startswith('_')))
@@ -258,17 +257,11 @@ _PRIMITIVE_NUMBER_TYPES = (
     float,
     decimal.Decimal,
 )
-try:
-    long
-except NameError:
-    pass
-else: # Python 2
-    _PRIMITIVE_NUMBER_TYPES += (
-        long,
-    )
 
 
-PRIMITIVES = six.string_types + (
+
+PRIMITIVES = (
+    str,
     type(None),
 ) + _PRIMITIVE_NUMBER_TYPES
 
