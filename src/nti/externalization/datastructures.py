@@ -435,8 +435,11 @@ class _ExternalizableInstanceDict(AbstractDynamicObjectIO):
         setattr(ext_self, k, value)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys):
+        # If we're compiled by cython and this method is a cpdef method, the
+        # needed __class__ cell isn't defined to use super().
+        # pylint:disable=super-with-arguments
         return (
-            super()._ext_accept_update_key(k, ext_self, ext_keys)
+            super(_ExternalizableInstanceDict, self)._ext_accept_update_key(k, ext_self, ext_keys)
             or (self._update_accepts_type_attrs and hasattr(ext_self, k))
         )
 
@@ -830,10 +833,17 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         # If the upper bound is given, then let the super class handle it all.
         # Presumably the user has given the correct branch to search.
 
+        # If we're compiled by cython and this method is a cpdef method, the
+        # needed __class__ cell isn't defined to use super().
+        # pylint:disable=super-with-arguments
         if iface_upper_bound is not None:
-            return super()._ext_find_schema(ext_self, iface_upper_bound)
+            return super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(
+                ext_self,
+                iface_upper_bound)
 
-        most_derived = super()._ext_find_schema(ext_self, interface.Interface)
+        most_derived = super(ModuleScopedInterfaceObjectIO, self)._ext_find_schema(
+            ext_self,
+            interface.Interface)
 
         # In theory, this is now the most derived interface.
         # If we have a graph that is not a tree, though, it may not be.

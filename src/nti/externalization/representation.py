@@ -120,7 +120,7 @@ class JsonRepresenter(object):
 
         if isinstance(stream, bytes):
             stream = stream.decode('utf-8')
-        value = simplejson.loads(stream)
+        value = simplejson.loads(stream, allow_nan=True)
 
         # Depending on whether the simplejson C speedups are active, we can still
         # get back a non-unicode string if the object was a naked string. (If the python

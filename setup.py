@@ -183,7 +183,7 @@ setup(
         'isodate',
         'persistent >= 4.7.0',
         'pytz',
-        'simplejson',
+        'simplejson >= 3.19',
         'transaction >= 2.2',
         'zope.component >= 4.6.1',
         'zope.configuration >= 4.4.0',
