@@ -65,13 +65,12 @@ if [ -d /project ] && [ -d /opt/python ]; then
 
         # XXX: The name of the wheel doesn't match the name of the project
         PATH="$OPATH" auditwheel repair $WHL
-        WHL=$(ls wheelhouse/*many*whl)
+        WHL=$(ls wheelhouse/nti.externalization*whl)
         cp $WHL /project/wheelhouse
         ls -l /project/wheelhouse
 
         rm -rf build
         rm -rf wheelhouse
-        rm -f dist/icrs*ssl*.whl
 
     done
 
