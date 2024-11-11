@@ -12,6 +12,7 @@ include *.txt
 include .isort.cfg
 include pyproject.toml
 include .pylintrc
+include make-manylinux
 exclude .nti_cover_package
 
 recursive-include .github *
