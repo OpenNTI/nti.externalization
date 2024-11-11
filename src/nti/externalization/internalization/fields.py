@@ -41,11 +41,6 @@ __all__ = [
 def noop():
     return
 
-def reraise(t, v, _tb):
-    if v is None:
-        v = t()
-    raise v
-
 class SetattrSet(object):
     """
     A callable object that uses ``setattr`` to set an
@@ -198,14 +193,15 @@ def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argumen
     exc_info = get_exc_info()
 
     if not exc_info[1].expected_type: # pragma: no cover
-        reraise(*exc_info)
+        raise exc_info[1]
 
     exp_type = exc_info[1].expected_type
     implemented_by_type = list(implementedBy(exp_type))
     # If the type unambiguously implements an interface (one interface)
     # that's our target. IDate does this
-    if len(implemented_by_type) != 1:
-        reraise(*exc_info) # pragma: no cover
+    if len(implemented_by_type) != 1: # pragma: no cover
+        raise exc_info[1]
+
 
     schema = implemented_by_type[0]
 
@@ -233,7 +229,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
     exc_info = get_exc_info()
 
     if not exc_info[1].errors or not _all_SchemaNotProvided(exc_info[1].errors):
-        reraise(*exc_info)
+        raise exc_info[1]
 
     # IObject provides `schema`, which is an interface, so we can adapt
     # using it. Some other things do not, for example nti.schema.field.Variant
@@ -248,7 +244,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
         # to raise the original error. If we could adapt,
         # but the converter does its own validation (e.g., fromObject)
         # then we want to let that validation error rise
-        reraise(*exc_info)
+        raise exc_info[1] from None
 
     # Now try to validate the converted value
     try:
@@ -257,7 +253,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
         # Nope. TypeError means we couldn't adapt, and a
         # validation error means we could adapt, but it still wasn't
         # right. Raise the original SchemaValidationError.
-        reraise(*exc_info)
+        raise exc_info[1] from None
 
     return value
 

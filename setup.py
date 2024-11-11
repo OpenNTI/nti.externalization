@@ -130,7 +130,7 @@ if not PYPY:
             compiler_directives={
                 #'linetrace': True,
                 'infer_types': True,
-                'language_level': '3str',
+                'language_level': '3',
                 'always_allow_keywords': False,
                 'nonecheck': False,
             },

@@ -23,21 +23,21 @@ cpdef LocatedExternalDict make_external_dict()
 
 cdef class StandardExternalFields(object):
 
-    cdef readonly unicode ID
-    cdef readonly unicode OID
-    cdef readonly unicode HREF
-    cdef readonly unicode INTID
-    cdef readonly unicode NTIID
-    cdef readonly unicode CREATOR
-    cdef readonly unicode CONTAINER_ID
-    cdef readonly unicode CREATED_TIME
-    cdef readonly unicode LAST_MODIFIED
-    cdef readonly unicode CLASS
-    cdef readonly unicode LINKS
-    cdef readonly unicode MIMETYPE
-    cdef readonly unicode ITEMS
-    cdef readonly unicode TOTAL
-    cdef readonly unicode ITEM_COUNT
+    cdef readonly str ID
+    cdef readonly str OID
+    cdef readonly str HREF
+    cdef readonly str INTID
+    cdef readonly str NTIID
+    cdef readonly str CREATOR
+    cdef readonly str CONTAINER_ID
+    cdef readonly str CREATED_TIME
+    cdef readonly str LAST_MODIFIED
+    cdef readonly str CLASS
+    cdef readonly str LINKS
+    cdef readonly str MIMETYPE
+    cdef readonly str ITEMS
+    cdef readonly str TOTAL
+    cdef readonly str ITEM_COUNT
 
     cdef readonly frozenset _ALL_ATTR_NAMES
     cdef readonly frozenset _ALL_EXTERNAL_KEYS
