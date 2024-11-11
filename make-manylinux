@@ -36,6 +36,7 @@ if [ -d /project ] && [ -d /opt/python ]; then
     # Build in an isolated directory
     mkdir /tmp/build
     cd /tmp/build
+    git config --global --add safe.directory /project/.git
     git clone /project project
     cd project
 
