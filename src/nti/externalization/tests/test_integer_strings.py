@@ -44,7 +44,7 @@ class TestIntStrings(unittest.TestCase):
             _t(i)
 
     def test_decode_unicode(self):
-        assert_that(from_external_string(u'abcde'),
+        assert_that(from_external_string('abcde'),
                     is_(204869188))
 
     def test_bad_value(self):

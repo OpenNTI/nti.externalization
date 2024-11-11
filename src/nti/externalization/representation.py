@@ -187,7 +187,7 @@ class _UnicodeLoader(yaml.SafeLoader):
         # represented as ASCII back to bytes. We don't
         # want that.
         return self.construct_scalar(node)
-_UnicodeLoader.add_constructor(u'tag:yaml.org,2002:str',
+_UnicodeLoader.add_constructor('tag:yaml.org,2002:str',
                                _UnicodeLoader.construct_yaml_str)
 
 
@@ -252,12 +252,12 @@ def _add_repr_to_cls(cls, default=_default_repr):
         # make_repr would catch, handling them much better. We only want the
         # __dict__ in there by default, though
         if default is _default_repr:
-            default = lambda self: repr(self.__dict__)
+            default = lambda self: repr(self.__dict__) # pylint:disable=unnecessary-lambda-assignment
 
         def _p_repr(self):
             raise _PReprException(default(self))
 
-        cls._p_repr = _p_repr
+        cls._p_repr = _p_repr # pylint:disable=protected-access
     else:
         cls.__repr__ = make_repr(default)
 

@@ -281,7 +281,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         return dottedname.resolve(package_name + '.interfaces')
 
     @classmethod
-    def __class_init__(cls):  # ExtensionClass.Base class initializer
+    def __class_init__(cls):  # ExtensionClass.Base class initializer pylint:disable=bad-dunder-name
         """
         Class initializer. Should be called exactly *once* on each
         distinct subclass.

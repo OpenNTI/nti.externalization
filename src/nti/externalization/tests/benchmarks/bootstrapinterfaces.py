@@ -21,10 +21,10 @@ class EmailAddressInvalid(InvalidValue):
     Invalid email address.
     """
 
-    i18n_message = u"The email address you have entered is not valid."
+    i18n_message = "The email address you have entered is not valid."
 
     def __init__(self, address):
-        super(EmailAddressInvalid, self).__init__(address)
+        super().__init__(address)
         self.with_field_and_value(None, address)
 
 
@@ -34,10 +34,10 @@ class RealnameInvalid(InvalidValue):
     """
 
     field = 'realname'
-    i18n_message = u"The first or last name you have entered is not valid."
+    i18n_message = "The first or last name you have entered is not valid."
 
     def __init__(self, name):
-        super(RealnameInvalid, self).__init__(name)
+        super().__init__(name)
         self.with_field_and_value(None, value=name)
 
 
@@ -48,7 +48,7 @@ def isValidMailAddress(addr):
     """Returns True if the email address is valid and False if not."""
     # Taken from z3c.schema.email
     # pylint:disable=too-many-return-statements
-    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-branches,too-complex
     # First we validate the name portion (name@domain)
     c = 0
     while c < len(addr):
@@ -60,7 +60,7 @@ def isValidMailAddress(addr):
         # A RFC-822 address cannot contain certain ASCII characters
         if addr[c] in rfc822_specials:
             return False
-        c = c + 1
+        c += 1
 
     # check whether we have any input and that the name did not end with a dot
     if not c or addr[c - 1] == '.':
@@ -81,14 +81,14 @@ def isValidMailAddress(addr):
         if addr[c] == '.':
             if c == domain or addr[c - 1] == '.':
                 return False
-            count = count + 1
+            count += 1
         # Make sure there are only ASCII characters
         if ord(addr[c]) <= 32 or ord(addr[c]) >= 127:
             return False
         # A RFC-822 address cannot contain certain ASCII characters
         if addr[c] in rfc822_specials:
             return False
-        c = c + 1
+        c += 1
     return count >= 1
 
 

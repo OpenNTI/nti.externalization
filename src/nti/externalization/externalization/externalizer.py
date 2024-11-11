@@ -112,6 +112,7 @@ class _ExternalizationState(object):
                  useCache=True,
                  decorate_callback=None,
                  policy=DEFAULT_EXTERNALIZATION_POLICY):
+        # pylint:disable=too-many-positional-arguments
         self.name = name
         # We take a similar approach to pickle.Pickler
         # for memoizing objects we've seen:
@@ -248,9 +249,10 @@ def _externalize_object(obj, state):
 
 
 def _to_external_object_state(obj, state, top_level=False):
+    # pylint:disable=too-many-positional-arguments
     # This function is way to long and ugly. Given cython's 0 function call overhead,
     # we can probably refactor.
-    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-branches,too-complex
     __traceback_info__ = obj
 
     assert obj is not None # caught by primitives already.
@@ -381,6 +383,7 @@ def to_external_object(
     :param str policy_name: If no *policy* is given, then this is used to
         lookup a utility. If this is used, the utility must exist.
     """
+    # pylint:disable=too-many-positional-arguments
     # Catch the primitives up here, quickly. This catches
     # numbers, strings, and None.
     if isinstance(obj, PRIMITIVES):

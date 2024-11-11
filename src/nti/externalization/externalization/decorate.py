@@ -4,10 +4,6 @@
 Functions for decorating external objects.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # Our request hook function always returns None, and pylint
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
@@ -23,6 +19,7 @@ def decorate_external_object(do_decorate, call_if_not_decorate,
                              original_object, external_object,
                              registry, # legacy, ignored. pylint:disable=unused-argument
                              request):
+    # pylint:disable=too-many-positional-arguments
     if do_decorate:
         for decorator in subscribers((original_object,), decorate_interface):
             meth = getattr(decorator, decorate_meth_name)
@@ -37,6 +34,7 @@ def decorate_external_object(do_decorate, call_if_not_decorate,
             for decorator in subscribers((original_object, request), decorate_interface):
                 meth = getattr(decorator, decorate_meth_name)
                 meth(original_object, external_object)
+    # pylint:disable-next=confusing-consecutive-elif
     elif call_if_not_decorate is not NotGiven and call_if_not_decorate is not None:
         # XXX: This makes no sense. What is this argument even for?
         call_if_not_decorate(original_object, external_object)

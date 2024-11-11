@@ -11,7 +11,7 @@ from __future__ import print_function
 import os
 import sys
 
-from six import text_type
+text_type = str
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] >= 3

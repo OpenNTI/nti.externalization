@@ -95,7 +95,7 @@ class IRegisterInternalizationMimeFactoriesDirective(interface.Interface):
     """
 
     module = GlobalObject(
-        title=u"Module to scan for Mime factories to add",
+        title="Module to scan for Mime factories to add",
         required=True,
     )
 
@@ -148,37 +148,37 @@ class IAutoPackageExternalizationDirective(interface.Interface):
     """
 
     root_interfaces = Tokens(
-        title=u"The root interfaces defined by the package.",
+        title="The root interfaces defined by the package.",
         value_type=GlobalInterface(),
         required=True)
 
     modules = Tokens(
-        title=u"Module names that contain the implementations of the root_interfaces.",
+        title="Module names that contain the implementations of the root_interfaces.",
         value_type=GlobalObject(),
         required=True)
 
     factory_modules = Tokens(
-        title=u"If given, module names that should be searched for internalization factories.",
-        description=(u"If not given, all *modules* will be examined. If given, "
-                     u"**only** these modules will be searched."),
+        title="If given, module names that should be searched for internalization factories.",
+        description=("If not given, all *modules* will be examined. If given, "
+                     "**only** these modules will be searched."),
         value_type=GlobalObject(),
         required=False)
 
     iobase = GlobalObject(
-        title=(u"If given, a base class that will be used. "
-               u"You can customize aspects of externalization that way."),
-        description=(u"This class should descend from `object`, and it should implement "
-                     u"the extension methods documented to customize "
-                     u"`.AutoPackageSearchingScopedInterfaceObjectIO`."),
+        title=("If given, a base class that will be used. "
+               "You can customize aspects of externalization that way."),
+        description=("This class should descend from `object`, and it should implement "
+                     "the extension methods documented to customize "
+                     "`.AutoPackageSearchingScopedInterfaceObjectIO`."),
         required=False)
 
     register_legacy_search_module = Bool(
-        title=(u"Register found factories by their class name."),
-        description=(u"If true (*not* the default), then, in addition to registering "
-                     u"factories by their mime type, also register them all by their class name. "
-                     u"This is not recommended; currently no conflicts are caught and the order "
-                     u"is ill-defined. "
-                     u"See https://github.com/NextThought/nti.externalization/issues/33"),
+        title=("Register found factories by their class name."),
+        description=("If true (*not* the default), then, in addition to registering "
+                     "factories by their mime type, also register them all by their class name. "
+                     "This is not recommended; currently no conflicts are caught and the order "
+                     "is ill-defined. "
+                     "See https://github.com/NextThought/nti.externalization/issues/33"),
         default=False,
         required=False,
     )
@@ -273,33 +273,33 @@ class IClassObjectFactoryDirective(interface.Interface):
     """
 
     factory = GlobalObject(
-        title=u'The class object that will be created.',
-        description=u"This must define the ``__external_can_create__`` attribute to be true.",
+        title='The class object that will be created.',
+        description="This must define the ``__external_can_create__`` attribute to be true.",
         required=True
     )
 
     name = PythonIdentifier(
-        title=u"The name for the factory.",
-        description=(u"If not given, the ``__external_class_name__`` of the class will be used. "
-                     u"If that's not available, the ``__name__`` will be used."),
+        title="The name for the factory.",
+        description=("If not given, the ``__external_class_name__`` of the class will be used. "
+                     "If that's not available, the ``__name__`` will be used."),
         required=False,
     )
 
     trusted = Bool(
-        title=u"Ignore any value for ``__external_can_create__`` on the factory.",
+        title="Ignore any value for ``__external_can_create__`` on the factory.",
         required=False,
         default=False,
     )
 
     title = MessageID(
-        title=u"Title",
-        description=u"Provides a title for the object.",
+        title="Title",
+        description="Provides a title for the object.",
         required=False,
     )
 
     description = MessageID(
-        title=u"Description",
-        description=u"Provides a description for the object.",
+        title="Description",
+        description="Provides a description for the object.",
         required=False
     )
 
@@ -333,13 +333,13 @@ class IBaseAnonymousObjectFactoryDirective(interface.Interface):
     """
 
     for_ = GlobalInterface(
-        title=u"The interface that is the *parent* object this will be used for",
+        title="The interface that is the *parent* object this will be used for",
         required=True,
     )
 
     field = PythonIdentifier(
-        title=u'The name of the schema field',
-        description=u'The factory results will be assigned to this field.',
+        title='The name of the schema field',
+        description='The factory results will be assigned to this field.',
         required=True,
     )
 
@@ -354,34 +354,34 @@ class IAnonymousObjectFactoryDirective(IBaseAnonymousObjectFactoryDirective):
     .. versionadded:: 1.0a3
     """
     factory = GlobalObject(
-        title=u'The class object that will be created.',
+        title='The class object that will be created.',
         required=True,
     )
 
     pass_external_object_to_factory = Bool(
-        title=(u"Pass the external object to the factory."),
-        description=(u"If true (*not* the default), then, the factory will recieve "
-                     u"one argument, the anonymous external data. "
-                     u'Otherwise, it gets no arguments.'),
+        title=("Pass the external object to the factory."),
+        description=("If true (*not* the default), then, the factory will recieve "
+                     "one argument, the anonymous external data. "
+                     'Otherwise, it gets no arguments.'),
         default=False,
         required=False,
     )
 
     trusted = Bool(
-        title=u"Ignore any value for ``__external_can_create__`` on the factory.",
+        title="Ignore any value for ``__external_can_create__`` on the factory.",
         required=False,
         default=False,
     )
 
     title = MessageID(
-        title=u"Title",
-        description=u"Provides a title for the object.",
+        title="Title",
+        description="Provides a title for the object.",
         required=False,
     )
 
     description = MessageID(
-        title=u"Description",
-        description=u"Provides a description for the object.",
+        title="Description",
+        description="Provides a description for the object.",
         required=False
     )
 
@@ -389,7 +389,8 @@ class IAnonymousObjectFactoryDirective(IBaseAnonymousObjectFactoryDirective):
 def anonymousObjectFactoryDirective(_context, factory, for_, field,
                                     pass_external_object_to_factory=False,
                                     trusted=False,
-                                    title=u'', description=u''):
+                                    title='', description=''):
+    # pylint:disable=too-many-positional-arguments
     _validate_factory(factory, trusted)
 
     field_name = str(field)
@@ -438,8 +439,8 @@ class IAnonymousObjectFactoryInPlaceDirective(IBaseAnonymousObjectFactoryDirecti
         class IHasAddresses(Interface):
 
             addresses = Dict(
-                     title=u"A mapping of address objects.",
-                     key_type=TextLine(title=u"Adresss key"),
+                     title="A mapping of address objects.",
+                     key_type=TextLine(title="Adresss key"),
                      value_type=Object(IAddress))
 
     The ZCML would then look like this:

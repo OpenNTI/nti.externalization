@@ -12,14 +12,8 @@ are implementation details.
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# stdlib imports
-
-import collections
 import warnings
+from collections.abc import Mapping
 
 from zope import component
 from zope import deferredimport
@@ -115,21 +109,22 @@ def is_nonstr_iter(v): # pragma: no cover
 
 
 def removed_unserializable(ext):
-    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-branches,too-complex
     # XXX: Why is this here? We don't use it anymore.
     # Can it be removed?
     warnings.warn("'removed_unserializable' will be deleted.", FutureWarning, stacklevel=2)
     def _is_sequence(m):
-        return (not isinstance(m, (str, collections.Mapping))
+        return (not isinstance(m, (str, Mapping))
                 and hasattr(m, '__iter__'))
 
     def _clean(m):
-        if isinstance(m, collections.Mapping):
+        if isinstance(m, Mapping):
             for k, v in list(m.items()):
                 if _is_sequence(v):
                     if not isinstance(v, list):
                         m[k] = list(v)
-                elif not isinstance(v, collections.Mapping):
+                # pylint:disable-next=confusing-consecutive-elif
+                elif not isinstance(v, Mapping):
                     if not isinstance(v, _primitives):
                         m[k] = None
             values = m.values()
@@ -138,7 +133,8 @@ def removed_unserializable(ext):
                 if _is_sequence(v):
                     if not isinstance(v, list):
                         m[idx] = list(v)
-                elif not isinstance(v, collections.Mapping):
+                # pylint:disable-next=confusing-consecutive-elif
+                elif not isinstance(v, Mapping):
                     if not isinstance(v, _primitives):
                         m[idx] = None
             values = m

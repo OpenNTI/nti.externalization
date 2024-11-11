@@ -31,9 +31,9 @@ class TestToExternalOID(CleanUp,
         class Persistent(object):
             _p_oid = None
 
-            database_name = u'main'
+            database_name = 'main'
             def add(self, obj):
-                obj._p_oid = b'abc'
+                obj._p_oid = b'abc' # pylint:disable=protected-access
 
             def db(self):
                 return self

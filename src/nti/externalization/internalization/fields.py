@@ -15,8 +15,6 @@ from __future__ import print_function
 # stdlib imports
 from sys import exc_info as get_exc_info
 
-from six import text_type
-from six import reraise
 
 from zope.interface import implementedBy
 
@@ -43,6 +41,10 @@ __all__ = [
 def noop():
     return
 
+def reraise(t, v, _tb):
+    if v is None:
+        v = t()
+    raise v
 
 class SetattrSet(object):
     """
@@ -162,10 +164,7 @@ def _adapt_sequence(field, value):
 
 
 def _all_SchemaNotProvided(sequence):
-    for ex in sequence:
-        if not isinstance(ex, SchemaNotProvided):
-            return False # pragma: no cover
-    return True
+    return all(isinstance(ex, SchemaNotProvided) for ex in sequence)
 
 ###
 # Fixup functions for various validation errors.
@@ -185,12 +184,12 @@ def _handle_SchemaNotProvided(field_name, field, value): # pylint:disable=unused
     try:
         value = field.schema(value)
         field.validate(value)
-        return value
     except (LookupError, TypeError, ValidationError, AttributeError):
         # Nope. TypeError (or AttrError - Variant) means we couldn't adapt,
         # and a validation error means we could adapt, but it still wasn't
         # right. Raise the original SchemaValidationError.
-        reraise(*exc_info)
+        raise exc_info[1] if exc_info[1] is not None else exc_info[0]() from None
+    return value
 
 def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argument
     # Like SchemaNotProvided, but for a primitive type,
@@ -211,10 +210,10 @@ def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argumen
     schema = implemented_by_type[0]
 
     try:
-        return schema(value)
+        result = schema(value)
     except (LookupError, TypeError):
         # No registered adapter, darn
-        reraise(*exc_info)
+        raise exc_info[1] if exc_info[1] is not None else exc_info[0]() from None
     except ValidationError as e:
         # Found an adapter, but it does its own validation,
         # and that validation failed (eg, IDate below)
@@ -222,6 +221,8 @@ def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argumen
         # so go with it after ensuring it has a field
         e.field = field
         raise
+
+    return result
 
 
 def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unused-argument
@@ -261,7 +262,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
     return value
 
 _CONVERTERS = (
-    ('fromUnicode', text_type),
+    ('fromUnicode', str),
     ('fromBytes', bytes),
     ('fromObject', object)
 )
@@ -319,7 +320,7 @@ def validate_field_value(self, field_name, field, value):
         else:
             _do_set = noop
     else:
-        _do_set = FieldSet(self, field, value)
+        _do_set = FieldSet(self, field, value) # pylint:disable=redefined-variable-type
 
     return _do_set
 

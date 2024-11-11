@@ -8,8 +8,8 @@ from __future__ import print_function
 # stdlib imports
 import unittest
 import warnings
+from unittest.mock import patch as Patch
 
-import fudge
 from zope import component
 from zope import interface
 from zope.interface.common.idatetime import IDate
@@ -180,15 +180,18 @@ class TestDefaultExternalizedObjectFactory(CleanUp,
         assert_that(self._callFUT([]), is_(none()))
         assert_that(self._callFUT(()), is_(none()))
 
-    @fudge.patch('nti.externalization.internalization.find_factory_for_class_name')
+    @Patch('nti.externalization.internalization.find_factory_for_class_name',
+           autospec=True)
     def test_with_blank_mime_type(self, _):
         assert_that(self._callFUT({'MimeType': ''}), is_(none()))
 
-    @fudge.patch('nti.externalization.internalization.find_factory_for_class_name')
+    @Patch('nti.externalization.internalization.find_factory_for_class_name',
+           autospec=True)
     def test_with_black_class(self, _):
         assert_that(self._callFUT({'Class': ''}), is_(none()))
 
-    @fudge.patch('nti.externalization.internalization.find_factory_for_class_name')
+    @Patch('nti.externalization.internalization.find_factory_for_class_name',
+           autospec=True)
     def test_with_mime_type_no_registrations(self, _):
         assert_that(self._callFUT({'MimeType': 'mime'}), is_(none()))
 
@@ -593,7 +596,7 @@ class TestValidateFieldValue(CleanUp,
 
         class O(object):
 
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 assert iface is IThing
                 interface.alsoProvides(self, iface)
                 return self
@@ -626,7 +629,7 @@ class TestValidateFieldValue(CleanUp,
             self._callFUT(field, MyObject())
 
         class MyConformingObject(object):
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 assert iface is Iface
                 interface.alsoProvides(self, iface)
                 # Note that we have to return this exact type, other wise
@@ -638,7 +641,7 @@ class TestValidateFieldValue(CleanUp,
         assert_that(bag, has_property('field', is_(TheType)))
 
         class MyInvalidObject(object):
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 raise ValidationError()
 
         with self.assertRaises(ValidationError) as exc:
@@ -657,7 +660,7 @@ class TestValidateFieldValue(CleanUp,
         field = List(value_type=Object(IThing), __name__='field')
 
         class O(object):
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 assert iface is IThing, iface
                 interface.alsoProvides(self, iface)
                 return self
@@ -679,7 +682,7 @@ class TestValidateFieldValue(CleanUp,
         field = List(value_type=Object(IThing), __name__='field')
 
         class N(object):
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 raise TypeError()
 
         with self.assertRaises(WrongContainedType):
@@ -720,7 +723,7 @@ class TestValidateFieldValue(CleanUp,
 
         class Conforms(object):
 
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 assert iface is IThing
                 return 'conforms'
 

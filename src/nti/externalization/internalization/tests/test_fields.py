@@ -70,7 +70,7 @@ class TestValidateFieldValueEvents(CleanUp,
         root = Bar()
 
         class NotThing(object):
-            def __conform__(self, iface):
+            def __conform__(self, iface): # pylint:disable=bad-dunder-name
                 return thing if iface is IThing else None
 
 
@@ -104,27 +104,27 @@ class TestValidateFieldValue(unittest.TestCase):
     def test_unicode_field_name_field_non_property(self):
         from zope.schema import TextLine
         class IFoo(interface.Interface):
-            field = TextLine(title=u'text')
+            field = TextLine(title='text')
 
         class Foo(object):
             pass
 
         foo = Foo()
-        self._callFUT(foo, IFoo, u'field', u'text')()
-        assert_that(foo, has_attr('field', u'text'))
+        self._callFUT(foo, IFoo, 'field', 'text')()
+        assert_that(foo, has_attr('field', 'text'))
 
     def test_unicode_field_name_field_non_property_readonly(self):
         from zope.schema import TextLine
         class IFoo(interface.Interface):
-            field = TextLine(title=u'text', readonly=True)
+            field = TextLine(title='text', readonly=True)
             field.setTaggedValue('_ext_allow_initial_set', True)
 
         class Foo(object):
             pass
 
         foo = Foo()
-        self._callFUT(foo, IFoo, u'field', u'text')()
-        assert_that(foo, has_attr('field', u'text'))
+        self._callFUT(foo, IFoo, 'field', 'text')()
+        assert_that(foo, has_attr('field', 'text'))
 
     def test_from_bytes(self):
         from zope.schema.interfaces import IFromBytes
@@ -137,13 +137,13 @@ class TestValidateFieldValue(unittest.TestCase):
                 return b'from bytes'
 
         class IFoo(interface.Interface):
-            field = OnlyBytes(title=u'text')
+            field = OnlyBytes(title='text')
 
         class Foo(object):
             pass
 
         foo = Foo()
-        self._callFUT(foo, IFoo, u'field', b'text')()
+        self._callFUT(foo, IFoo, 'field', b'text')()
         assert_that(foo, has_attr('field', b'from bytes'))
 
 
@@ -151,7 +151,7 @@ class TestValidateFieldValue(unittest.TestCase):
         from zope.schema.interfaces import SchemaNotCorrectlyImplemented
         from zope.schema import TextLine
         class IFoo(interface.Interface):
-            field = TextLine(title=u'text', required=True)
+            field = TextLine(title='text', required=True)
 
         @interface.implementer(IFoo)
         class Foo(object):
@@ -184,6 +184,6 @@ class TestValidateNamedFieldValue(TestValidateFieldValue):
             pass
 
         foo = Foo()
-        self._callFUT(foo, IFoo, u'field', 42)()
+        self._callFUT(foo, IFoo, 'field', 42)()
 
         assert_that(foo, has_attr('field', 42))

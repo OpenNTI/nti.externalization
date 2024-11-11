@@ -69,7 +69,7 @@ def _cache_cleanUp(instances):
     # seen to raise "RuntimeError: set changed size during iteration."
     # We should probably try to run a gc.collect() before iterating it.
     for x in list(instances):
-        x.__init__()
+        x.__init__() # pylint:disable=unnecessary-dunder-call
 
 
 try:

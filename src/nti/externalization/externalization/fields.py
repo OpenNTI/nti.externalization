@@ -21,6 +21,7 @@ def choose_field(result, self, ext_name,
                  converter=None,
                  fields=(),
                  sup_iface=None, sup_fields=(), sup_converter=None):
+    # pylint:disable=too-many-positional-arguments
     # XXX: We have a public user of this in nti.ntiids.oids. We need
     # to document this and probably move it to a different module, or
     # provide a cleaner simpler replacement.

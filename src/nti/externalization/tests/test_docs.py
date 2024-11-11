@@ -60,7 +60,6 @@ def test_suite():
         doctest.NORMALIZE_WHITESPACE
         | doctest.ELLIPSIS
         | doctest.IGNORE_EXCEPTION_DETAIL
-        | renormalizing.IGNORE_EXCEPTION_MODULE_IN_PYTHON2
     ))
     m += manuel.codeblock.Manuel()
     m += manuel.capture.Manuel()

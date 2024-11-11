@@ -35,10 +35,6 @@ from hamcrest import none
 
 class RegistrationMixin(object):
 
-    assertRaisesRegex = getattr(unittest.TestCase,
-                                'assertRaisesRegex',
-                                unittest.TestCase.assertRaisesRegexp)
-
     def _getModule(self):
         import sys
         return sys.modules[__name__]

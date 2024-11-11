@@ -33,6 +33,7 @@ __all__ = [
 
 def resolve_externals(object_io, updating_object, externalObject,
                       context=None):
+    # pylint:disable=too-complex
     # Run the resolution steps on the external object
     # TODO: Document this.
 
@@ -64,6 +65,7 @@ def resolve_externals(object_io, updating_object, externalObject,
         # which don't work when accessed through the dictionary in this way,
         # so we special case it so instances don't have to.
         if isinstance(resolver_func, (classmethod, staticmethod)):
+            # pylint:disable-next=unnecessary-dunder-call
             resolver_func = resolver_func.__get__(None, object_io.__class__)
 
         try:

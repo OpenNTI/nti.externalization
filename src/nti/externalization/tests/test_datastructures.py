@@ -101,14 +101,14 @@ class TestAbstractDynamicObjectIO(CommonTestMixin,
 
         result = inst.toExternalDictionary()
         assert_that(result,
-                    is_({u'Class': 'IO', u'Creator': u'creator'}))
+                    is_({'Class': 'IO', 'Creator': 'creator'}))
 
 
         inst._excluded_out_ivars_ = frozenset()
 
         result = inst.toExternalDictionary()
         assert_that(result,
-                    is_({u'Class': 'IO', u'Creator': u'creator', 'creator': 'creator'}))
+                    is_({'Class': 'IO', 'Creator': 'creator', 'creator': 'creator'}))
 
     def test_ext_dict_primitive_keys_bypass_toExternalObject(self):
         # XXX: We used to monkey-patch datastructures.toExternalObject to
@@ -140,7 +140,7 @@ class TestAbstractDynamicObjectIO(CommonTestMixin,
         result = inst.toExternalDictionary()
         assert_that(result,
                     is_({
-                        u'Class': 'IO',
+                        'Class': 'IO',
                         'ivar': [{'key': 42}, [76]],
                         'dict': {'key': 42},
                         'list': [76],
@@ -159,13 +159,13 @@ class TestAbstractDynamicObjectIO(CommonTestMixin,
         result = inst.toExternalDictionary(mergeFrom=merge_from)
 
         assert_that(result,
-                    is_({u'Class': 'IO', 'OID': 'oid', 'ID': 'id'}))
+                    is_({'Class': 'IO', 'OID': 'oid', 'ID': 'id'}))
 
         inst._prefer_oid_ = True
         result = inst.toExternalDictionary(mergeFrom=merge_from)
 
         assert_that(result,
-                    is_({u'Class': 'IO', 'OID': 'oid', 'ID': 'oid'}))
+                    is_({'Class': 'IO', 'OID': 'oid', 'ID': 'oid'}))
 
     def test_ext_accept_external_id_false(self):
         inst = self._makeOne()
@@ -441,7 +441,7 @@ class TestInterfaceObjectIO(CleanUp,
         assert_that(ext_self, has_property('ivar', 1.0))
 
         # A text string is fine
-        inst.updateFromExternalObject({'ivar': u'2.0'})
+        inst.updateFromExternalObject({'ivar': '2.0'})
         assert_that(ext_self, has_property('ivar', 2.0))
 
         # A byte string is fine
@@ -523,7 +523,7 @@ class TestInterfaceObjectIO(CleanUp,
         from zope.schema import Dict
 
         class I(interface.Interface):
-            field = Dict(title=u'A blank field')
+            field = Dict(title='A blank field')
 
         @interface.implementer(I)
         class O(object):
@@ -539,8 +539,8 @@ class TestInterfaceObjectIO(CleanUp,
 
         class I(interface.Interface):
             field = Dict(
-                title=u'A blank field',
-                value_type=TextLine(title=u'text')
+                title='A blank field',
+                value_type=TextLine(title='text')
             )
 
         @interface.implementer(I)
@@ -560,7 +560,7 @@ class TestInterfaceObjectIO(CleanUp,
 
         class I(interface.Interface):
             field = Dict(
-                title=u'A blank field',
+                title='A blank field',
                 value_type=Object(I2)
             )
 
@@ -677,7 +677,7 @@ class TestExternalizableInstanceDict(CommonTestMixin,
         class MappingIO(self._getTargetClass()):
 
             def __init__(self, replacement):
-                super(MappingIO, self).__init__()
+                super().__init__()
                 self.context = replacement
 
             # These are never called since we create an instance
@@ -732,12 +732,12 @@ class TestExternalizableInstanceDict(CommonTestMixin,
             pass
 
         m = MappingIO()
-        m.__dict__[u'bad_u_key'] = 'bad_value'
+        m.__dict__['bad_u_key'] = 'bad_value'
         m.__dict__[b'bad_b_key'] = 'bad_value'
 
         class Jar(object):
             def register(self, obj):
-                "Needed for IJar interface"
+                """Needed for IJar interface"""
 
         # p_changed can only be set if we have a jar
         m._p_jar = Jar()
@@ -790,14 +790,14 @@ class TestStandardInternalObjectExternalizer(unittest.TestCase):
         }))
 
         # Now non-native-strs
-        ext = Ext()
-        ext.creator = u'sjohnson'
+        ext = Ext() # pylint:disable=redefined-variable-type
+        ext.creator = 'sjohnson'
         o.context = ext
 
         if not PURE_PYTHON:
             # XXX: pure-python mode allows anything.
             with self.assertRaises(TypeError):
-                o.__external_class_name__ = u'Foo' if bytes is str else b'Foo'
+                o.__external_class_name__ = 'Foo' if bytes is str else b'Foo'
 
         ext = o.toExternalObject()
         assert_that(ext, is_({
