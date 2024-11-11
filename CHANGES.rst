@@ -3,7 +3,7 @@
 =========
 
 
-2.4.0 (unreleased)
+2.4.0 (2024-11-11)
 ==================
 
 - Drop support for anything older than Python 3.10.
