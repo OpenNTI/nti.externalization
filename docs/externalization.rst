@@ -136,7 +136,7 @@ from the object schema), and it is always before
 ``IExternalObjectDecorator`` is used. There may be occasional uses for
 this, but it's best to stick to ``IExternalObjectDecorator``.
 
-.. _subscription adapters: http://muthukadan.net/docs/zca.html#subscription-adapter
+.. _subscription adapters: https://seecoresoftware.com/zca/#subscription-adapter
 
 Dublin Core Metadata
 --------------------

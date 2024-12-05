@@ -543,6 +543,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     """
 
     _ext_iface_upper_bound = None
+    _iface = None
 
     def __init__(self, context, iface_upper_bound=None, validate_after_update=True):
         """

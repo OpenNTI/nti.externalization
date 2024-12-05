@@ -53,7 +53,7 @@ Lets look at the factories registered for our address:
    >>> factory()
    <nti.externalization.tests.benchmarks.objects.Address ...>
 
-.. _Zope Component factories: http://muthukadan.net/docs/zca.html#factory
+.. _Zope Component factories: https://seecoresoftware.com/zca#factory
 
 Mime Types are found in the class attribute ``mimeType``;
 ``ext:registerAutoPackageIO`` will add computed ``mimeType`` values to

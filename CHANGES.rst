@@ -6,7 +6,8 @@
 2.4.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Reduce the logging level for recursive invocations. We handle this
+  case correctly, it did not need to be a warning.
 
 
 2.4.0 (2024-11-11)

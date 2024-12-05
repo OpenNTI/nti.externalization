@@ -376,7 +376,7 @@ Much better! We get validation of our constraints and we didn't have
 to write much code. But, we still had to write *some* code, one class
 for each object we're externalizing. Can we do better?
 
-.. _Zope Component Architecture: http://muthukadan.net/docs/zca.html
+.. _Zope Component Architecture: https://seecoresoftware.com/zca/
 .. _their new headquarters: https://appleinsider.com/articles/18/02/16/apple-park-now-apples-official-corporate-address
 
 .. _autoPackageIO:
