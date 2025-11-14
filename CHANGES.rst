@@ -3,7 +3,7 @@
 =========
 
 
-2.5.0 (unreleased)
+2.5.0 (2025-11-14)
 ==================
 
 - Reduce the logging level for recursive invocations. We handle this
