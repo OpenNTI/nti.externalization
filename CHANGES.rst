@@ -11,7 +11,10 @@
 - Add support for Python 3.14.
 - Add the new 'zodb' extra, which installs optional dependencies that
   use the ZODB ecosystem: persistent, BTrees, zope.intid,
-  zope.container, etc. These dependencies are no longer installed by default.
+  zope.container, etc. These dependencies are no longer installed by
+  default.
+- No longer build binary wheels for the legacy 'manylinux2014'
+  standard, only 2_28.
 
 2.4.0 (2024-11-11)
 ==================
