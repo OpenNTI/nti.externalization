@@ -5,21 +5,19 @@ Support for handling the IO for all the objects in a *package*,
 typically via a ZCML directive.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import logging
 
-from ZODB.loglevels import TRACE
 from zope import interface
 
 from zope.dottedname import resolve as dottedname
 from zope.mimetype.interfaces import IContentTypeAware
 
 from nti.schema.interfaces import find_most_derived_interface
-from nti.externalization.datastructures import ModuleScopedInterfaceObjectIO
+from ._compat import TRACE
+from .datastructures import ModuleScopedInterfaceObjectIO
 
 
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 # If we extend ExtensionClass.Base, __class_init__ is called automatically
 # for each subclass. But we also start participating in acquisition, which

@@ -12,11 +12,20 @@ from numbers import Number
 import unittest
 
 
-from ZODB.broken import Broken
-import persistent
+try:
+    from ZODB.broken import Broken
+    from persistent import CHANGED
+    from persistent import UPTODATE
+    from zope.dublincore import interfaces as dub_interfaces
+except ModuleNotFoundError:
+    Broken = None
+    dub_interfaces = None
+    from ..persistence import CHANGED
+    from ..persistence import UPTODATE
+
 from zope import component
 from zope import interface
-from zope.dublincore import interfaces as dub_interfaces
+
 from zope.testing.cleanup import CleanUp
 
 from nti.externalization.externalization import stripSyntheticKeysFromExternalDictionary
@@ -65,10 +74,7 @@ from hamcrest import raises
 from hamcrest import same_instance
 from hamcrest import has_property as has_attr
 
-try:
-    from collections import UserDict
-except ImportError: # Python 2
-    from UserDict import UserDict
+from collections import UserDict
 
 
 # disable: accessing protected members, too many methods
@@ -83,20 +89,20 @@ class TestFunctions(ExternalizationLayerTest):
 
     def test_getPersistentState(self):
         # Non-persistent objects are changed
-        assert_that(getPersistentState(None), is_(persistent.CHANGED))
-        assert_that(getPersistentState(object()), is_(persistent.CHANGED))
+        assert_that(getPersistentState(None), is_(CHANGED))
+        assert_that(getPersistentState(object()), is_(CHANGED))
 
         # Object with _p_changed are that
         class T(object):
             _p_changed = True
 
-        assert_that(getPersistentState(T()), is_(persistent.CHANGED))
+        assert_that(getPersistentState(T()), is_(CHANGED))
         T._p_changed = False
-        assert_that(getPersistentState(T()), is_(persistent.UPTODATE))
+        assert_that(getPersistentState(T()), is_(UPTODATE))
 
         # _p_state is trumped by _p_changed
         T._p_state = None
-        assert_that(getPersistentState(T()), is_(persistent.UPTODATE))
+        assert_that(getPersistentState(T()), is_(UPTODATE))
 
         # _p_state is used if _p_changed isn't
         del T._p_changed
@@ -173,7 +179,10 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(toExternalObject(C()), has_entry('Class', 'ExternalC'))
 
     def test_broken(self):
+        if Broken is None:
+            self.skipTest('ZODb not installed')
         # Without the devmode hooks
+        # XXX: Global side effects! This is not safe!
         gsm = component.getGlobalSiteManager()
         gsm.unregisterAdapter(factory=DevmodeNonExternalizableObjectReplacementFactory,
                               required=())
@@ -237,7 +246,10 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(isSyntheticKey('key'), is_false())
 
     def test_choose_field_POSKeyError_not_ignored(self):
-        from ZODB.POSException import POSKeyError
+        try:
+            from ZODB.POSException import POSKeyError
+        except ModuleNotFoundError:
+            self.skipTest('ZODB not installed')
         class Raises(object):
             def __getattr__(self, name):
                 raise POSKeyError(name)
@@ -362,7 +374,12 @@ class TestDecorators(CleanUp,
 class TestPersistentExternalizableWeakList(unittest.TestCase):
 
     def test_plus_extend(self):
-        class C(persistent.Persistent):
+        try:
+            from persistent import Persistent
+        except ModuleNotFoundError:
+            self.skipTest('Persistent not installed')
+
+        class C(Persistent):
             pass
         c1 = C()
         c2 = C()
@@ -603,7 +620,8 @@ class TestToExternalObject(ExternalizationLayerTest):
                     is_not(same_instance(ext_val[1])))
 
     def test_to_stand_dict_uses_dubcore(self):
-
+        if dub_interfaces is None:
+            self.skipTest('zope.dublincore not installed')
         @interface.implementer(dub_interfaces.IDCTimes)
         class X(object):
             created = datetime.datetime.now()
@@ -618,6 +636,8 @@ class TestToExternalObject(ExternalizationLayerTest):
                     has_entry(StandardExternalFields.CREATED_TIME, is_(Number)))
 
     def test_to_stand_dict_uses_dubcore_iso8601(self):
+        if dub_interfaces is None:
+            self.skipTest('zope.dublincore not installed')
         from ..interfaces import ExternalizationPolicy
         from ..datetime import datetime_to_string
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
@@ -637,6 +657,8 @@ class TestToExternalObject(ExternalizationLayerTest):
                     has_entry(StandardExternalFields.CREATED_TIME, is_(expected_string)))
 
     def test_to_stand_dict_prefers_direct_fields_iso8601(self):
+        if dub_interfaces is None:
+            self.skipTest('zope.dublincore not installed')
         from ..interfaces import ExternalizationPolicy
         from ..datetime import datetime_to_string
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
@@ -657,6 +679,8 @@ class TestToExternalObject(ExternalizationLayerTest):
                     has_entry(StandardExternalFields.CREATED_TIME, is_(expected_string)))
 
     def test_to_stand_dict_prefers_direct_fields(self):
+        if dub_interfaces is None:
+            self.skipTest('zope.dublincore not installed')
         @interface.implementer(dub_interfaces.IDCTimes)
         class X(object):
             created = datetime.datetime.now()
@@ -698,6 +722,13 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(result, is_({'abc': 42, 'Class': 'O', 'MimeType': 'application/thing'}))
 
     def test_name_falls_back_to_standard_name(self):
+        # Without the devmode hooks
+        # XXX: Global side effects, this is not safe.
+        gsm = component.getGlobalSiteManager()
+        gsm.unregisterAdapter(factory=DevmodeNonExternalizableObjectReplacementFactory,
+                              required=())
+        gsm.unregisterAdapter(factory=DevmodeNonExternalizableObjectReplacementFactory,
+                              required=(interface.Interface,))
         toExternalObject(self, name='a name')
 
     def test_toExternalList(self):
@@ -822,7 +853,10 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(s, is_('{"Class": "O", "Creator": "creator"}'))
 
     def test_externalize_OOBTree(self):
-        from BTrees import family64
+        try:
+            from BTrees import family64
+        except ModuleNotFoundError:
+            self.skipTest('BTrees not installed')
         bt = family64.OO.BTree()
         bt['key'] = 'value'
         result = toExternalObject(bt)
@@ -830,7 +864,10 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(result, is_({'Class': 'OOBTree', 'key': 'value'}))
 
     def test_externalize_PersistentMapping(self):
-        from persistent.mapping import PersistentMapping
+        try:
+            from persistent.mapping import PersistentMapping
+        except ModuleNotFoundError:
+            self.skipTest("persistent not installed")
         pm = PersistentMapping()
         pm['key'] = 'value'
         result = toExternalObject(pm)
@@ -838,7 +875,10 @@ class TestToExternalObject(ExternalizationLayerTest):
         assert_that(result, is_({'Class': 'PersistentMapping', 'key': 'value'}))
 
     def test_externalize_IIBTree(self):
-        from BTrees import family64
+        try:
+            from BTrees import family64
+        except ModuleNotFoundError:
+            self.skipTest('BTrees not installed')
         bt = family64.II.BTree()
         bt[1] = 2
         result = toExternalObject(bt)

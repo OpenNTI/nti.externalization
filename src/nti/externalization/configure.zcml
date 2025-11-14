@@ -13,12 +13,14 @@
     -->
     <include package="." file="meta.zcml" />
 
-    <subscriber provides=".interfaces.IExternalStandardDictionaryDecorator"
-                for="zope.dublincore.interfaces.IDCExtended"
+    <subscriber
+                provides=".interfaces.IExternalStandardDictionaryDecorator"
+                for=".dublincore.IDCExtended"
                 factory=".dublincore.DCExtendedExternalMappingDecorator" />
 
-    <subscriber provides=".interfaces.IExternalStandardDictionaryDecorator"
-                for="zope.dublincore.interfaces.IDCDescriptiveProperties"
+    <subscriber
+                provides=".interfaces.IExternalStandardDictionaryDecorator"
+                for=".dublincore.IDCDescriptiveProperties"
                 factory=".dublincore.DCDescriptivePropertiesExternalMappingDecorator" />
 
     <!-- The "*" matches things that implement some (any) interface -->

@@ -20,8 +20,15 @@ from __future__ import print_function
 
 from zope import component
 from zope import interface
-from zope.dublincore.interfaces import IDCDescriptiveProperties
-from zope.dublincore.interfaces import IDCExtended
+try:
+    from zope.dublincore.interfaces import IDCDescriptiveProperties
+    from zope.dublincore.interfaces import IDCExtended
+except ModuleNotFoundError:
+    # pylint:disable=inherit-non-class
+    class IDCDescriptiveProperties(interface.Interface):
+        """Mock"""
+    class IDCExtended(interface.Interface):
+        """Mock"""
 
 from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
 from nti.externalization.interfaces import StandardExternalFields

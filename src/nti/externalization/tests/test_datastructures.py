@@ -659,7 +659,10 @@ class TestExternalizableInstanceDict(CommonTestMixin,
 
 
     def test_can_also_subclass_persistent(self):
-        from persistent import Persistent
+        try:
+            from persistent import Persistent
+        except ModuleNotFoundError:
+            self.skipTest('persistent not installed')
 
         class Base(self._getTargetClass()):
             pass
@@ -727,7 +730,10 @@ class TestExternalizableInstanceDict(CommonTestMixin,
         # Seen in the wild with legacy data.
         # The unicode path is bad on Python 2,
         # the bytes path is bad on Python 3.
-        from persistent import Persistent
+        try:
+            from persistent import Persistent
+        except ModuleNotFoundError:
+            self.skipTest('persistent not installed')
         class MappingIO(self._getTargetClass(), Persistent):
             pass
 

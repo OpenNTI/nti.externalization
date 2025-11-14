@@ -16,8 +16,15 @@ from __future__ import print_function
 import decimal
 import warnings
 
-from persistent import Persistent
-from ZODB.POSException import POSError
+try:
+    from persistent import Persistent
+except ModuleNotFoundError:
+    class Persistent:
+        """Mock"""
+    class POSError(Exception):
+        """Mock"""
+else:
+    from ZODB.POSException import POSError
 import simplejson
 import yaml
 from zope import component
@@ -163,6 +170,8 @@ def _yaml_represent_decimal(dumper, data):
             pass
         else:
             return dumper.represent_int(data)
+    # TODO: Try replacing these with math.nan and math.inf
+    # pylint: disable=consider-math-not-float
     if data.is_nan():
         return dumper.represent_float(float('nan'))
     if data.is_infinite():

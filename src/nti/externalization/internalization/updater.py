@@ -11,20 +11,18 @@ from __future__ import print_function
 
 
 # stdlib imports
-try:
-    from collections.abc import MutableSequence
-except ImportError: # Python 2
-    # pylint:disable=deprecated-class
-    from collections import MutableSequence
-    from collections import MutableMapping
-else: # pragma: no cover
-    from collections.abc import MutableMapping
+from collections.abc import MutableSequence
+from collections.abc import MutableMapping
 import inspect
 import warnings
 
-
-from persistent.interfaces import IPersistent
 from zope import interface
+try:
+    from persistent.interfaces import IPersistent
+except ModuleNotFoundError:
+    class IPersistent(interface.Interface): # pylint: disable=inherit-non-class
+        """Mock"""
+
 from zope.event import notify as notify_event
 
 from nti.externalization._base_interfaces import PRIMITIVES

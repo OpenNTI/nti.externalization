@@ -15,18 +15,17 @@ from __future__ import print_function
 
 # stdlib imports
 import warnings
-try:
-    from collections.abc import Set
-except ImportError: # Python 2
-    # pylint:disable=deprecated-class
-    from collections import Set
-    from collections import Mapping
-else: # pragma: no cover
-    from collections.abc import Mapping
+from collections.abc import Set
+from collections.abc import Mapping
 from collections import defaultdict
 from weakref import WeakKeyDictionary
 
-import persistent
+
+try:
+    from persistent.list import PersistentList
+    _PL = (PersistentList,)
+except ModuleNotFoundError:
+    _PL = ()
 
 from zope.component import queryAdapter
 from zope.component import getUtility
@@ -73,11 +72,10 @@ _manager_push = _manager.push
 #: by iterating it and mapping onto a list. This allows :class:`~z3c.batching.interfaces.IBatch`
 #: to be directly externalized.
 SEQUENCE_TYPES = (
-    persistent.list.PersistentList,
     Set,
     list,
     tuple,
-)
+) + _PL
 
 #: The types that we will treat as mappings for externalization purposes. These
 #: all map onto a dict.

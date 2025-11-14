@@ -14,10 +14,10 @@ from datetime import datetime as DateTime
 from calendar import timegm as dt_tuple_to_unix
 
 
-from zope.dublincore.interfaces import IDCTimes
 from zope.security.management import system_user
 from zope.security.interfaces import IPrincipal
 
+from nti.externalization._compat import IDCTimes
 from nti.externalization._base_interfaces import get_standard_external_fields
 from nti.externalization._base_interfaces import get_standard_internal_fields
 from nti.externalization._base_interfaces import get_default_externalization_policy

@@ -18,10 +18,11 @@ entry_points = {
 }
 
 TESTS_REQUIRE = [
-    'nti.testing',
+    'nti.testing >= 4.4.0',
     'zope.testrunner',
     'manuel',
     'pyperf',
+    'transaction >= 5.0',
 ]
 
 
@@ -152,20 +153,19 @@ setup(
     author_email='jason@nextthought.com',
     description="NTI Externalization",
     long_description=(_read('README.rst') + '\n\n' + _read('CHANGES.rst')),
-    license='Apache',
+    license='Apache-2.0',
     keywords='externalization',
     classifiers=[
-        'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
-        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
@@ -179,30 +179,32 @@ setup(
         'nti.schema >= 1.17.0',
 
         'PyYAML >= 5.1',
-        'ZODB >= 5.5.1',
         'isodate',
-        'persistent >= 4.7.0',
         'pytz',
         'simplejson >= 3.19',
-        'transaction >= 2.2',
+        'transaction',
         'zope.component >= 4.6.1',
         'zope.configuration >= 4.4.0',
-        'zope.container >= 4.4.0',
         'zope.dottedname >= 4.3.0',
-        'zope.dublincore >= 4.2.0',
         'zope.event >= 4.4.0',
         'zope.hookable >= 5.0.1',
         'zope.interface >= 5.0.1', # getDirectTaggedValue
-        'zope.intid >= 4.3.0',
         'zope.lifecycleevent >= 4.3.0',
         'zope.location >= 4.2.0',
         'zope.mimetype >= 2.5.0',
         'zope.proxy >= 4.3.5',
         'zope.schema >= 6.0.0',
         'zope.security >= 5.1.1',
-        'BTrees >= 4.8.0', # Registers BTrees as Mapping automatically.
     ],
     extras_require={
+        'zodb': [
+            'ZODB >= 5.5.1',
+            'persistent >= 4.7.0',
+            'zope.container >= 4.4.0',
+            'zope.dublincore >= 4.2.0',
+            'zope.intid >= 4.3.0',
+            'BTrees >= 4.8.0', # Registers BTrees as Mapping automatically.
+        ],
         'test': TESTS_REQUIRE,
         'docs': [
             'Sphinx',

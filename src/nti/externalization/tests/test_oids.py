@@ -25,7 +25,10 @@ class TestToExternalOID(CleanUp,
 
     def test_add_to_connection(self):
         from zope.interface import implementer
-        from ZODB.interfaces import IConnection
+        try:
+            from ZODB.interfaces import IConnection
+        except ModuleNotFoundError:
+            self.skipTest('ZODB not installed')
 
         @implementer(IConnection)
         class Persistent(object):
@@ -51,8 +54,11 @@ class TestToExternalOID(CleanUp,
 
     def test_intid(self):
         from zope.interface import implementer
-        from zope.intid.interfaces import IIntIds
         from zope import component
+        try:
+            from zope.intid.interfaces import IIntIds
+        except ModuleNotFoundError:
+            self.skipTest('Intids not installed')
 
         @implementer(IIntIds)
         class IntIds(object):

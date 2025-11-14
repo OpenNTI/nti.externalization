@@ -10,8 +10,13 @@ import unittest
 
 from Acquisition import Implicit
 from ExtensionClass import Base
-from zope.container.contained import ContainedProxy
 from zope.proxy import ProxyBase
+
+try:
+    from zope.container.contained import ContainedProxy
+except ModuleNotFoundError:
+    ContainedProxy = ProxyBase
+
 
 from nti.externalization.proxy import removeAllProxies
 from nti.testing.matchers import aq_inContextOf
@@ -80,7 +85,7 @@ def test_suite():
     from unittest import defaultTestLoader
     suite = defaultTestLoader.loadTestsFromName(__name__)
 
-    return unittest.TestSuite([
-        suite,
-        doctest.DocTestSuite('nti.externalization.proxy'),
-    ])
+    suites = [suite]
+    if ProxyBase is not ContainedProxy:
+        suites.append(doctest.DocTestSuite('nti.externalization.proxy'))
+    return unittest.TestSuite(suites)
