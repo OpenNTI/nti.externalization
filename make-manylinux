@@ -44,13 +44,10 @@ if [ -d /project ] && [ -d /opt/python ]; then
     OPATH="$PATH"
     which auditwheel
     echo @@@@@@@@@@@@@@@@@@@@@@
-    echo Will build /opt/python/cp{39,310,311}* /opt/python/pp{39,}*
+    echo Will build /opt/python/cp{310,311,312,313,314}*
 
-    for variant in `ls -d /opt/python/cp{313,310,311,312}*`; do
-        if [ "$variant" = "/opt/python/cp313-cp313t" ]; then
-            echo "Skipping no-gil build. The GIL is required."
-            continue
-        fi
+    for variant in `ls -d /opt/python/cp{314,313,310,311,312}*`; do
+
         export PATH="$variant/bin:$OPATH"
         echo "Building $variant $(python --version)"
 
