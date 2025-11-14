@@ -22,10 +22,24 @@ izip = zip
 
 import warnings
 
-import persistent
-from persistent.list import PersistentList
-from persistent.mapping import PersistentMapping
-from persistent.wref import WeakRef as PWeakRef
+try:
+    from persistent import UPTODATE
+    from persistent import CHANGED
+    from persistent import Persistent
+    from persistent.list import PersistentList
+    from persistent.mapping import PersistentMapping
+    from persistent.wref import WeakRef as PWeakRef
+except ModuleNotFoundError as ex:
+    assert ex.name == 'persistent'
+    UPTODATE = None
+    CHANGED = 'Fake Changed'
+    class Persistent:
+        """Mock"""
+    PersistentList = list
+    PersistentMapping = dict
+    from weakref import ref
+    class PWeakRef(ref):
+        __slots__ = ()
 
 from zope import interface
 
@@ -68,15 +82,15 @@ def getPersistentState(obj):
         # Trust the changed value ahead of the state value,
         # because it is settable from python but the state
         # is more implicit.
-        return persistent.CHANGED if obj._p_changed else persistent.UPTODATE
+        return CHANGED if obj._p_changed else UPTODATE
     except AttributeError:
         pass
 
     try:
-        if obj._p_state == persistent.UPTODATE and obj._p_jar is None:
+        if obj._p_state == UPTODATE and obj._p_jar is None:
             # In keeping with the pessimistic theme, if it claims to be uptodate, but has never
             # been saved, we consider that the same as changed
-            return persistent.CHANGED
+            return CHANGED
     except AttributeError:
         pass
 
@@ -90,7 +104,7 @@ def getPersistentState(obj):
         try:
             return obj.getPersistentState()
         except AttributeError:
-            return persistent.CHANGED
+            return CHANGED
 
 
 def setPersistentStateChanged(obj):
@@ -187,12 +201,13 @@ class PersistentExternalizableWeakList(PersistentExternalizableList): # pylint:d
     def __init__(self, initlist=None):
         if initlist is not None:
             initlist = [self.__wrap(x) for x in initlist]
-        super().__init__(initlist)
+        super().__init__(initlist or ())
 
     def __getitem__(self, i):
         return super().__getitem__(i)()
 
-    # NOTE: __iter__ is implemented with __getitem__ so we don't reimplement.
+    # NOTE: __iter__ is implemented with __getitem__ so we don't reimplement
+    # (unless we're subclassing stdlib list)
     # However, __eq__ isn't, it wants to directly compare lists
     def __eq__(self, other):
         # If we just compare lists, weak refs will fail badly
@@ -204,6 +219,17 @@ class PersistentExternalizableWeakList(PersistentExternalizableList): # pylint:d
             return False
 
         return all(obj1 == obj2 for obj1, obj2 in izip(self, other))
+
+    if PersistentList is list:
+        def __iter__(self):
+            for i in super().__iter__():
+                yield i()
+
+        def __mul__(self, n):
+            # Returns a plain list object.
+            plain = super().__mul__(n)
+            return self.__class__(plain)
+
 
     __hash__ = None
 
@@ -292,7 +318,7 @@ def NoPickle(cls):
                           stacklevel=2)
         setattr(cls, meth, __reduce_ex__)
 
-    if issubclass(cls, persistent.Persistent):
+    if issubclass(cls, Persistent):
         warnings.warn(RuntimeWarning("Using @NoPickle an a Persistent subclass"),
                       stacklevel=2)
 

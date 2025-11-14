@@ -14,10 +14,11 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "pypy-3.10"
+          - "pypy-3.11"
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
         extras:
           - "[test,docs]"
         # include:
@@ -46,10 +47,14 @@ jobs:
         coverage combine || true
         coverage report -i || true
     - name: Lint
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == '3.14'
       run: |
         python -m pip install -U pylint
         pylint src
+    - name: Test without ZODB
+      run: |
+        python -m pip uninstall -y ZODB zope.dublincore zope.proxy persistent zope.container BTrees
+        PURE_PYTHON=1 coverage run -a -m zope.testrunner --test-path=src  --auto-color --auto-progress
     - name: Submit to Coveralls
       uses: coverallsapp/github-action@v2
       with:

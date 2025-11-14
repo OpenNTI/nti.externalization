@@ -9,17 +9,26 @@ from __future__ import print_function
 import unittest
 import warnings
 
-import persistent
-from persistent import Persistent
-from persistent.wref import WeakRef as PWeakRef
+try:
+    from persistent import Persistent
+    from persistent.wref import WeakRef as PWeakRef
+    from persistent import UPTODATE
+    from persistent import CHANGED
+except ModuleNotFoundError:
+    class Persistent:
+        """Mock"""
+        MOCK = True
+    from ..persistence import PWeakRef
+    from ..persistence import UPTODATE
+    from ..persistence import CHANGED
 
-from nti.externalization.persistence import PersistentExternalizableList
-from nti.externalization.persistence import PersistentExternalizableDictionary
-from nti.externalization.persistence import PersistentExternalizableWeakList
-from nti.externalization.persistence import getPersistentState
-from nti.externalization.persistence import setPersistentStateChanged
-from nti.externalization.persistence import NoPickle
-from nti.externalization.tests import ExternalizationLayerTest
+from ..persistence import PersistentExternalizableList
+from ..persistence import PersistentExternalizableDictionary
+from ..persistence import PersistentExternalizableWeakList
+from ..persistence import getPersistentState
+from ..persistence import setPersistentStateChanged
+from ..persistence import NoPickle
+from . import ExternalizationLayerTest
 
 from hamcrest import assert_that
 from hamcrest import calling
@@ -55,7 +64,7 @@ class TestPersistentExternalizableWeakList(ExternalizationLayerTest):
 
         # Cannot set non-persistent objects
         assert_that(calling(obj.append).with_args(object()),
-                    raises(AttributeError))
+                    raises((AttributeError, TypeError)))
 
         pers = Persistent()
         obj.append(pers)
@@ -125,16 +134,17 @@ class TestPersistentExternalizableDict(unittest.TestCase):
 class TestGetPersistentState(unittest.TestCase):
 
     def test_without_jar(self):
+
         class P(object):
-            _p_state = persistent.UPTODATE
+            _p_state = UPTODATE
             _p_jar = None
 
-        assert_that(getPersistentState(P), is_(persistent.CHANGED))
+        assert_that(getPersistentState(P), is_(CHANGED))
 
     def test_with_proxy_p_changed(self):
         from zope.proxy import ProxyBase
         class P(object):
-            _p_state = persistent.UPTODATE
+            _p_state = UPTODATE
             _p_jar = None
 
         class MyProxy(ProxyBase):
@@ -146,14 +156,14 @@ class TestGetPersistentState(unittest.TestCase):
             _p_state = _p_changed
 
         proxy = MyProxy(P())
-        assert_that(getPersistentState(proxy), is_(persistent.CHANGED))
+        assert_that(getPersistentState(proxy), is_(CHANGED))
 
         setPersistentStateChanged(proxy) # Does nothing
 
     def test_with_proxy_p_state(self):
         from zope.proxy import ProxyBase
         class P(object):
-            _p_state = persistent.CHANGED
+            _p_state = CHANGED
             _p_jar = None
 
         class MyProxy(ProxyBase):
@@ -163,7 +173,7 @@ class TestGetPersistentState(unittest.TestCase):
                 raise AttributeError()
 
         proxy = MyProxy(P())
-        assert_that(getPersistentState(proxy), is_(persistent.CHANGED))
+        assert_that(getPersistentState(proxy), is_(CHANGED))
 
         setPersistentStateChanged(proxy) # Does nothing
 
@@ -171,7 +181,8 @@ class TestGetPersistentState(unittest.TestCase):
 class TestWeakRef(unittest.TestCase):
 
     def test_to_externalObject(self):
-
+        if hasattr(Persistent, 'MOCK'):
+            self.skipTest('persistent not installed')
         class P(Persistent):
             def toExternalObject(self, **_kwargs):
                 return {'a': 42}
@@ -181,7 +192,8 @@ class TestWeakRef(unittest.TestCase):
         assert_that(wref.toExternalObject(), is_({'a': 42}))
 
     def test_to_externalOID(self):
-
+        if hasattr(Persistent, 'MOCK'):
+            self.skipTest('persistent not installed')
         class P(Persistent):
             def toExternalOID(self, **_kwargs):
                 return b'abc'
@@ -201,7 +213,7 @@ class GlobalSubclassPersistentNoPickle(GlobalPersistentNoPickle):
     pass
 
 @NoPickle
-class GlobalNoPickle(object):
+class GlobalNoPickle:
     pass
 
 class GlobalSubclassNoPickle(GlobalNoPickle):
@@ -222,8 +234,11 @@ class GlobalNoPicklePersistentMixin3(GlobalSubclassNoPickle,
 class TestNoPickle(unittest.TestCase):
 
     def _persist_zodb(self, obj):
-        from ZODB import DB
-        from ZODB.MappingStorage import MappingStorage
+        try:
+            from ZODB import DB
+            from ZODB.MappingStorage import MappingStorage
+        except ModuleNotFoundError:
+            self.skipTest('ZODB not installed')
         import transaction
 
         db = DB(MappingStorage())
@@ -246,8 +261,12 @@ class TestNoPickle(unittest.TestCase):
         for meth in (self._persist_zodb,
                      self._persist_pickle,):
             __traceback_info__ = meth
-            assert_that(calling(meth).with_args(factory()),
-                        raises(TypeError, "Not allowed to pickle"))
+            # Got to allow SkipTest through
+            try:
+                meth(factory())
+                self.fail('Should raise TypeError')
+            except TypeError as ex:
+                self.assertTrue('Not allowed to pickle' in str(ex))
 
     def test_plain_object(self):
         self._all_persists_fail(GlobalNoPickle)
@@ -277,6 +296,8 @@ class TestNoPickle(unittest.TestCase):
         self._all_persists_fail(GlobalNoPicklePersistentMixin3)
 
     def _check_emits_warning(self, kind):
+        if hasattr(Persistent, 'MOCK'):
+            self.skipTest('persistent not installed')
         with warnings.catch_warnings(record=True) as w:
             NoPickle(kind)
 

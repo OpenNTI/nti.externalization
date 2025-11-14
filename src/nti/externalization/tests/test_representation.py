@@ -12,7 +12,10 @@ import re
 import unittest
 from unittest.mock import patch as Patch
 
-from persistent import Persistent
+try:
+    from persistent import Persistent
+except ModuleNotFoundError:
+    Persistent = None
 
 
 from . import ExternalizationLayerTest
@@ -25,8 +28,14 @@ from hamcrest import is_
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 # pylint:disable=attribute-defined-outside-init, useless-object-inheritance
+# pylint:disable=consider-math-not-float
 
 class TestWithRepr(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        if Persistent is None:
+            self.skipTest('Persistent not installed')
 
     def test_default(self):
 
@@ -59,7 +68,7 @@ class TestWithRepr(unittest.TestCase):
 
     def test_raises_POSError(self):
         def raise_(unused_instance):
-            from ZODB.POSException import ConnectionStateError
+            from ZODB.POSException import ConnectionStateError # pylint:disable=import-error
             raise ConnectionStateError()
 
         @representation.WithRepr(raise_)

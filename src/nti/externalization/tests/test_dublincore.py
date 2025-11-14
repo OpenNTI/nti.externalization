@@ -104,8 +104,9 @@ class TestDCDescriptiveProprtiesExternalMappingDecorator(AbstractDCDecoratorTest
 class TestConfigured(ExternalizationLayerTest):
 
     def test_decorate(self):
-        from zope.dublincore.interfaces import IDCDescriptiveProperties
-        from zope.dublincore.interfaces import IDCExtended
+        from ..dublincore import IDCDescriptiveProperties
+        from ..dublincore import IDCExtended
+
         from zope import interface
 
         from nti.externalization.externalization import decorate_external_mapping

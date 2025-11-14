@@ -366,7 +366,10 @@ class TestUpdateFromExternaObject(CleanUp,
         assert_that(result, is_([1, 2, 3]))
 
     def test_update_sequence_of_primitives_persistent_contained(self):
-        from persistent import Persistent
+        try:
+            from persistent import Persistent
+        except ModuleNotFoundError:
+            self.skipTest('persistent not installed')
         ext = [1, 2, 3]
         class O(Persistent):
             pass
@@ -410,7 +413,10 @@ class TestUpdateFromExternaObject(CleanUp,
         assert_that(contained, has_property('updated', True))
 
     def test_update_persistent_object(self):
-        from persistent import Persistent
+        try:
+            from persistent import Persistent
+        except ModuleNotFoundError:
+            self.skipTest('persistent not installed')
         external = {}
 
         class Obj(Persistent):

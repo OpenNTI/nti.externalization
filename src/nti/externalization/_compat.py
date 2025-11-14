@@ -4,12 +4,9 @@
 System spanning utilities.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import sys
+import logging
 
 text_type = str
 
@@ -23,6 +20,19 @@ OSX = sys.platform == 'darwin'
 
 PURE_PYTHON = PYPY or os.getenv('PURE_PYTHON') or os.getenv("NTI_EXT_PURE_PYTHON")
 
+
+try:
+    from zope.dublincore.interfaces import IDCTimes # pylint: disable=unused-import
+except ModuleNotFoundError:
+    from zope.interface import Interface
+    class IDCTimes(Interface): # pylint: disable=inherit-non-class
+        """Mock"""
+
+try:
+    from ZODB.loglevels import TRACE
+except ModuleNotFoundError:
+    TRACE = 5
+    logging.addLevelName(TRACE, "TRACE")
 
 def to_unicode(s, encoding='utf-8', err='strict'):
     """

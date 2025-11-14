@@ -3,12 +3,15 @@
 =========
 
 
-2.4.1 (unreleased)
+2.5.0 (unreleased)
 ==================
 
 - Reduce the logging level for recursive invocations. We handle this
   case correctly, it did not need to be a warning.
-
+- Add support for Python 3.14.
+- Add the new 'zodb' extra, which installs optional dependencies that
+  use the ZODB ecosystem: persistent, BTrees, zope.intid,
+  zope.container, etc. These dependencies are no longer installed by default.
 
 2.4.0 (2024-11-11)
 ==================

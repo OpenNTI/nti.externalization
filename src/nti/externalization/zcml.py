@@ -37,11 +37,8 @@ Example (non-sensical) of all the directives:
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import logging
 
-from ZODB import loglevels
 from zope import interface
 from zope.component import zcml as component_zcml
 from zope.configuration.fields import Bool
@@ -51,6 +48,7 @@ from zope.configuration.fields import Tokens
 from zope.configuration.fields import MessageID
 from zope.configuration.fields import PythonIdentifier
 
+from ._compat import TRACE
 from .interfaces import _ILegacySearchModuleFactory
 from .autopackage import AutoPackageSearchingScopedInterfaceObjectIO
 from .factory import MimeObjectFactory
@@ -63,7 +61,7 @@ from .internalization.legacy_factories import find_factories_in_module
 
 __docformat__ = "restructuredtext en"
 
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 # pylint: disable=protected-access,inherit-non-class
 
@@ -113,7 +111,7 @@ def registerMimeFactories(_context, module):
                 continue
 
         if mime_type:
-            logger.log(loglevels.TRACE,
+            logger.log(TRACE,
                        "Registered mime factory utility %s = %s (%s)",
                        object_name, value, mime_type)
             factory = MimeObjectFactory(value,
@@ -226,7 +224,7 @@ def autoPackageExternalization(_context, root_interfaces, modules,
     cls_iio.__module__ = _context.package.__name__ if _context.package else '__dynamic__'
 
     for iface in root_interfaces:
-        logger.log(loglevels.TRACE,
+        logger.log(TRACE,
                    "Registering ObjectIO for %s as %s", iface, cls_iio)
         component_zcml.adapter(_context, factory=(cls_iio,), for_=(iface,))
 
@@ -250,7 +248,7 @@ def autoPackageExternalization(_context, root_interfaces, modules,
 
     # Now that it's initted, register the factories
     for module in (factory_modules or modules):
-        logger.log(loglevels.TRACE,
+        logger.log(TRACE,
                    "Examining module %s for mime factories", module)
         registerMimeFactories(_context, module)
 

@@ -12,11 +12,19 @@ from __future__ import print_function
 import binascii
 import collections
 
-
-from ZODB.interfaces import IConnection
+try:
+    from ZODB.interfaces import IConnection
+except ModuleNotFoundError:
+    def IConnection(_):
+        raise TypeError
 from zope import component
 
-from zope.intid.interfaces import IIntIds
+try:
+    from zope.intid.interfaces import IIntIds
+except ModuleNotFoundError:
+    from zope.interface import Interface
+    class IIntIds(Interface): # pylint: disable=inherit-non-class
+        """Mock"""
 
 from nti.externalization._compat import bytes_
 
