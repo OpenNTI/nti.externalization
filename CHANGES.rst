@@ -14,7 +14,7 @@
   zope.container, etc. These dependencies are no longer installed by
   default.
 - No longer build binary wheels for the legacy 'manylinux2014'
-  standard, only 2_28.
+  standard, only 2_28. Similarly, switch from musllinux_1_1 to 1_2.
 
 2.4.0 (2024-11-11)
 ==================

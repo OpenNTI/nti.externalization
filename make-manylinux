@@ -61,7 +61,7 @@ if [ -d /project ] && [ -d /opt/python ]; then
 
         # XXX: The name of the wheel doesn't match the name of the project
         PATH="$OPATH" auditwheel repair $WHL
-        WHL=$(ls wheelhouse/nti.externalization*whl)
+        WHL=$(ls wheelhouse/*externalization*whl)
         cp $WHL /project/wheelhouse
         ls -l /project/wheelhouse
 
@@ -76,5 +76,5 @@ fi
 # Mount the current directory as /project
 # Can't use -i on Travis with arm64, "input device not a tty"
 sname=$(basename "$0")
-docker run --rm -e PIP_INDEX_URL -v "$(pwd)/:/project"  "${DOCKER_IMAGE:-quay.io/pypa/manylinux2014_x86_64}" /project/"$sname"
+docker run --rm -e PIP_INDEX_URL -v "$(pwd)/:/project"  "${DOCKER_IMAGE:-quay.io/pypa/manylinux_2_28_x86_64}" /project/"$sname"
 ls -l wheelhouse
