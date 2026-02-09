@@ -3,7 +3,7 @@
 =========
 
 
-2.6.0 (unreleased)
+2.6.0 (2026-02-09)
 ==================
 
 - Remove the automatic hooking of ``get_current_request`` to
