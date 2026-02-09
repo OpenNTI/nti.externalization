@@ -3,10 +3,12 @@
 =========
 
 
-2.5.1 (unreleased)
+2.6.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Remove the automatic hooking of ``get_current_request`` to
+  ``pyramid.threadlocal.get_current_request``. If you want this
+  behaviour, you must do so yourself.
 
 
 2.5.0 (2025-11-14)

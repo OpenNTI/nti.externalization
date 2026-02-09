@@ -8,8 +8,13 @@ from __future__ import print_function
 # stdlib imports
 import unittest
 
-from Acquisition import Implicit
-from ExtensionClass import Base
+try:
+    from Acquisition import Implicit
+    from ExtensionClass import Base
+except ImportError:
+    Implicit = object
+    Base = object
+
 from zope.proxy import ProxyBase
 
 try:
@@ -48,6 +53,11 @@ def aq_proxied(im):
     return ec.x
 
 class TestProxy(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        if Implicit is object:
+            self.skipTest('Acquisition and ExtensionClass not available.')
 
     def test_removeAllProxies_simple(self):
 

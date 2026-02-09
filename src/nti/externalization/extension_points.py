@@ -54,22 +54,19 @@ def get_current_request():
     In version 1.0, this will default to using Pyramid's
     :func:`pyramid.threadlocal.get_current_request` if pyramid is
     installed. However, in a future version, an application wishing
-    to use Pyramid's request will explicitly need to set the hook.
+    to use Pyramid's request will explicitly need to set the hook::
+
+        from pyramid import threadlocal
+        get_current_request.sethook(threadlocal.get_current_request)
 
     .. deprecated:: 1.0
        The automatic fallback to Pyramid. It will be removed
        in 1.1 or before.
+
+    .. versionchanged:: NEXT
+       No longer attempt the automatic fallback.
     """
     return None # pragma: no cover
-
-
-try:
-    from pyramid import threadlocal
-except ImportError:
-    pass
-else: # pragma: no cover
-    get_current_request.sethook(threadlocal.get_current_request)
-    del threadlocal
 
 
 _StandardExternalFields_OID = StandardExternalFields.OID
