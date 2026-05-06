@@ -219,6 +219,9 @@ class IExternalObjectRepresenter(interface.Interface):
         Write the given object. If `fp` is None, then the string
         representation will be returned, otherwise, fp specifies a writeable
         object to which the representation will be written.
+
+        Implementations should accept arbitrary keyword arguments, ignoring
+        any they don't understand.
         """
 
 

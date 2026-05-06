@@ -42,7 +42,8 @@ __all__ = [
 
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
-                               name=_NotGiven, registry=_NotGiven):
+                               name=_NotGiven, registry=_NotGiven,
+                               **repr_kwargs):
     """
     to_external_representation(obj, ext_format='json', name=NotGiven) -> str
 
@@ -56,6 +57,12 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
         `.EXT_REPR_YAML`, or the
         name of some other utility that implements
         `~nti.externalization.interfaces.IExternalObjectRepresenter`
+
+    The *repr_kwargs* are passed to the dump method of
+    the representer.
+
+    .. versionchanged:: NEXT
+       Added *repr_kwargs*
     """
     if registry is not _NotGiven: # pragma: no cover
         warnings.warn(
@@ -67,7 +74,10 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
     # parts of the datastructure more than necessary. Here we traverse
     # the whole thing exactly twice.
     ext = toExternalObject(obj, name=name)
-    return component.getUtility(IExternalObjectRepresenter, name=ext_format).dump(ext)
+    return component.getUtility(
+        IExternalObjectRepresenter,
+        name=ext_format
+    ).dump(ext, **repr_kwargs)
 
 
 def to_json_representation(obj):
@@ -101,12 +111,8 @@ def _second_pass_to_external_object(obj):
 @interface.implementer(IExternalObjectIO)
 class JsonRepresenter(object):
 
-    _DUMP_ARGS = dict(
-        option=orjson.OPT_SORT_KEYS if __debug__ else 0, # Makes testing easier
-        default=_second_pass_to_external_object
-    )
-
-    def dump(self, obj, fp=None):
+    @staticmethod
+    def dump(obj, fp=None, sort_keys=False, as_str=True, **_unused):
         """
         Given an object that is known to already be in an externalized form,
         convert it to JSON. This can be about 10% faster then requiring a pass
@@ -114,17 +120,31 @@ class JsonRepresenter(object):
         form, while still handling a few corner cases with a second-pass conversion.
         (These things creep in during the object decorator phase and are usually
         links.)
-        """
-        byte_str = orjson.dumps(obj, **self._DUMP_ARGS)
-        text_str = byte_str.decode('utf-8')
-        if fp:
-            return fp.write(text_str)
 
-        return text_str
+        .. versionchanged:: NEXT
+           Added the *sort_keys* parameter, defaulting to false for speed.
+           Added the *as_str* parameter, defaulting to true for backwards compatibility.
+           If set to false, then a bytes object will be returned (and written to any
+           *fp*). Bytes is orjson's native output format.
+
+        """
+        result = orjson.dumps(obj,
+                              option=orjson.OPT_SORT_KEYS if sort_keys else 0,
+                              default=_second_pass_to_external_object)
+        if as_str:
+            result = result.decode('utf-8')
+        if fp:
+            return fp.write(result)
+        return result
+
+    @classmethod
+    def dump_fast(cls, obj):
+        return cls.dump(obj, sort_keys=False, as_str=False)
 
     def load(self, stream):
         return orjson.loads(stream)
-to_json_representation_externalized = JsonRepresenter().dump
+to_json_representation_externalized = JsonRepresenter.dump
+to_json_representation_fast = JsonRepresenter.dump_fast
 
 
 # YAML
@@ -192,7 +212,7 @@ _UnicodeLoader.add_constructor('tag:yaml.org,2002:str',
 @interface.implementer(IExternalObjectIO)
 class YamlRepresenter(object):
 
-    def dump(self, obj, fp=None):
+    def dump(self, obj, fp=None, **_unused):
         # The default_flow_style changed in PyYaml 5.1 from None to False.
         # Using False produces multi-line, indented, verbose output. While being human readable,
         # this consumes space and eliminates simple parsing with JSON. Using True

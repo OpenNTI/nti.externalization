@@ -310,6 +310,11 @@ class TestJson(AbstractRepresenterTestMixin,
         result = json.load(b'"hi"')
         assert_that(result, is_("hi"))
 
+    def test_print_to_bytes(self):
+        json = self._makeOne()
+        result = json.dump(1, as_str=False)
+        assert_that(result, is_(bytes))
+
     def test_to_json_representation(self):
         result = representation.to_json_representation({})
         assert_that(result, is_('{}'))
