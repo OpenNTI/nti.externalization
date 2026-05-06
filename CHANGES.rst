@@ -18,6 +18,7 @@
 - Remove deprecated uses of ``datetime.datetime.utcfromtimestamp``.
   Now, instead of being "naive" parsed dates from timestamps
   will have a ``tzinfo`` of UTC.
+- Support for PyPy has been removed (``orjson`` doesn't run on PyPy).
 
 2.6.0 (2026-02-09)
 ==================
