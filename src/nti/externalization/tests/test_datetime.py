@@ -117,7 +117,9 @@ class TestDatetime(ExternalizationLayerTest):
 
     def test_datetime_from_timestamp(self):
         from datetime import datetime
-        assert_that(IDateTime(123456), is_(datetime.utcfromtimestamp(123456)))
+        from datetime import timezone
+        assert_that(IDateTime(123456), is_(datetime.fromtimestamp(123456,
+                                                                  timezone.utc)))
 
 class TestTzinfo(unittest.TestCase):
 

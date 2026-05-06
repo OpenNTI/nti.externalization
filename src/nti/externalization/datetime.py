@@ -202,11 +202,16 @@ def datetime_from_timestamp(value):
     >>> provideAdapter(datetime_from_timestamp, (int,))
     >>> provideAdapter(datetime_from_timestamp, (float,))
     >>> IDateTime(123456)
-    datetime.datetime(1970, 1, 2, 10, 17, 36)
+    datetime.datetime(1970, 1, 2, 10, 17, 36, tzinfo=<UTC>)
     >>> IDateTime(654321.0)
-    datetime.datetime(1970, 1, 8, 13, 45, 21)
+    datetime.datetime(1970, 1, 8, 13, 45, 21, tzinfo=<UTC>)
+
+    .. versionchanged::
+       The returned objects now have the UTC timezone
+       set. Previously they were naive, but that is deprecated.
+
     """
-    return datetime.utcfromtimestamp(value)
+    return datetime.fromtimestamp(value, pytz.UTC)
 
 
 @component.adapter(IDate)

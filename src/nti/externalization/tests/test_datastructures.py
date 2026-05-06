@@ -57,6 +57,7 @@ class CommonTestMixin(object):
         from ..interfaces import ExternalizationPolicy
         from ..datetime import datetime_to_string
         from datetime import datetime as DateTime
+        from datetime import timezone
 
         iso_policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 
@@ -68,7 +69,7 @@ class CommonTestMixin(object):
         io = self._makeOne()
         io._ext_replacement = lambda: x
         def to_str(ts):
-            return datetime_to_string(DateTime.utcfromtimestamp(ts)).toExternalObject()
+            return datetime_to_string(DateTime.fromtimestamp(ts, timezone.utc)).toExternalObject()
         created_string = to_str(X.createdTime)
         modified_string = to_str(X.lastModified)
 

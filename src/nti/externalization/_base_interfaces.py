@@ -251,7 +251,8 @@ def get_standard_internal_fields():
 # external objects by all representers. In particular,
 # ``fractions.Fraction`` cannot be handled by default and
 # needs to go through the adaptation process, as does ``complex``.
-# simplejson can handle ``decimal.Decimal``, but YAML cannot.
+# simplejson can handle ``decimal.Decimal``, but YAML cannot;
+# neither can orjson.
 _PRIMITIVE_NUMBER_TYPES = (
     int, # bool is a subclass of int.
     float,

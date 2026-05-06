@@ -8,11 +8,6 @@ The provided implementations of
 provide and register two, one for `JSON <.EXT_REPR_JSON>` and one for
 `YAML <.EXT_REPR_YAML>`.
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import decimal
 import warnings
 
@@ -25,7 +20,7 @@ except ModuleNotFoundError:
         """Mock"""
 else:
     from ZODB.POSException import POSError
-import simplejson
+import orjson
 import yaml
 from zope import component
 from zope import interface
@@ -85,7 +80,17 @@ def to_json_representation(obj):
 
 # JSON
 
+class _FakeDecimalDumper:
+    def represent_int(self, d):
+        return int(d)
+    def represent_float(self, f):
+        return f
+    def represent_scalar(self, _tag, d):
+        return float(d)
+
 def _second_pass_to_external_object(obj):
+    if isinstance(obj, decimal.Decimal):
+        return _yaml_represent_decimal(_FakeDecimalDumper(), obj)
     result = toExternalObject(obj, name='second-pass')
     if result is obj:
         raise TypeError(repr(obj) + " is not serializable")
@@ -96,9 +101,10 @@ def _second_pass_to_external_object(obj):
 @interface.implementer(IExternalObjectIO)
 class JsonRepresenter(object):
 
-    _DUMP_ARGS = dict(check_circular=False,
-                      sort_keys=__debug__,  # Makes testing easier
-                      default=_second_pass_to_external_object)
+    _DUMP_ARGS = dict(
+        option=orjson.OPT_SORT_KEYS if __debug__ else 0, # Makes testing easier
+        default=_second_pass_to_external_object
+    )
 
     def dump(self, obj, fp=None):
         """
@@ -109,33 +115,15 @@ class JsonRepresenter(object):
         (These things creep in during the object decorator phase and are usually
         links.)
         """
+        byte_str = orjson.dumps(obj, **self._DUMP_ARGS)
+        text_str = byte_str.decode('utf-8')
         if fp:
-            return simplejson.dump(obj, fp, **self._DUMP_ARGS)
+            return fp.write(text_str)
 
-        return simplejson.dumps(obj, **self._DUMP_ARGS)
+        return text_str
 
     def load(self, stream):
-        # We need all string values to be unicode objects. simplejson is different from
-        # the built-in json and returns strings that can be represented as ascii as str
-        # objects if the input was a bytestring.
-        # The only way to get it to return unicode is if the input is unicode, or
-        # to use a hook to do so incrementally. The hook saves allocating the entire request body
-        # as a unicode string in memory and is marginally faster in some cases. However,
-        # the hooks gets to be complicated if it correctly catches everything (inside arrays,
-        # for example; the function below misses them) so decoding to unicode up front
-        # is simpler
-
-        if isinstance(stream, bytes):
-            stream = stream.decode('utf-8')
-        value = simplejson.loads(stream, allow_nan=True)
-
-        # Depending on whether the simplejson C speedups are active, we can still
-        # get back a non-unicode string if the object was a naked string. (If the python
-        # version is used, it returns unicode; the C version returns str.)
-        if isinstance(value, bytes):
-            # we know it's simple ascii or it would have produced unicode
-            value = value.decode("ascii")
-        return value
+        return orjson.loads(stream)
 to_json_representation_externalized = JsonRepresenter().dump
 
 

@@ -419,7 +419,8 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
     def to_str(ts): # pylint:disable=no-self-argument
         from ..datetime import datetime_to_string
         from datetime import datetime as DateTime
-        return datetime_to_string(DateTime.utcfromtimestamp(ts)).toExternalObject()
+        from datetime import timezone
+        return datetime_to_string(DateTime.fromtimestamp(ts, timezone.utc)).toExternalObject()
     created_string = to_str(X().createdTime)
     modified_string = to_str(X().lastModified)
     del to_str
@@ -661,6 +662,7 @@ class TestToExternalObject(ExternalizationLayerTest):
             self.skipTest('zope.dublincore not installed')
         from ..interfaces import ExternalizationPolicy
         from ..datetime import datetime_to_string
+        from datetime import timezone
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 
         @interface.implementer(dub_interfaces.IDCTimes)
@@ -670,7 +672,7 @@ class TestToExternalObject(ExternalizationLayerTest):
             createdTime = lastModified = 8675309
 
         assert_that(X(), verifiably_provides(dub_interfaces.IDCTimes))
-        dt = datetime.datetime.utcfromtimestamp(X.createdTime)
+        dt = datetime.datetime.fromtimestamp(X.createdTime, timezone.utc)
         expected_string = datetime_to_string(dt).toExternalObject()
         ex_dic = to_standard_external_dictionary(X(), policy=policy)
         assert_that(ex_dic,
@@ -850,7 +852,7 @@ class TestToExternalObject(ExternalizationLayerTest):
         # Serialize to JSON too to make sure we get the right thing
         from ..representation import to_json_representation_externalized
         s = to_json_representation_externalized(result)
-        assert_that(s, is_('{"Class": "O", "Creator": "creator"}'))
+        assert_that(s, is_('{"Class":"O","Creator":"creator"}'))
 
     def test_externalize_OOBTree(self):
         try:

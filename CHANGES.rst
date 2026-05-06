@@ -3,11 +3,21 @@
 =========
 
 
-2.6.1 (unreleased)
+3.0.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Switch to using ``orjson`` for JSON dumping/loading, from
+  ``simplejson``. This introduces the following changes:
 
+   - Floating nan and negative and positive infinity can no longer be
+     represented; they are serialized as null.
+   - ``decimal.Decimal`` objects may be represented with reduced
+     precision.
+   - Whitespace has changed (``orjson`` elides unnecessary whitespace).
+
+- Remove deprecated uses of ``datetime.datetime.utcfromtimestamp``.
+  Now, instead of being "naive" parsed dates from timestamps
+  will have a ``tzinfo`` of UTC.
 
 2.6.0 (2026-02-09)
 ==================
