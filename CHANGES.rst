@@ -13,7 +13,8 @@
      represented; they are serialized as null.
    - ``decimal.Decimal`` objects may be represented with reduced
      precision.
-   - Whitespace has changed (``orjson`` elides unnecessary whitespace).
+   - Whitespace has changed (``orjson`` elides unnecessary
+     whitespace).
 
 - Remove deprecated uses of ``datetime.datetime.utcfromtimestamp``.
   Now, instead of being "naive" parsed dates from timestamps

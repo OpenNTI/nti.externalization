@@ -206,7 +206,7 @@ def datetime_from_timestamp(value):
     >>> IDateTime(654321.0)
     datetime.datetime(1970, 1, 8, 13, 45, 21, tzinfo=<UTC>)
 
-    .. versionchanged::
+    .. versionchanged:: NEXT
        The returned objects now have the UTC timezone
        set. Previously they were naive, but that is deprecated.
 
