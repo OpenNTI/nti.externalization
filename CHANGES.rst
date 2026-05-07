@@ -3,7 +3,7 @@
 =========
 
 
-3.0.0 (unreleased)
+3.0.0 (2026-05-07)
 ==================
 
 - Switch to using ``orjson`` for JSON dumping/loading, from

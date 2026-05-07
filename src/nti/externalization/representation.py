@@ -61,7 +61,7 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
     The *repr_kwargs* are passed to the dump method of
     the representer.
 
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.0.0
        Added *repr_kwargs*
     """
     if registry is not _NotGiven: # pragma: no cover
@@ -121,7 +121,7 @@ class JsonRepresenter(object):
         (These things creep in during the object decorator phase and are usually
         links.)
 
-        .. versionchanged:: NEXT
+        .. versionchanged:: 3.0.0
            Added the *sort_keys* parameter, defaulting to false for speed.
            Added the *as_str* parameter, defaulting to true for backwards compatibility.
            If set to false, then a bytes object will be returned (and written to any
