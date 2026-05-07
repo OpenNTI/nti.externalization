@@ -11,13 +11,8 @@ These are generally meant to be used as zope.interface adapters once
 this package has been configured, but they can be called manually as well.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # stdlib imports
 from datetime import datetime
-import sys
 import time
 
 import isodate
@@ -57,7 +52,7 @@ def _parse_with(func, string):
         ).with_traceback(e.__traceback__) from e
 
 
-_input_type = (str if sys.version_info[0] >= 3 else basestring) # pylint:disable=undefined-variable
+_input_type = str
 # XXX: This should really be either unicode or str on Python 2. We need to *know*
 # what our input type is. All the tests pass on Python 3 with this registered to 'str',
 # so we're never passing ``bytes``

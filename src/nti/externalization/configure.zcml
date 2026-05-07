@@ -48,16 +48,16 @@
     <!-- Offer to adapt strings to dates -->
     <!-- TODO: This is a bit ad-hoc. Surely there's a more formal set
     of transforms somewhere? -->
-    <adapter factory=".datetime.date_from_string" />
-    <adapter factory=".datetime.datetime_from_string" />
-    <adapter factory=".datetime.duration_from_string" />
-    <adapter factory=".datetime.datetime_from_timestamp" for="int" />
-    <adapter factory=".datetime.datetime_from_timestamp" for="float" />
+    <adapter factory=".datetime_ext.date_from_string" />
+    <adapter factory=".datetime_ext.datetime_from_string" />
+    <adapter factory=".datetime_ext.duration_from_string" />
+    <adapter factory=".datetime_ext.datetime_from_timestamp" for="int" />
+    <adapter factory=".datetime_ext.datetime_from_timestamp" for="float" />
 
     <!-- Do the reverse as well. -->
-    <adapter factory=".datetime.date_to_string" />
-    <adapter factory=".datetime.datetime_to_string" />
-    <adapter factory=".datetime.duration_to_string" />
+    <adapter factory=".datetime_ext.date_to_string" />
+    <adapter factory=".datetime_ext.datetime_to_string" />
+    <adapter factory=".datetime_ext.duration_to_string" />
 
     <!-- -->
     <!-- Numbers (fractions) -->

@@ -24,10 +24,6 @@ startup.
 .. versionadded:: 1.0
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from zope.hookable import hookable
 
 from ._compat import to_unicode

@@ -55,7 +55,7 @@ class CommonTestMixin(object):
 
     def test_standard_dates_policy(self):
         from ..interfaces import ExternalizationPolicy
-        from ..datetime import datetime_to_string
+        from ..datetime_ext import datetime_to_string
         from datetime import datetime as DateTime
         from datetime import timezone
 

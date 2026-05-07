@@ -4,9 +4,6 @@
 Functions to find standard fields.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # pylint:disable=inconsistent-return-statements
 
@@ -47,7 +44,7 @@ _datetime_to_string = None
 def datetime_to_string(dt):
     global _datetime_to_string # pylint:disable=global-statement
     if _datetime_to_string is None:
-        from nti.externalization.datetime import datetime_to_string as dts
+        from nti.externalization.datetime_ext import datetime_to_string as dts
         _datetime_to_string = dts
     if dt is not None:
         return _datetime_to_string(dt).toExternalObject()

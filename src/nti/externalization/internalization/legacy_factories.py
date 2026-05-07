@@ -13,10 +13,6 @@ Support for magically finding factories given class names.
 # in this fashion. (For cython compilation, this lives in interfaces.)
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # stdlib imports
 import types
 import warnings
@@ -38,7 +34,7 @@ __all__ = [
 #: .. deprecated:: 1.0
 #: This is legacy functionality, please do not access directly.
 #: The public interface is through :func:`register_legacy_search_module`
-LEGACY_FACTORY_SEARCH_MODULES = set()
+LEGACY_FACTORY_SEARCH_MODULES = set() # type:ignore
 
 try:
     from zope.testing.cleanup import addCleanUp # pylint: disable=ungrouped-imports
@@ -69,7 +65,7 @@ def register_legacy_search_module(module_name):
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
 
-_ext_factory_warnings = set()
+_ext_factory_warnings = set() # type:ignore
 
 def search_for_external_factory(typeName):
     """

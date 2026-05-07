@@ -23,9 +23,6 @@ this algorithm gracefully but still honor codes in the wild.
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __all__ = [
     'to_external_string',
@@ -35,11 +32,7 @@ __all__ = [
 # stdlib imports
 import string
 
-try:
-    maketrans = str.maketrans
-except AttributeError: # Python 2
-    from string import maketrans # pylint:disable=no-name-in-module
-
+maketrans = str.maketrans
 translate = str.translate
 
 # In the first version of the protocol, the version marker, which would
@@ -65,7 +58,7 @@ _BASE = len(_VOCABULARY)
 _ZERO_MARKER = '@'  # Zero is special
 
 
-def from_external_string(key):
+def from_external_string(key) -> int:
     """
     Turn the string in *key* into an integer.
 
@@ -104,7 +97,7 @@ def from_external_string(key):
     return int_sum
 
 
-def to_external_string(integer):
+def to_external_string(integer) -> str:
     """
     Turn an integer into a native string representation.
 

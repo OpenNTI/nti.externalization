@@ -11,6 +11,7 @@ include tox.ini
 include *.txt
 include .isort.cfg
 include pyproject.toml
+include .readthedocs.yml
 include .pylintrc
 include make-manylinux
 exclude .nti_cover_package

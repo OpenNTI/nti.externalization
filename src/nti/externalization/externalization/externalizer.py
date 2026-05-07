@@ -9,10 +9,6 @@ The driver function for the externalization process.
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # stdlib imports
 import warnings
 from collections.abc import Set

@@ -7,46 +7,35 @@ The basics of turning objects into dictionaries.
 # Our request hook function always returns None, and pylint
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # stdlib imports
 import warnings
+from collections.abc import Mapping
+from collections.abc import MutableMapping
 
-
-from nti.externalization._base_interfaces import make_external_dict
 from nti.externalization._base_interfaces import NotGiven
-
-
-from nti.externalization.extension_points import set_external_identifiers
-from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
-
-
-from nti.externalization._base_interfaces import get_standard_external_fields
 from nti.externalization._base_interfaces import get_default_externalization_policy
-
-
-from nti.externalization.externalization.standard_fields import get_last_modified_time
+from nti.externalization._base_interfaces import get_standard_external_fields
+from nti.externalization._base_interfaces import make_external_dict
+from nti.externalization.extension_points import set_external_identifiers
+from nti.externalization.externalization.decorate import decorate_external_object
+from nti.externalization.externalization.standard_fields import get_class
+from nti.externalization.externalization.standard_fields import get_container_id
 from nti.externalization.externalization.standard_fields import get_created_time
 from nti.externalization.externalization.standard_fields import get_creator
-from nti.externalization.externalization.standard_fields import get_container_id
-from nti.externalization.externalization.standard_fields import get_class
-
-from nti.externalization.externalization.decorate import decorate_external_object
+from nti.externalization.externalization.standard_fields import get_last_modified_time
+from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
 
 StandardExternalFields = get_standard_external_fields()
 DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 
 def internal_to_standard_external_dictionary(
         self,
-        mergeFrom=None,
+        mergeFrom: Mapping|None = None,
         decorate=True,
         request=NotGiven,
         decorate_callback=NotGiven,
         policy=DEFAULT_EXTERNALIZATION_POLICY,
-):
+) -> MutableMapping:
     # pylint:disable=too-many-positional-arguments
     # The real implementation of this function. Code in this
     # package should use this; code outside of this package *MUST NOT*
@@ -73,6 +62,8 @@ def internal_to_standard_external_dictionary(
 
     return result
 
+
+
 def to_standard_external_dictionary(
         self,
         mergeFrom=None,
@@ -85,7 +76,7 @@ def to_standard_external_dictionary(
         name=NotGiven,
         useCache=NotGiven,
         **kwargs
-):
+) -> MutableMapping:
     """to_standard_external_dictionary(self, mergeFrom=None, decorate=True, request=NotGiven)
 
     Returns a dictionary representing the standard externalization of
@@ -153,7 +144,7 @@ def to_standard_external_dictionary(
     )
 
 
-def to_minimal_standard_external_dictionary(self, mergeFrom=None):
+def to_minimal_standard_external_dictionary(self, mergeFrom=None) -> MutableMapping:
     """
     Does no decoration. Useful for non-'object' types. *self* should have a *mime_type* field.
     """
@@ -170,5 +161,7 @@ def to_minimal_standard_external_dictionary(self, mergeFrom=None):
     return result
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import \
+    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
+
 import_c_accel(globals(), 'nti.externalization.externalization._dictionary')

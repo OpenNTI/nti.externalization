@@ -22,3 +22,8 @@ from nti.externalization.representation import to_json_representation_sorted
 from nti.externalization.representation import to_json_representation
 from nti.externalization.internalization import new_from_external_object
 from nti.externalization.internalization import update_from_external_object
+
+# BWC hacks
+import sys
+import nti.externalization.datetime_ext as datetime
+sys.modules['nti.externalization.datetime'] = datetime

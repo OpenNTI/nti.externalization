@@ -7,11 +7,12 @@ System spanning utilities.
 import os
 import sys
 import logging
+from typing import overload
 
 text_type = str
 
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] >= 3
+PY2 = False
+PY3 = True
 PYPY = hasattr(sys, 'pypy_version_info')
 WIN = sys.platform.startswith("win")
 LINUX = sys.platform.startswith('linux')
@@ -25,7 +26,8 @@ try:
     from zope.dublincore.interfaces import IDCTimes # pylint: disable=unused-import
 except ModuleNotFoundError:
     from zope.interface import Interface
-    class IDCTimes(Interface): # pylint: disable=inherit-non-class
+    #pylint: disable-next=inherit-non-class
+    class IDCTimes(Interface): # type:ignore[no-redef]
         """Mock"""
 
 try:
@@ -34,7 +36,7 @@ except ModuleNotFoundError:
     TRACE = 5
     logging.addLevelName(TRACE, "TRACE")
 
-def to_unicode(s, encoding='utf-8', err='strict'):
+def to_unicode(s, encoding:str='utf-8', err:str='strict') -> str|None:
     """
     Decode a byte sequence and unicode result
     """
@@ -44,8 +46,15 @@ def to_unicode(s, encoding='utf-8', err='strict'):
 
 text_ = to_unicode
 
+@overload
+def bytes_(s:str, encoding:str='', errors:str='') -> bytes:
+    ...
 
-def bytes_(s, encoding='utf-8', errors='strict'):
+@overload
+def bytes_(s:None, encoding:str='', errors:str='') -> None:
+    ...
+
+def bytes_(s, encoding:str='utf-8', errors:str='strict') -> bytes|None:
     """
     If ``s`` is an instance of ``text_type``, return
     ``s.encode(encoding, errors)``, otherwise return ``s``

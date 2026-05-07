@@ -9,10 +9,6 @@ This should have no dependencies on things in this package.
 This module is **PRIVATE** to this package.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import decimal
 
 
@@ -64,7 +60,7 @@ class LocatedExternalDict(dict):
         return dict_update(self, other)
 
 
-def make_external_dict():
+def make_external_dict() -> LocatedExternalDict:
     # This layer of indirection is for cython; it can't cimport
     # types when the extension name doesn't match the
     # pxd name. But it can cimport functions that are cpdef to return
@@ -187,7 +183,7 @@ MINIMAL_SYNTHETIC_EXTERNAL_KEYS = frozenset((
 ))
 
 
-def isSyntheticKey(k):
+def isSyntheticKey(k:str) -> bool:
     """
     Deprecated. Prefer to test against StandardExternalFields.EXTERNAL_KEYS
     """
@@ -241,7 +237,7 @@ class StandardInternalFields(object):
 
 _standard_internal_fields = StandardInternalFields()
 
-def get_standard_internal_fields():
+def get_standard_internal_fields() -> StandardInternalFields:
     return _standard_internal_fields
 
 # Note that we DO NOT include ``numbers.Number``
@@ -308,7 +304,7 @@ class ExternalizationPolicy(object):
 #: The default externalization policy.
 DEFAULT_EXTERNALIZATION_POLICY = ExternalizationPolicy()
 
-def get_default_externalization_policy():
+def get_default_externalization_policy() -> ExternalizationPolicy:
     return DEFAULT_EXTERNALIZATION_POLICY
 
 from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position

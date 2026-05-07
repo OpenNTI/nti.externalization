@@ -9,7 +9,8 @@
 - Document the ``to_json_representation`` variants and add one
   that guarantees sorted keys. Make the "fast" variant not dependent
   on second-chance externalization.
-
+- Renamed the "datetime" module to "datetime_ext" to avoid conflicts
+  with the standard library. Backwards compatibility shims are in place.
 
 3.0.0 (2026-05-07)
 ==================

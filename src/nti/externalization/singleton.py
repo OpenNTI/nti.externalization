@@ -21,10 +21,6 @@ to a constructor and an object allocation with a faster call to return
 a constant object.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # This was originally based on code from sympy.core.singleton
 
 __all__ = [
@@ -82,6 +78,8 @@ class SingletonMetaclass(type):
     False
     """
 
+    _new_instance: staticmethod
+
     def __new__(mcs, name, bases, cls_dict): # pylint:disable=bad-mcs-classmethod-argument
         cls_dict['__slots__'] = ()  # no ivars
         cls_dict['__init__'] = lambda *args: None
@@ -98,7 +96,7 @@ class SingletonMetaclass(type):
             ctor = cls.__new__
         cls._new_instance = staticmethod(ctor)
 
-        the_instance = ctor(cls)
+        the_instance = ctor(cls) # type: ignore[call-arg,arg-type]
 
         cls.__new__ = staticmethod(lambda *args: the_instance)
 
@@ -106,15 +104,14 @@ class SingletonMetaclass(type):
 
 SingletonDecorator = SingletonMetaclass # BWC
 
-Singleton = SingletonMetaclass(
-    'Singleton', (object,),
-    {
-        '__doc__':
-        "A base class for singletons. "
-        "Can be more convenient than a metaclass for Python2/Python3 compatibility."
-    }
-)
 
+
+class Singleton(metaclass=SingletonMetaclass):
+    """
+    A base class for singletons.
+
+    Can be more convenient than using the metaclass.
+    """
 
 from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization._singleton')

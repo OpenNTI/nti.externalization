@@ -2,4 +2,4 @@
  Datetime
 ==========
 
-.. automodule:: nti.externalization.datetime
+.. automodule:: nti.externalization.datetime_ext

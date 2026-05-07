@@ -14,10 +14,6 @@ from ZCML.
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from zope import component
 from zope import interface
 try:
@@ -25,9 +21,9 @@ try:
     from zope.dublincore.interfaces import IDCExtended
 except ModuleNotFoundError:
     # pylint:disable=inherit-non-class
-    class IDCDescriptiveProperties(interface.Interface):
+    class IDCDescriptiveProperties(interface.Interface): # type:ignore[no-redef]
         """Mock"""
-    class IDCExtended(interface.Interface):
+    class IDCExtended(interface.Interface): # type:ignore[no-redef]
         """Mock"""
 
 from nti.externalization.interfaces import IExternalStandardDictionaryDecorator

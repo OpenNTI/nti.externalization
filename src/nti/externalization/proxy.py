@@ -11,9 +11,8 @@ other proxes placed around it. This module provides `removeAllProxies` for that 
 It is extensible with `registerProxyUnwrapper`.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from collections.abc import Callable
+from typing import Any
 
 from zope.dottedname import resolve as dottedname
 
@@ -22,7 +21,7 @@ __all__ = [
     'registerProxyUnwrapper',
 ]
 
-_unwrappers = []
+_unwrappers: list[Callable[[Any], Any]] = []
 
 def _init_unwrappers():
     del _unwrappers[:]

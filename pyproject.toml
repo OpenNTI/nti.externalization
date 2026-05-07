@@ -22,3 +22,41 @@ requires = [
 
 [tool.check-manifest]
 ignore = ["*.c"]
+
+
+[tool.mypy]
+# Must be present for mpypy to read this file.
+follow_imports = "normal"
+check_untyped_defs = true
+allow_redefinition = true
+disable_error_code = [
+  "method-assign"
+]
+
+[[tool.mypy.overrides]]
+# third-party untyped code
+module = [
+  "ZODB.*",
+  "zope.*",
+  "persistent.*",
+  "cpuinfo",
+  "nti.*",
+  "botocore.*",
+  "fsspec.*",
+  "transaction",
+  "grpc",
+  "grpc_health.*",
+  "google.type.*",
+  "zc.*",
+  "z3c.*",
+  "netaddr.*",
+  "dnslib",
+  "cytoolz.*",
+  "toolz.*",
+  "boto3.*",
+  "pg8000",
+  "urllib3.*",
+  "indexed_gzip",
+
+]
+ignore_missing_imports = true

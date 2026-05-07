@@ -417,7 +417,7 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
             self.lastModified = 8675309
 
     def to_str(ts): # pylint:disable=no-self-argument
-        from ..datetime import datetime_to_string
+        from ..datetime_ext import datetime_to_string
         from datetime import datetime as DateTime
         from datetime import timezone
         return datetime_to_string(DateTime.fromtimestamp(ts, timezone.utc)).toExternalObject()
@@ -640,7 +640,7 @@ class TestToExternalObject(ExternalizationLayerTest):
         if dub_interfaces is None:
             self.skipTest('zope.dublincore not installed')
         from ..interfaces import ExternalizationPolicy
-        from ..datetime import datetime_to_string
+        from ..datetime_ext import datetime_to_string
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 
         @interface.implementer(dub_interfaces.IDCTimes)
@@ -661,7 +661,7 @@ class TestToExternalObject(ExternalizationLayerTest):
         if dub_interfaces is None:
             self.skipTest('zope.dublincore not installed')
         from ..interfaces import ExternalizationPolicy
-        from ..datetime import datetime_to_string
+        from ..datetime_ext import datetime_to_string
         from datetime import timezone
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 

@@ -5,16 +5,16 @@ Implementations of object factories.
 .. versionadded:: 1.0
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+from collections.abc import Callable
+from typing import Any
 
 from zope import interface
 from zope.component.factory import Factory
 
+from nti.externalization.interfaces import IAnonymousObjectFactory
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IMimeObjectFactory
-from nti.externalization.interfaces import IAnonymousObjectFactory
 
 _builtin_callable = callable
 
@@ -60,7 +60,7 @@ class ObjectFactory(Factory):
 
     #: The default callable argument, if none is given to the
     #: constructor.
-    default_factory = None
+    default_factory: Callable[[Any], Any]|None = None
     #: The default title, if none is given to the constructor.
     default_title = ''
     #: The default description, if none is given to the constructor.

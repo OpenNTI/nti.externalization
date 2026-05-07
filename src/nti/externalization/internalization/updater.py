@@ -5,11 +5,6 @@ The driver functions for updating an object from an external form.
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 # stdlib imports
 from collections.abc import MutableSequence
 from collections.abc import MutableMapping
@@ -38,7 +33,7 @@ from .externals import resolve_externals
 
 
 
-_EMPTY_DICT = {}
+_EMPTY_DICT: dict = {}
 IPersistent_providedBy = IPersistent.providedBy
 
 
