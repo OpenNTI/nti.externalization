@@ -1,6 +1,5 @@
 import os
 import sys
-import codecs
 
 from setuptools import setup
 from setuptools import find_namespace_packages
@@ -27,7 +26,7 @@ TESTS_REQUIRE = [
 
 
 def _read(fname):
-    with codecs.open(fname, encoding='utf-8') as f:
+    with open(fname, encoding='utf-8') as f:
         return f.read()
 
 # Cython
@@ -148,9 +147,9 @@ if not PYPY:
 
 setup(
     name='nti.externalization',
-    version='2.6.1.dev0',
+    version='3.0.0',
     author='Jason Madden',
-    author_email='jason@nextthought.com',
+    author_email='jason@seecoresoftware.com',
     description="NTI Externalization",
     long_description=(_read('README.rst') + '\n\n' + _read('CHANGES.rst')),
     license='Apache-2.0',
@@ -167,7 +166,6 @@ setup(
         'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3.14',
         'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
     ],
     url="https://github.com/OpenNTI/nti.externalization",
     zip_safe=True,
@@ -181,7 +179,7 @@ setup(
         'PyYAML >= 5.1',
         'isodate',
         'pytz',
-        'simplejson >= 3.19',
+        'orjson >= 3.11.9',
         'transaction',
         'zope.component >= 4.6.1',
         'zope.configuration >= 4.4.0',

@@ -11,6 +11,7 @@ from __future__ import print_function
 # pylint:disable=inconsistent-return-statements
 
 from datetime import datetime as DateTime
+from datetime import timezone as TimeZone
 from calendar import timegm as dt_tuple_to_unix
 
 
@@ -52,7 +53,7 @@ def datetime_to_string(dt):
         return _datetime_to_string(dt).toExternalObject()
 
 def timestamp_to_string(ts):
-    return datetime_to_string(DateTime.utcfromtimestamp(ts))
+    return datetime_to_string(DateTime.fromtimestamp(ts, TimeZone.utc))
 
 _LAST_MOD_FIELDS = (
     StandardInternalFields.LAST_MODIFIED,

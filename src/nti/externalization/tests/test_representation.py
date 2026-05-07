@@ -3,14 +3,10 @@
 Tests for representation.py
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # stdlib imports
 import re
 import unittest
-from unittest.mock import patch as Patch
 
 try:
     from persistent import Persistent
@@ -200,13 +196,16 @@ class AbstractRepresenterTestMixin(object):
         )
 
 
+    _max_precision_decimal_num_str =  '2.561702493119680037517373933E+139'
+
     def test_dump_decimal_float(self):
         import decimal
 
-        for s in '1.1', '2.561702493119680037517373933E+139':
+        for s in '1.1', self._max_precision_decimal_num_str:
             num = decimal.Decimal(s)
             rep = self._makeOne()
             result = rep.dump(num)
+            __traceback_info__ = s, result
             assert_that(result.lower(), is_(self._simpleNumRepr(s.lower())))
 
             # We preserve the full representation of the decimal
@@ -217,6 +216,8 @@ class AbstractRepresenterTestMixin(object):
                 is_(expected)
             )
 
+    def _expected_nan_str(self, val):
+        return str(val)
 
     def test_dump_decimal_nan(self):
         import decimal
@@ -227,7 +228,10 @@ class AbstractRepresenterTestMixin(object):
             result = rep.dump(num)
             __traceback_info__ = result
             result = rep.load(result)
-            assert_that(str(f), is_(str(result)))
+            assert_that(self._expected_nan_str(f), is_(str(result)))
+
+    def _expected_decimal_inf_val(self, val):
+        return val
 
     def test_dump_decimal_inf(self):
         import decimal
@@ -238,7 +242,7 @@ class AbstractRepresenterTestMixin(object):
             result = rep.dump(num)
             __traceback_info__ = result
             result = rep.load(result)
-            assert_that(result, is_(f))
+            assert_that(result, is_(self._expected_decimal_inf_val(f)))
 
     def test_unicode(self):
         rep = self._makeOne()
@@ -276,11 +280,27 @@ class TestJson(AbstractRepresenterTestMixin,
     def _simpleStringRepr(self, s):
         return '"' + s + '"'
 
+    def _simpleNumRepr(self, i):
+        # orjson prior to 3.11.7 doesn't use the sign in an exponent
+        # if its positive, which is legal. Both
+        # 3.1e+2 and 3.1e1 mean the same.
+        # Our min requirement is 3.11.9, so we're now safe
+        # to use the string Python gives us (which includes the +)
+        return str(i)
+
+    def _expected_nan_str(self, val):
+        return str(None)
+
+    def _expected_decimal_inf_val(self, val):
+        return None
+
+    _max_precision_decimal_num_str =  '2.56170249311968e+139'
+
     def test_dump_to_stream(self):
         import io
 
         json = self._makeOne()
-        bio = io.BytesIO() if str is bytes else io.StringIO()
+        bio = io.StringIO()
         json.dump("hi", bio)
 
         assert_that(bio.getvalue(), is_('"hi"'))
@@ -290,13 +310,10 @@ class TestJson(AbstractRepresenterTestMixin,
         result = json.load(b'"hi"')
         assert_that(result, is_("hi"))
 
-    @Patch('simplejson.loads', autospec=True)
-    def test_loads_returns_bytes(self, loads):
-        loads.return_value = b'bytes'
-
+    def test_print_to_bytes(self):
         json = self._makeOne()
-        result = json.load(b'hi')
-        assert_that(result, is_('bytes'))
+        result = json.dump(1, as_str=False)
+        assert_that(result, is_(bytes))
 
     def test_to_json_representation(self):
         result = representation.to_json_representation({})

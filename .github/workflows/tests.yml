@@ -14,7 +14,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "pypy-3.11"
           - "3.11"
           - "3.12"
           - "3.13"
@@ -101,7 +100,7 @@ jobs:
         env:
           DOCKER_IMAGE: quay.io/pypa/${{ matrix.image }}
         run: bash ./make-manylinux
-      - name: Store greenlet wheels
+      - name: Store nti.externalization wheels
         uses: actions/upload-artifact@v7
         with:
           path: wheelhouse/*whl

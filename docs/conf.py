@@ -215,6 +215,8 @@ autodoc_default_options = {
     'members': None,
     'show-inheritance': None,
 }
+# https://github.com/sphinx-doc/sphinx/issues/14089
+autodoc_use_legacy_class_based = True
 
 autoclass_content = 'both'
 # This causes the order in __all__ to be ignored :(

@@ -536,14 +536,36 @@ A *representation* is a format that can serialize Python dictionaries
 to text, and given that text, produce a Python dictionary. This
 package provides two representations by default, JSON and YAML. These
 are named utilities providing ``IExternalObjectIO``. The function
-`nti.externalization.to_external_representation` is a shortcut for dumping to a string:
+`nti.externalization.to_external_representation` is a shortcut for
+dumping to a string; any keyword arguments you pass it will be
+sent to the ``IExternalObjectIO.dump``. The JSON format supports two
+arguments; see `nti.externalization.representation.JsonRepresenter`.
 
     >>> from nti.externalization import to_external_representation
     >>> from nti.externalization.interfaces import EXT_REPR_JSON, EXT_REPR_YAML
     >>> to_external_representation(address, EXT_REPR_JSON)
-    '{"Class": "Address", "city": "Cupertino",...
+    '{"Class":"Address",...
     >>> to_external_representation(address, EXT_REPR_YAML)
     "{Class: Address, city: Cupertino, country: USA,...
+
+The fastest way to get JSON output is to *not* sort the keys, and to
+produce a :class:`bytes` object. By default, ``EXT_REPR_JSON``
+doesn't sort the keys, and returns a :class:`str`. You can use the
+keyword arguments to change that:
+
+    >>> as_bytes = to_external_representation(address, EXT_REPR_JSON, sort_keys=False, as_str=False)
+    >>> assert isinstance(as_bytes, bytes)
+
+There are also some convenience functions, but note that these do not
+use the registered utility, they directly invoke the default utility:
+
+    >>> from nti.externalization import to_json_representation
+    >>> from nti.externalization import to_json_representation_fast
+    >>> to_json_representation(address)
+    '{"Class":"Address",...
+    >>> as_bytes = to_json_representation_fast(address)
+    >>> assert isinstance(as_bytes, bytes)
+
 
 Loading from a string doesn't have a shortcut, we need to use the
 utility:

@@ -8,11 +8,6 @@ The provided implementations of
 provide and register two, one for `JSON <.EXT_REPR_JSON>` and one for
 `YAML <.EXT_REPR_YAML>`.
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import decimal
 import warnings
 
@@ -25,7 +20,7 @@ except ModuleNotFoundError:
         """Mock"""
 else:
     from ZODB.POSException import POSError
-import simplejson
+import orjson
 import yaml
 from zope import component
 from zope import interface
@@ -47,7 +42,8 @@ __all__ = [
 
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
-                               name=_NotGiven, registry=_NotGiven):
+                               name=_NotGiven, registry=_NotGiven,
+                               **repr_kwargs):
     """
     to_external_representation(obj, ext_format='json', name=NotGiven) -> str
 
@@ -61,6 +57,12 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
         `.EXT_REPR_YAML`, or the
         name of some other utility that implements
         `~nti.externalization.interfaces.IExternalObjectRepresenter`
+
+    The *repr_kwargs* are passed to the dump method of
+    the representer.
+
+    .. versionchanged:: NEXT
+       Added *repr_kwargs*
     """
     if registry is not _NotGiven: # pragma: no cover
         warnings.warn(
@@ -72,7 +74,10 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
     # parts of the datastructure more than necessary. Here we traverse
     # the whole thing exactly twice.
     ext = toExternalObject(obj, name=name)
-    return component.getUtility(IExternalObjectRepresenter, name=ext_format).dump(ext)
+    return component.getUtility(
+        IExternalObjectRepresenter,
+        name=ext_format
+    ).dump(ext, **repr_kwargs)
 
 
 def to_json_representation(obj):
@@ -85,7 +90,17 @@ def to_json_representation(obj):
 
 # JSON
 
+class _FakeDecimalDumper:
+    def represent_int(self, d):
+        return int(d)
+    def represent_float(self, f):
+        return f
+    def represent_scalar(self, _tag, d):
+        return float(d)
+
 def _second_pass_to_external_object(obj):
+    if isinstance(obj, decimal.Decimal):
+        return _yaml_represent_decimal(_FakeDecimalDumper(), obj)
     result = toExternalObject(obj, name='second-pass')
     if result is obj:
         raise TypeError(repr(obj) + " is not serializable")
@@ -96,11 +111,8 @@ def _second_pass_to_external_object(obj):
 @interface.implementer(IExternalObjectIO)
 class JsonRepresenter(object):
 
-    _DUMP_ARGS = dict(check_circular=False,
-                      sort_keys=__debug__,  # Makes testing easier
-                      default=_second_pass_to_external_object)
-
-    def dump(self, obj, fp=None):
+    @staticmethod
+    def dump(obj, fp=None, sort_keys=False, as_str=True, **_unused):
         """
         Given an object that is known to already be in an externalized form,
         convert it to JSON. This can be about 10% faster then requiring a pass
@@ -108,35 +120,31 @@ class JsonRepresenter(object):
         form, while still handling a few corner cases with a second-pass conversion.
         (These things creep in during the object decorator phase and are usually
         links.)
-        """
-        if fp:
-            return simplejson.dump(obj, fp, **self._DUMP_ARGS)
 
-        return simplejson.dumps(obj, **self._DUMP_ARGS)
+        .. versionchanged:: NEXT
+           Added the *sort_keys* parameter, defaulting to false for speed.
+           Added the *as_str* parameter, defaulting to true for backwards compatibility.
+           If set to false, then a bytes object will be returned (and written to any
+           *fp*). Bytes is orjson's native output format.
+
+        """
+        result = orjson.dumps(obj,
+                              option=orjson.OPT_SORT_KEYS if sort_keys else 0,
+                              default=_second_pass_to_external_object)
+        if as_str:
+            result = result.decode('utf-8')
+        if fp:
+            return fp.write(result)
+        return result
+
+    @classmethod
+    def dump_fast(cls, obj):
+        return cls.dump(obj, sort_keys=False, as_str=False)
 
     def load(self, stream):
-        # We need all string values to be unicode objects. simplejson is different from
-        # the built-in json and returns strings that can be represented as ascii as str
-        # objects if the input was a bytestring.
-        # The only way to get it to return unicode is if the input is unicode, or
-        # to use a hook to do so incrementally. The hook saves allocating the entire request body
-        # as a unicode string in memory and is marginally faster in some cases. However,
-        # the hooks gets to be complicated if it correctly catches everything (inside arrays,
-        # for example; the function below misses them) so decoding to unicode up front
-        # is simpler
-
-        if isinstance(stream, bytes):
-            stream = stream.decode('utf-8')
-        value = simplejson.loads(stream, allow_nan=True)
-
-        # Depending on whether the simplejson C speedups are active, we can still
-        # get back a non-unicode string if the object was a naked string. (If the python
-        # version is used, it returns unicode; the C version returns str.)
-        if isinstance(value, bytes):
-            # we know it's simple ascii or it would have produced unicode
-            value = value.decode("ascii")
-        return value
-to_json_representation_externalized = JsonRepresenter().dump
+        return orjson.loads(stream)
+to_json_representation_externalized = JsonRepresenter.dump
+to_json_representation_fast = JsonRepresenter.dump_fast
 
 
 # YAML
@@ -204,7 +212,7 @@ _UnicodeLoader.add_constructor('tag:yaml.org,2002:str',
 @interface.implementer(IExternalObjectIO)
 class YamlRepresenter(object):
 
-    def dump(self, obj, fp=None):
+    def dump(self, obj, fp=None, **_unused):
         # The default_flow_style changed in PyYaml 5.1 from None to False.
         # Using False produces multi-line, indented, verbose output. While being human readable,
         # this consumes space and eliminates simple parsing with JSON. Using True
