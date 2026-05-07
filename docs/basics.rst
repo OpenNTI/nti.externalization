@@ -556,16 +556,18 @@ keyword arguments to change that:
     >>> as_bytes = to_external_representation(address, EXT_REPR_JSON, sort_keys=False, as_str=False)
     >>> assert isinstance(as_bytes, bytes)
 
-There are also some convenience functions, but note that these do not
-use the registered utility, they directly invoke the default utility:
+There are also some convenience functions. The "fast" and "sorted"
+variants bypass utility lookup and directly use the default ``JsonRepresenter``.
 
     >>> from nti.externalization import to_json_representation
     >>> from nti.externalization import to_json_representation_fast
+    >>> from nti.externalization import to_json_representation_sorted
     >>> to_json_representation(address)
     '{"Class":"Address",...
     >>> as_bytes = to_json_representation_fast(address)
     >>> assert isinstance(as_bytes, bytes)
-
+    >>> to_json_representation_sorted(address)
+    '{"Class":"Address","city":"Cupertino",...
 
 Loading from a string doesn't have a shortcut, we need to use the
 utility:

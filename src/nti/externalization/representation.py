@@ -35,17 +35,26 @@ from .interfaces import IExternalObjectRepresenter
 __all__ = [
     'to_external_representation',
     'to_json_representation',
+    'to_json_representation_fast',
+    'to_json_representation_sorted',
     'WithRepr',
+    'JsonRepresenter',
+    'YamlRepresenter',
 ]
 
 # Driver functions
 
+def _to_external_representation(obj, io, name=_NotGiven,
+                                **repr_kwargs) -> str|bytes:
+
+    ext = toExternalObject(obj, name=name)
+    return io.dump(ext, **repr_kwargs)
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
                                name=_NotGiven, registry=_NotGiven,
-                               **repr_kwargs):
+                               **repr_kwargs) -> str|bytes:
     """
-    to_external_representation(obj, ext_format='json', name=NotGiven) -> str
+    to_external_representation(obj, ext_format='json', name=NotGiven, **repr_kwargs) -> str|bytes
 
     Transforms (and returns) the *obj* into its external (string)
     representation.
@@ -73,19 +82,51 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
     # the externalization process itself, but we would wind up traversing
     # parts of the datastructure more than necessary. Here we traverse
     # the whole thing exactly twice.
-    ext = toExternalObject(obj, name=name)
-    return component.getUtility(
+    io = component.getUtility(
         IExternalObjectRepresenter,
         name=ext_format
-    ).dump(ext, **repr_kwargs)
+    )
+
+    return _to_external_representation(obj, io, name, **repr_kwargs)
 
 
-def to_json_representation(obj):
+def to_json_representation(obj) -> str:
     """
     A convenience function that calls
     :func:`to_external_representation` with `.EXT_REPR_JSON`.
     """
     return to_external_representation(obj, EXT_REPR_JSON)
+
+def to_json_representation_fast(obj) -> bytes:
+    """
+    A convenience function that calls
+    :func:`to_external_representation` with `.EXT_REPR_JSON`
+    and additional parameters to optimize for speed.
+
+    Note that this bypasses utility lookup and directly
+    uses :class:`JsonRepresenter`
+
+    .. versionadded:: 3.0.0
+    .. versionchanged:: NEXT
+       Now properly externalizes the object instead of relying on
+       the second-chance externalization mechanism.
+    """
+    return _to_external_representation(obj, JsonRepresenter,
+                                      sort_keys=False, as_str=False)
+
+def to_json_representation_sorted(obj) -> str:
+    """
+    Like `to_json_representation`, but guarantees that
+    the keys are sorted. This is slower, but may be
+    helpful in tests that do string comparisons.
+
+    Note that this bypasses utility lookup and directly
+    uses :class:`JsonRepresenter`
+
+    .. versionadded:: NEXT
+    """
+    return _to_external_representation(obj, JsonRepresenter,
+                                       sort_keys=True)
 
 
 # JSON
@@ -110,10 +151,15 @@ def _second_pass_to_external_object(obj):
 @interface.named(EXT_REPR_JSON)
 @interface.implementer(IExternalObjectIO)
 class JsonRepresenter(object):
+    """
+    Default IO object using ``orjson`` for JSON input/output.
+    """
 
     @staticmethod
-    def dump(obj, fp=None, sort_keys=False, as_str=True, **_unused):
+    def dump(obj, fp=None, sort_keys=False, as_str=True, **_unused) -> str|bytes:
         """
+        dump(obj, fp=None, sort_keys=False, as_str=True) -> str|bytes
+
         Given an object that is known to already be in an externalized form,
         convert it to JSON. This can be about 10% faster then requiring a pass
         across all the sub-objects of the object to check that they are in external
@@ -127,6 +173,8 @@ class JsonRepresenter(object):
            If set to false, then a bytes object will be returned (and written to any
            *fp*). Bytes is orjson's native output format.
 
+           Other keyword arguments are ignored.
+
         """
         result = orjson.dumps(obj,
                               option=orjson.OPT_SORT_KEYS if sort_keys else 0,
@@ -137,14 +185,15 @@ class JsonRepresenter(object):
             return fp.write(result)
         return result
 
-    @classmethod
-    def dump_fast(cls, obj):
-        return cls.dump(obj, sort_keys=False, as_str=False)
-
     def load(self, stream):
         return orjson.loads(stream)
+
+# This is meant for dumping already externalized objects, but
+# because of the second_pass_to_external_object default,
+# it will actually dump any dumpable object by first externalizing
+# it. Try not to rely on that.
 to_json_representation_externalized = JsonRepresenter.dump
-to_json_representation_fast = JsonRepresenter.dump_fast
+
 
 
 # YAML
@@ -211,8 +260,17 @@ _UnicodeLoader.add_constructor('tag:yaml.org,2002:str',
 @interface.named(EXT_REPR_YAML)
 @interface.implementer(IExternalObjectIO)
 class YamlRepresenter(object):
+    """
+    Default IO object using ``yaml`` for object input/output.
+    """
 
-    def dump(self, obj, fp=None, **_unused):
+    @staticmethod
+    def dump(obj, fp=None, **_unused) -> str:
+        """
+        dump(obj, fp=None) -> str
+
+        Other keyword arguments are ignored.
+        """
         # The default_flow_style changed in PyYaml 5.1 from None to False.
         # Using False produces multi-line, indented, verbose output. While being human readable,
         # this consumes space and eliminates simple parsing with JSON. Using True
@@ -221,7 +279,8 @@ class YamlRepresenter(object):
         # https://github.com/yaml/pyyaml/issues/199
         return yaml.dump(obj, stream=fp, Dumper=_ExtDumper, default_flow_style=True)
 
-    def load(self, stream):
+    @staticmethod
+    def load(stream):
         return yaml.load(stream, Loader=_UnicodeLoader)
 
 
