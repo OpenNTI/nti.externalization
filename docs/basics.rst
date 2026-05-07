@@ -557,7 +557,7 @@ keyword arguments to change that:
     >>> assert isinstance(as_bytes, bytes)
 
 There are also some convenience functions. The "fast" and "sorted"
-variant bypass utility lookup and directly uses the default ``JsonRepresenter``.
+variants bypass utility lookup and directly use the default ``JsonRepresenter``.
 
     >>> from nti.externalization import to_json_representation
     >>> from nti.externalization import to_json_representation_fast
