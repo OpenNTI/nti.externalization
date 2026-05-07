@@ -123,7 +123,7 @@ def to_json_representation_sorted(obj) -> str:
     Note that this bypasses utility lookup and directly
     uses :class:`JsonRepresenter`
 
-    .. versionadded: NEXT
+    .. versionadded:: NEXT
     """
     return _to_external_representation(obj, JsonRepresenter,
                                        sort_keys=True)
