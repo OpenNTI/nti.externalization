@@ -5,21 +5,18 @@ Functions related to events.
 
 """
 
+from collections.abc import Collection
+from collections.abc import Sequence
+from typing import Any
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
+from zope.event import notify as _zope_event_notify
 from zope.interface import classImplements
 from zope.interface import providedBy
-from zope.event import notify as _zope_event_notify
 from zope.lifecycleevent import IAttributes
 
-from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 from nti.externalization._interface_cache import cache_for_key_in_providedBy
+from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
 
-logger = __import__('logging').getLogger(__name__)
 
 __all__ = [
     'notifyModified',
@@ -42,7 +39,8 @@ class _Attributes(object):
 classImplements(_Attributes, IAttributes)
 
 
-def _make_modified_attributes(containedObject, external_keys):
+def _make_modified_attributes(containedObject,
+                              external_keys:Sequence[str]) -> Collection[_Attributes]:
     # Returns a sequence of fresh _Attributes objects,
     # one for each distinct interface (including None) that declared
     # any key found in *external_keys*.
@@ -61,7 +59,7 @@ def _make_modified_attributes(containedObject, external_keys):
 
     # {iface -> _Attributes(iface)}. Note that iface will be None if there
     # is no interface that defined the key.
-    result = {}
+    result: dict[Any, _Attributes]= {}
 
     provides_get = provides.get
 
@@ -158,5 +156,7 @@ def notifyModified(containedObject, externalObject, updater=None, external_keys=
                            kwargs)
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import \
+    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
+
 import_c_accel(globals(), 'nti.externalization.internalization._events')

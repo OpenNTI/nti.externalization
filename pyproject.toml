@@ -17,8 +17,54 @@ requires = [
      # failing in Python 2 (https://travis-ci.org/github/gevent/gevent/jobs/683782800);
      # This was fixed in 3.0a5 (https://github.com/cython/cython/issues/3578)
      # 3.0a6 fixes an issue cythonizing source on 32-bit platforms
-     "Cython >= 3.2.1",
+     "Cython >= 3.2.4",
 ]
 
 [tool.check-manifest]
 ignore = ["*.c"]
+
+
+[tool.mypy]
+# Must be present for mypy to read this file.
+follow_imports = "normal"
+check_untyped_defs = true
+allow_redefinition = true
+disable_error_code = [
+  "method-assign"
+]
+# Our tests are in terrible shape
+# and will need some work to be clean
+exclude = [
+  'test_.*\.py',
+]
+
+[[tool.mypy.overrides]]
+# third-party untyped code
+module = [
+  "ZODB.*",
+  "zope.*",
+  "persistent.*",
+  "cpuinfo",
+  "nti.*",
+  "botocore.*",
+  "fsspec.*",
+  "transaction",
+  "grpc",
+  "grpc_health.*",
+  "google.type.*",
+  "zc.*",
+  "z3c.*",
+  "netaddr.*",
+  "dnslib",
+  "cytoolz.*",
+  "toolz.*",
+  "boto3.*",
+  "pg8000",
+  "urllib3.*",
+  "indexed_gzip",
+  "pyperf",
+  "isodate",
+  "vmprof"
+
+]
+ignore_missing_imports = true

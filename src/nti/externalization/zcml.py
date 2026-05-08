@@ -191,16 +191,16 @@ def autoPackageExternalization(_context, root_interfaces, modules,
     package_name = ext_module_name.rsplit('.', 1)[0]
 
     root_interfaces = frozenset(root_interfaces)
-    @classmethod
+    @classmethod # type:ignore[misc]
     def _ap_enumerate_externalizable_root_interfaces(_cls, unused_ifaces):
         return root_interfaces
 
     module_names = frozenset([m.__name__.split('.')[-1] for m in modules])
-    @classmethod
+    @classmethod # type:ignore[misc]
     def _ap_enumerate_module_names(_cls):
         return module_names
 
-    @classmethod
+    @classmethod # type:ignore[misc]
     def _ap_find_package_name(_cls):
         return package_name
 
@@ -216,9 +216,10 @@ def autoPackageExternalization(_context, root_interfaces, modules,
     if iobase:
         bases = (iobase,) + bases
 
-    cls_iio = type('AutoPackageSearchingScopedInterfaceObjectIO',
-                   bases,
-                   cls_dict)
+    cls_iio: type[AutoPackageSearchingScopedInterfaceObjectIO] = type(
+        'AutoPackageSearchingScopedInterfaceObjectIO',
+        bases,
+        cls_dict)
     # If we don't set the __module__, it defaults to this module,
     # which would be very confusing.
     cls_iio.__module__ = _context.package.__name__ if _context.package else '__dynamic__'

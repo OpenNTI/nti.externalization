@@ -5,21 +5,15 @@ The driver function for the externalization process.
 
 """
 
-# Our request hook function always returns None, and pylint
-# flags that as useless (good for it)
-# pylint:disable=assignment-from-none
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# stdlib imports
+import logging
 import warnings
-from collections.abc import Set
-from collections.abc import Mapping
 from collections import defaultdict
+from collections.abc import Callable
+from collections.abc import Mapping
+from collections.abc import MutableMapping
+from collections.abc import Set
+from typing import Any
 from weakref import WeakKeyDictionary
-
 
 try:
     from persistent.list import PersistentList
@@ -27,29 +21,30 @@ try:
 except ModuleNotFoundError:
     _PL = ()
 
-from zope.component import queryAdapter
 from zope.component import getUtility
+from zope.component import queryAdapter
 from zope.interface.common.sequence import IFiniteSequence
 
-from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import PRIMITIVES
+from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import get_default_externalization_policy
 from nti.externalization._threadlocal import ThreadLocalManager
 from nti.externalization.extension_points import get_current_request
-
-from nti.externalization.interfaces import IInternalObjectExternalizer
+from nti.externalization.externalization.decorate import decorate_external_object
+from nti.externalization.externalization.dictionary import internal_to_standard_external_dictionary
+from nti.externalization.externalization.replacers import DefaultNonExternalizableReplacer
+from nti.externalization.interfaces import IExternalizationPolicy
 from nti.externalization.interfaces import IExternalObjectDecorator
+from nti.externalization.interfaces import IInternalObjectExternalizer
 from nti.externalization.interfaces import ILocatedExternalSequence
 from nti.externalization.interfaces import INonExternalizableReplacementFactory
-from nti.externalization.interfaces import IExternalizationPolicy
 
-from nti.externalization.externalization.replacers import DefaultNonExternalizableReplacer
+# Our request hook function always returns None, and pylint
+# flags that as useless (good for it)
+# pylint:disable=assignment-from-none
+# stdlib imports
 
-from nti.externalization.externalization.dictionary import internal_to_standard_external_dictionary
-
-from nti.externalization.externalization.decorate import decorate_external_object
-
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
@@ -60,7 +55,9 @@ DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 # the name that was established at the top level.
 
 # Stores tuples (name, memos)
-_manager = ThreadLocalManager(default=lambda: (NotGiven, None, DEFAULT_EXTERNALIZATION_POLICY))
+_manager: ThreadLocalManager[tuple[Any, Any, Any]] = ThreadLocalManager(
+    default=lambda: (NotGiven, None, DEFAULT_EXTERNALIZATION_POLICY)
+)
 _manager_get = _manager.get
 _manager_pop = _manager.pop
 _manager_push = _manager.push
@@ -102,8 +99,11 @@ class _ExternalizationState(object):
         '_kwargs',
     )
 
-    def __init__(self, memos,
-                 name, catch_components, catch_component_action,
+    def __init__(self,
+                 memos,
+                 name,
+                 catch_components: tuple[type[BaseException], ...] | type[BaseException],
+                 catch_component_action: Callable[[Any, BaseException], Any]|None,
                  request,
                  default_non_externalizable_replacer,
                  decorate=True,
@@ -130,7 +130,7 @@ class _ExternalizationState(object):
 
         self.policy = policy
 
-        self._kwargs = None
+        self._kwargs: dict|None = None
 
     def as_kwargs(self):
         if self._kwargs is None:
@@ -181,7 +181,7 @@ def _externalize_sequence(obj, state):
     return result
 
 
-_usable_externalObject_cache = WeakKeyDictionary()
+_usable_externalObject_cache:MutableMapping[type, bool] = WeakKeyDictionary()
 _usable_externalObject_cache_get = _usable_externalObject_cache.get
 
 try:
@@ -238,7 +238,7 @@ def _externalize_object(obj, state):
             adapter = IInternalObjectExternalizer(obj, None)
 
         if adapter is not None:
-            toExternalObject = adapter.toExternalObject
+            toExternalObject = adapter.toExternalObject # type:ignore[misc]
 
     if toExternalObject is not None:
         result = toExternalObject(**state.as_kwargs())
@@ -294,7 +294,9 @@ def _to_external_object_state(obj, state, top_level=False):
                 # TODO: Should this live here, or at a higher level where the ultimate
                 # external target/use-case is known?
                 replacer = state.default_non_externalizable_replacer
-                result = INonExternalizableReplacementFactory(obj, replacer)(obj)
+                result = INonExternalizableReplacementFactory( # type:ignore[misc]
+                    obj, replacer
+                )(obj) # type:ignore[call-arg]
 
 
         decorate_external_object(
@@ -325,9 +327,8 @@ def _to_external_object_state(obj, state, top_level=False):
 def to_external_object(
         obj,
         name=NotGiven,
-        registry=NotGiven,
-        catch_components=(),
-        catch_component_action=None,
+        catch_components: tuple[type[BaseException],...]|type[BaseException] = (),
+        catch_component_action: Callable[[Any, BaseException], Any]|None = None,
         request=NotGiven,
         decorate=True,
         useCache=True,
@@ -344,7 +345,7 @@ def to_external_object(
     :const:`SEQUENCE_TYPES` and :const:`MAPPING_TYPES` for details on
     what we can handle by default.
 
-    :param string name: The name of the adapter to
+    :param str name: The name of the adapter to
         :class:`~nti.externalization.interfaces.IInternalObjectExternalizer`
         to look for. Defaults to the empty string (the default
         adapter). If you provide a name, and an adapter is not found,
@@ -380,6 +381,9 @@ def to_external_object(
         is used.
     :param str policy_name: If no *policy* is given, then this is used to
         lookup a utility. If this is used, the utility must exist.
+
+    .. versionchanged:: NEXT
+       Remove the deprecated *registry* argument.
     """
     # pylint:disable=too-many-positional-arguments
     # Catch the primitives up here, quickly. This catches
@@ -394,11 +398,6 @@ def to_external_object(
         name = ''
     if request is NotGiven:
         request = get_current_request()
-    if registry is not NotGiven: # pragma: no cover
-        warnings.warn(
-            "The registry argument is deprecated and ignored. Call in a correct site.",
-            FutureWarning
-        )
 
 
     if policy is NotGiven:
@@ -425,5 +424,7 @@ def to_external_object(
         _manager_pop()
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import \
+    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
+
 import_c_accel(globals(), 'nti.externalization.externalization._externalizer')

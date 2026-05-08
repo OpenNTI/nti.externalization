@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
 import warnings
 
 try:
+    from persistent import CHANGED
+    from persistent import UPTODATE
     from persistent import Persistent
     from persistent.wref import WeakRef as PWeakRef
-    from persistent import UPTODATE
-    from persistent import CHANGED
 except ModuleNotFoundError:
     class Persistent:
         """Mock"""
@@ -22,20 +18,20 @@ except ModuleNotFoundError:
     from ..persistence import UPTODATE
     from ..persistence import CHANGED
 
-from ..persistence import PersistentExternalizableList
-from ..persistence import PersistentExternalizableDictionary
-from ..persistence import PersistentExternalizableWeakList
-from ..persistence import getPersistentState
-from ..persistence import setPersistentStateChanged
-from ..persistence import NoPickle
-from . import ExternalizationLayerTest
-
 from hamcrest import assert_that
 from hamcrest import calling
+from hamcrest import has_length
 from hamcrest import is_
 from hamcrest import is_not
 from hamcrest import raises
-from hamcrest import has_length
+
+from ..persistence import NoPickle
+from ..persistence import PersistentExternalizableDictionary
+from ..persistence import PersistentExternalizableList
+from ..persistence import PersistentExternalizableWeakList
+from ..persistence import getPersistentState
+from ..persistence import setPersistentStateChanged
+from . import ExternalizationLayerTest
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904

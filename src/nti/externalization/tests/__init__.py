@@ -1,23 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
 
 import zope.testing.cleanup
 
 import nti.testing.base
+# BWC exports
+from nti.externalization.testing import Externalizes
+from nti.externalization.testing import assert_does_not_pickle
+from nti.externalization.testing import externalizes
 from nti.testing.layers import ConfiguringLayerMixin
 from nti.testing.layers import ZopeComponentLayer
 
-# BWC exports
-from nti.externalization.testing import Externalizes
-from nti.externalization.testing import externalizes
-from nti.externalization.testing import assert_does_not_pickle
 Externalizes = Externalizes
 externalizes = externalizes
 assert_does_not_pickle = assert_does_not_pickle

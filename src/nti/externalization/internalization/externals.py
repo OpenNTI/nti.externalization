@@ -5,27 +5,12 @@ Functions for translating external object references into internal
 objects.
 
 """
-
-
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
-# stdlib imports
-try:
-    from collections.abc import MutableSequence
-except ImportError: # Python 2
-    # pylint:disable=deprecated-class
-    from collections import MutableSequence
+from collections.abc import MutableSequence
 
 
 from zope import component
 
-
 from nti.externalization.interfaces import IExternalReferenceResolver
-
 
 __all__ = [
     'resolve_externals',
@@ -81,5 +66,5 @@ def resolve_externals(object_io, updating_object, externalObject,
 
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization.internalization._externals')

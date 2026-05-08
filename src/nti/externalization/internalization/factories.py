@@ -11,32 +11,25 @@ are registered in the component manager.
 # There are a *lot* of fixme (XXX and the like) in this file.
 # Turn those off in general so we can see through the noise.
 # pylint:disable=fixme
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import warnings
+import logging
+from collections.abc import Callable
 
 from zope import component
 from zope import interface
 
-from nti.externalization._base_interfaces import NotGiven
 from nti.externalization.interfaces import IClassObjectFactory
 from nti.externalization.interfaces import IExternalizedObjectFactoryFinder
 from nti.externalization.interfaces import IFactory
 from nti.externalization.interfaces import IMimeObjectFactory
 
-from .legacy_factories import search_for_external_factory
-
 from .._base_interfaces import get_standard_external_fields
-
+from .legacy_factories import search_for_external_factory
 
 StandardExternalFields = get_standard_external_fields()
 component_queryAdapter = component.queryAdapter
 component_queryUtility = component.queryUtility
 
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'default_externalized_object_factory_finder',
@@ -131,7 +124,7 @@ def default_externalized_object_factory_finder_factory(unused_externalized_objec
     return default_externalized_object_factory_finder
 
 
-def find_factory_for_class_name(class_name):
+def find_factory_for_class_name(class_name:str) -> Callable|None:
     factory = component_queryUtility(IClassObjectFactory, class_name)
     if factory is None:
         factory = search_for_external_factory(class_name)
@@ -141,7 +134,7 @@ def find_factory_for_class_name(class_name):
     return factory
 
 
-def find_factory_for(externalized_object, registry=NotGiven):
+def find_factory_for(externalized_object) -> Callable|None:
     """
     find_factory_for(externalized_object) -> factory
 
@@ -163,17 +156,16 @@ def find_factory_for(externalized_object, registry=NotGiven):
 
     .. versionchanged:: 1.0a10
        The ``registry`` argument is deprecated and ignored.
+
+    .. versionchanged:: NEXT
+       Remove the registry argument.
     """
-    if registry is not NotGiven: # pragma: no cover
-        warnings.warn(
-            "The registry argument is deprecated and ignored",
-            FutureWarning
-        )
 
     factory_finder = IExternalizedObjectFactoryFinder(externalized_object, None)
 
     if factory_finder is not None:
-        return factory_finder.find_factory(externalized_object) # pylint:disable=too-many-function-args
+        # pylint:disable-next=too-many-function-args
+        return factory_finder.find_factory(externalized_object) # type:ignore[call-arg,misc]
 
     # We do it this way instead of using
     # ``default_externalized_object_factory_finder`` as the default in
@@ -181,5 +173,7 @@ def find_factory_for(externalized_object, registry=NotGiven):
     return _find_factory_for_mime_or_class(externalized_object)
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import \
+    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
+
 import_c_accel(globals(), 'nti.externalization.internalization._factories')

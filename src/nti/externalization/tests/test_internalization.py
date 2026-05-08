@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
 import warnings
 from unittest.mock import patch as Patch
@@ -13,15 +9,10 @@ from unittest.mock import patch as Patch
 from zope import component
 from zope import interface
 from zope.interface.common.idatetime import IDate
-from zope.testing.cleanup import CleanUp
 from zope.schema.interfaces import InvalidValue
+from zope.testing.cleanup import CleanUp
 
 from nti.externalization.tests import ExternalizationLayerTest
-
-
-from .. import internalization as INT
-from ..interfaces import IClassObjectFactory
-from ..interfaces import IMimeObjectFactory
 
 from hamcrest import assert_that
 from hamcrest import contains_exactly
@@ -36,6 +27,10 @@ from hamcrest import is_in
 from hamcrest import is_not
 from hamcrest import none
 from hamcrest import same_instance
+
+from .. import internalization as INT
+from ..interfaces import IClassObjectFactory
+from ..interfaces import IMimeObjectFactory
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -55,8 +50,8 @@ class TestEvents(CleanUp,
                  unittest.TestCase):
 
     def _doIt(self, *args, **kwargs):
-        from nti.externalization.internalization import notifyModified
         from nti.externalization.interfaces import ObjectModifiedFromExternalEvent
+        from nti.externalization.internalization import notifyModified
 
         with warnings.catch_warnings(record=True):
             event = notifyModified(*args, **kwargs)
@@ -614,8 +609,8 @@ class TestValidateFieldValue(CleanUp,
 
     def test_wrong_type_adapts(self):
         from zope.schema import Field
-        from zope.schema.interfaces import WrongType
         from zope.schema.interfaces import ValidationError
+        from zope.schema.interfaces import WrongType
 
         class Iface(interface.Interface):
             pass
@@ -656,8 +651,8 @@ class TestValidateFieldValue(CleanUp,
         assert_that(exc.exception, has_property('field', field))
 
     def test_wrong_contained_type_object_field_adapts(self):
-        from zope.schema import Object
         from zope.schema import List
+        from zope.schema import Object
 
 
         class IThing(interface.Interface):
@@ -677,9 +672,9 @@ class TestValidateFieldValue(CleanUp,
         assert_that(bag, has_property('field', contains_exactly(is_(O))))
 
     def test_wrong_contained_type_object_field_adapts_fails(self):
-        from zope.schema.interfaces import WrongContainedType
-        from zope.schema import Object
         from zope.schema import List
+        from zope.schema import Object
+        from zope.schema.interfaces import WrongContainedType
 
 
         class IThing(interface.Interface):
@@ -712,8 +707,8 @@ class TestValidateFieldValue(CleanUp,
 
 
     def test_wrong_contained_type_field(self):
-        from zope.schema import Object
         from zope.schema import List
+        from zope.schema import Object
         from zope.schema.interfaces import WrongContainedType
 
 
@@ -740,8 +735,8 @@ class TestValidateFieldValue(CleanUp,
         assert_that(ex.errors[0], has_property('value', is_(Conforms)))
 
     def test_wrong_contained_type_value_type_fromObject(self):
-        from zope.schema import Object
         from zope.schema import List
+        from zope.schema import Object
 
         class IThing(interface.Interface):
             pass

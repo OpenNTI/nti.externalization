@@ -4,26 +4,21 @@ Benchmark for a simple registered autopackage IFace with
 a single text field.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 
 import sys
 
-import pyperf
-from pyperf import perf_counter
-
 from zope.configuration import xmlconfig
 
-from nti.externalization.representation import JsonRepresenter
+import nti.externalization.tests.benchmarks
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.internalization import default_externalized_object_factory_finder
 from nti.externalization.internalization import update_from_external_object
-
-import nti.externalization.tests.benchmarks
+from nti.externalization.representation import JsonRepresenter
 from nti.externalization.tests.benchmarks.objects import DerivedWithOneTextField
+
+import pyperf
+from pyperf import perf_counter
 
 INNER_LOOPS = 100
 
@@ -59,8 +54,8 @@ def update_from_external_object_time_func(loops, ext):
 
 
 def profile(loops=1000, obj=None):
-    from cProfile import Profile
     import pstats
+    from cProfile import Profile
 
     if obj is None:
         obj = DerivedWithOneTextField()
@@ -85,7 +80,7 @@ def profile(loops=1000, obj=None):
         stats.print_stats(20)
 
 def vmprofile(loops=1000, obj=None):
-    import vmprof # pylint:disable=import-error
+    import vmprof  # pylint:disable=import-error
 
     if obj is None:
         obj = DerivedWithOneTextField()

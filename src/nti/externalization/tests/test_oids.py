@@ -4,20 +4,16 @@
 Tests for oids.py.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
 
 from zope.testing.cleanup import CleanUp
 
-from ..oids import fromExternalOID
-from ..oids import toExternalOID
-
 from hamcrest import assert_that
 from hamcrest import is_
+
+from ..oids import fromExternalOID
+from ..oids import toExternalOID
 
 
 class TestToExternalOID(CleanUp,
@@ -53,8 +49,8 @@ class TestToExternalOID(CleanUp,
         assert_that(result, is_('default'))
 
     def test_intid(self):
-        from zope.interface import implementer
         from zope import component
+        from zope.interface import implementer
         try:
             from zope.intid.interfaces import IIntIds
         except ModuleNotFoundError:

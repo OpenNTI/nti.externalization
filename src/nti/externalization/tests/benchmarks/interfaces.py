@@ -3,26 +3,21 @@
 Interfaces for objects we will benchmark with.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from zope.interface import Interface
 from zope.interface import taggedValue
-
 from zope.schema import List
 from zope.schema import Object
 
-from nti.schema.field import TextLine
-
 from nti.externalization.tests.benchmarks.bootstrapinterfaces import IRootInterface
-from nti.externalization.tests.benchmarks.profileinterfaces import IFriendlyNamed
+from nti.externalization.tests.benchmarks.profileinterfaces import IAddress
 from nti.externalization.tests.benchmarks.profileinterfaces import IAvatarURL
 from nti.externalization.tests.benchmarks.profileinterfaces import IBackgroundURL
+from nti.externalization.tests.benchmarks.profileinterfaces import IFriendlyNamed
 from nti.externalization.tests.benchmarks.profileinterfaces import IProfileAvatarURL
-from nti.externalization.tests.benchmarks.profileinterfaces import IAddress
 from nti.externalization.tests.benchmarks.profileinterfaces import IUserContactProfile
 from nti.externalization.tests.benchmarks.profileinterfaces import IUserProfile
+from nti.schema.field import TextLine
 
 __all__ = [
     'IRootInterface',

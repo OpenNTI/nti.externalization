@@ -27,8 +27,8 @@ cdef tuple _CREATOR_FIELDS
 cdef tuple _CONTAINER_FIELDS
 cdef _EXT_CLASS_IGNORED_MODULES
 
-cdef basestring _SYSTEM_USER_NAME
-cdef basestring _SYSTEM_USER_ID
+cdef str _SYSTEM_USER_NAME
+cdef str _SYSTEM_USER_ID
 cdef IPrincipal_providedBy
 
 # XXX: If we use ``cdef``, then when we pass these functions to

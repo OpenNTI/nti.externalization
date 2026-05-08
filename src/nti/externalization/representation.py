@@ -9,17 +9,17 @@ provide and register two, one for `JSON <.EXT_REPR_JSON>` and one for
 `YAML <.EXT_REPR_YAML>`.
 """
 import decimal
-import warnings
+from typing import cast
 
 try:
     from persistent import Persistent
 except ModuleNotFoundError:
-    class Persistent:
+    class Persistent: # type:ignore[no-redef]
         """Mock"""
-    class POSError(Exception):
+    class POSError(Exception): # type:ignore[no-redef]
         """Mock"""
 else:
-    from ZODB.POSException import POSError
+    from ZODB.POSException import POSError # type:ignore[no-redef]
 import orjson
 import yaml
 from zope import component
@@ -51,7 +51,7 @@ def _to_external_representation(obj, io, name=_NotGiven,
     return io.dump(ext, **repr_kwargs)
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
-                               name=_NotGiven, registry=_NotGiven,
+                               name=_NotGiven,
                                **repr_kwargs) -> str|bytes:
     """
     to_external_representation(obj, ext_format='json', name=NotGiven, **repr_kwargs) -> str|bytes
@@ -72,12 +72,10 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
 
     .. versionchanged:: 3.0.0
        Added *repr_kwargs*
+    .. versionchanged:: NEXT
+       Removed the deprecated 'registry' param
     """
-    if registry is not _NotGiven: # pragma: no cover
-        warnings.warn(
-            "The registry argument is ignored. Call in a correct site.",
-            FutureWarning
-        )
+
     # It would seem nice to be able to do this in one step during
     # the externalization process itself, but we would wind up traversing
     # parts of the datastructure more than necessary. Here we traverse
@@ -95,7 +93,7 @@ def to_json_representation(obj) -> str:
     A convenience function that calls
     :func:`to_external_representation` with `.EXT_REPR_JSON`.
     """
-    return to_external_representation(obj, EXT_REPR_JSON)
+    return cast(str, to_external_representation(obj, EXT_REPR_JSON))
 
 def to_json_representation_fast(obj) -> bytes:
     """
@@ -111,8 +109,8 @@ def to_json_representation_fast(obj) -> bytes:
        Now properly externalizes the object instead of relying on
        the second-chance externalization mechanism.
     """
-    return _to_external_representation(obj, JsonRepresenter,
-                                      sort_keys=False, as_str=False)
+    return cast(bytes, _to_external_representation(obj, JsonRepresenter,
+                                                   sort_keys=False, as_str=False))
 
 def to_json_representation_sorted(obj) -> str:
     """
@@ -125,8 +123,8 @@ def to_json_representation_sorted(obj) -> str:
 
     .. versionadded:: NEXT
     """
-    return _to_external_representation(obj, JsonRepresenter,
-                                       sort_keys=True)
+    return cast(str, _to_external_representation(obj, JsonRepresenter,
+                                                 sort_keys=True))
 
 
 # JSON
@@ -180,7 +178,7 @@ class JsonRepresenter(object):
                               option=orjson.OPT_SORT_KEYS if sort_keys else 0,
                               default=_second_pass_to_external_object)
         if as_str:
-            result = result.decode('utf-8')
+            result = result.decode('utf-8') # type:ignore[assignment]
         if fp:
             return fp.write(result)
         return result
@@ -212,11 +210,7 @@ class _ExtDumper(yaml.SafeDumper):
 # requires an exact type match.
 _ExtDumper.add_multi_representer(list, _ExtDumper.represent_list)
 _ExtDumper.add_multi_representer(dict, _ExtDumper.represent_dict)
-if str is bytes: # Python 2
-     # pylint:disable=undefined-variable,no-member
-    _ExtDumper.add_multi_representer(unicode, _ExtDumper.represent_unicode)
-else: # Python 3
-    _ExtDumper.add_multi_representer(str, _ExtDumper.represent_str)
+_ExtDumper.add_multi_representer(str, _ExtDumper.represent_str)
 
 def _yaml_represent_decimal(dumper, data):
     s = str(data)
@@ -241,7 +235,7 @@ _ExtDumper.add_representer(decimal.Decimal, _yaml_represent_decimal)
 def _yaml_represent_unknown(dumper, data):
     ext_obj = _second_pass_to_external_object(data)
     return dumper.represent_data(ext_obj)
-_ExtDumper.add_multi_representer(None, _yaml_represent_unknown)
+_ExtDumper.add_multi_representer(None, _yaml_represent_unknown) # type:ignore[arg-type]
 
 
 

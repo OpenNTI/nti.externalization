@@ -5,34 +5,31 @@ Externalization Interfaces
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from typing import Any
 
+import zope.interface.common.builtins as ibuiltins
 from zope import interface
-
 from zope.component.interfaces import IFactory
 from zope.deprecation import deprecated
 from zope.interface.common import collections as icollections
-from zope.interface.common import sequence as legacy_isequence
 from zope.interface.common import mapping as legacy_imapping
-import zope.interface.common.builtins as ibuiltins
+from zope.interface.common import sequence as legacy_isequence
 from zope.interface.interfaces import IObjectEvent
 from zope.interface.interfaces import ObjectEvent
 from zope.lifecycleevent import IObjectModifiedEvent
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.location import ILocation
 
+from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
+from ._base_interfaces import ExternalizationPolicy
+from ._base_interfaces import LocatedExternalDict
+from ._base_interfaces import get_default_externalization_policy
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
 
 # pylint:disable=inherit-non-class,no-method-argument,no-self-argument
 # pylint:disable=too-many-ancestors
 
-from ._base_interfaces import LocatedExternalDict
-from ._base_interfaces import get_standard_external_fields
-from ._base_interfaces import get_standard_internal_fields
-from ._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
-from ._base_interfaces import ExternalizationPolicy
-from ._base_interfaces import get_default_externalization_policy
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
@@ -457,7 +454,7 @@ class ObjectModifiedFromExternalEvent(ObjectModifiedEvent):
     Default implementation of `IObjectModifiedFromExternalEvent`.
     """
 
-    kwargs = None
+    kwargs:dict[str,Any]|None = None
     external_value = None
 
     def __init__(self, obj, *descriptions, **kwargs):

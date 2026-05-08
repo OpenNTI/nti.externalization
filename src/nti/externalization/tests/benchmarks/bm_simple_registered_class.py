@@ -3,21 +3,19 @@
 Benchmark for a simple registered Class factory object.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import warnings
 
-import pyperf as perf
 from zope.configuration import xmlconfig
 
+import nti.externalization.tests.benchmarks
 from nti.externalization.externalization import toExternalObject
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.internalization import default_externalized_object_factory_finder
 from nti.externalization.internalization import update_from_external_object
-import nti.externalization.tests.benchmarks
 from nti.externalization.tests.benchmarks.objects import SimplestPossibleObject
+
+import pyperf as perf
 
 # pylint:disable=arguments-renamed,unused-argument
 # pylint:disable=arguments-differ

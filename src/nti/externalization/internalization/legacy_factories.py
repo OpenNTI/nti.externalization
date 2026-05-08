@@ -5,31 +5,24 @@ Support for magically finding factories given class names.
 
 .. deprecated:: 1.0
 """
-## Implementation of legacy search modules.
+import logging
+import types
+import warnings
 
+from zope import component
+from zope.dottedname.resolve import resolve
+
+from nti.externalization._base_interfaces import NotGiven
+from nti.externalization.interfaces import _ILegacySearchModuleFactory
+
+## Implementation of legacy search modules.
 # We go through the global component registry, using a local
 # interface. We treat the registry as a cache and we will only
 # look at any given module object one time. We can detect duplicates
 # in this fashion. (For cython compilation, this lives in interfaces.)
 
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# stdlib imports
-import types
-import warnings
-
-from zope import component
-
-from zope.dottedname.resolve import resolve
-
-from nti.externalization.interfaces import _ILegacySearchModuleFactory
-from nti.externalization._base_interfaces import NotGiven
-
-
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'register_legacy_search_module',
@@ -38,10 +31,10 @@ __all__ = [
 #: .. deprecated:: 1.0
 #: This is legacy functionality, please do not access directly.
 #: The public interface is through :func:`register_legacy_search_module`
-LEGACY_FACTORY_SEARCH_MODULES = set()
+LEGACY_FACTORY_SEARCH_MODULES = set[str|types.ModuleType]()
 
 try:
-    from zope.testing.cleanup import addCleanUp # pylint: disable=ungrouped-imports
+    from zope.testing.cleanup import addCleanUp  # pylint: disable=ungrouped-imports
 except ImportError: # pragma: no cover
     pass
 else:
@@ -69,9 +62,9 @@ def register_legacy_search_module(module_name):
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
 
-_ext_factory_warnings = set()
+_ext_factory_warnings = set[str]()
 
-def search_for_external_factory(typeName):
+def search_for_external_factory(typeName:str):
     """
     Deprecated, legacy functionality. Given the name of a type,
     optionally ending in 's' for plural, attempt to locate that type.
@@ -201,4 +194,5 @@ def find_factories_in_module(module,
 
  # pylint:disable=wrong-import-position,wrong-import-order
 from nti.externalization._compat import import_c_accel
+
 import_c_accel(globals(), 'nti.externalization.internalization._legacy_factories')

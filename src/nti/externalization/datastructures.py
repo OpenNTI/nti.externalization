@@ -4,52 +4,47 @@
 Datastructures to help externalization.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # There are a *lot* of fixme (XXX and the like) in this file.
 # Turn those off in general so we can see through the noise.
 # pylint:disable=fixme
 # pylint:disable=keyword-arg-before-vararg
-
 # stdlib imports
 import numbers
 import warnings
+from collections.abc import Collection
+from collections.abc import Mapping
+from collections.abc import MutableMapping
 
 from zope import interface
 from zope import schema
 from zope.component import getUtility
-from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import IDict
 from zope.schema.interfaces import IObject
+from zope.schema.interfaces import SchemaNotProvided
 
 from nti.schema.interfaces import find_most_derived_interface
 
-from .interfaces import IInternalObjectExternalizer
-from .interfaces import IInternalObjectIO
-from .interfaces import IInternalObjectIOFinder
-from .interfaces import IAnonymousObjectFactory
-from .interfaces import StandardInternalFields
-
+from ._base_interfaces import NotGiven
+from ._base_interfaces import get_default_externalization_policy
+from ._base_interfaces import get_standard_external_fields
+from ._base_interfaces import get_standard_internal_fields
+from ._interface_cache import cache_for
 # Things imported from cython with matching cimport
-from .externalization.dictionary import to_minimal_standard_external_dictionary
 from .externalization.dictionary import internal_to_standard_external_dictionary
+from .externalization.dictionary import to_minimal_standard_external_dictionary
 # Must rename this so it doesn't conflict with method defs;
 # that breaks cython
 from .externalization.externalizer import to_external_object as _toExternalObject
-
+from .factory import AnonymousObjectFactory
+from .interfaces import IAnonymousObjectFactory
+from .interfaces import IInternalObjectExternalizer
+from .interfaces import IInternalObjectIO
+from .interfaces import IInternalObjectIOFinder
+from .interfaces import StandardInternalFields
 from .internalization import validate_named_field_value
 from .internalization.factories import find_factory_for
 from .representation import make_repr
-from .factory import AnonymousObjectFactory
-
-from ._base_interfaces import get_standard_external_fields
-from ._base_interfaces import get_standard_internal_fields
-from ._base_interfaces import get_default_externalization_policy
-from ._base_interfaces import NotGiven
-
-from ._interface_cache import cache_for
 
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
@@ -83,7 +78,9 @@ class ExternalizableDictionaryMixin(object):
         """
         return self
 
-    def _ext_standard_external_dictionary(self, replacement, mergeFrom=None, **kwargs):
+    def _ext_standard_external_dictionary(self, replacement,
+                                          mergeFrom: Mapping|None = None,
+                                          **kwargs) -> MutableMapping:
         if self.__external_use_minimal_base__:
             return to_minimal_standard_external_dictionary(replacement,
                                                            mergeFrom=mergeFrom)
@@ -97,7 +94,8 @@ class ExternalizableDictionaryMixin(object):
             policy=kwargs.get("policy", DEFAULT_EXTERNALIZATION_POLICY),
         )
 
-    def toExternalDictionary(self, mergeFrom=None, *unused_args, **kwargs):
+    def toExternalDictionary(self, mergeFrom:Mapping|None = None,
+                             *unused_args, **kwargs) -> MutableMapping:
         """
         Produce the standard external dictionary for this object.
 
@@ -193,7 +191,7 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
         StandardExternalFields.CLASS,
         StandardInternalFields.CONTAINER_ID
     })
-    _ext_primitive_out_ivars_ = frozenset()
+    _ext_primitive_out_ivars_:Collection[str] = frozenset()
     _prefer_oid_ = False
 
     def find_factory_for_named_value(self, key, value): # pylint:disable=unused-argument
@@ -313,7 +311,8 @@ class AbstractDynamicObjectIO(ExternalizableDictionaryMixin):
             result[StandardExternalFields.ID] = result[StandardExternalFields.OID]
         return result
 
-    def toExternalObject(self, mergeFrom=None, *args, **kwargs):
+    def toExternalObject(self, mergeFrom: MutableMapping|None = None,
+                         *args, **kwargs) -> MutableMapping:
         return self.toExternalDictionary(mergeFrom, *args, **kwargs)
 
     def _ext_accept_update_key(self, k, ext_self, ext_keys): # pylint:disable=unused-argument
@@ -651,7 +650,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
     def _ext_setattr(self, ext_self, k, value):
         validate_named_field_value(ext_self, self._iface, k, value)()
 
-    def _ext_accept_external_id(self, ext_self, parsed):
+    def _ext_accept_external_id(self, ext_self, parsed) -> bool:
         """
         If the interface we're working from has a tagged value
         of ``__external_accept_id__`` on the ``id`` field, then
@@ -660,7 +659,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         cache = cache_for(self, ext_self)
         if cache.ext_accept_external_id is None:
             try:
-                field = cache.iface['id']
+                field = cache.iface['id'] # type:ignore[index]
                 cache.ext_accept_external_id = field.getTaggedValue('__external_accept_id__')
             except KeyError:
                 cache.ext_accept_external_id = False
@@ -782,7 +781,8 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
                     e.args = (errors[0][0],)
                 raise
 
-    def toExternalObject(self, mergeFrom=None, **kwargs): # pylint:disable=arguments-differ
+    def toExternalObject(self, mergeFrom: MutableMapping|None = None,# pylint:disable=arguments-differ
+                         **kwargs) -> MutableMapping:
         ext_class_name = None
         # Walk up the tree, checking each one to see if ``__external__class_name__`` exists
         # and wants to provide a value. The walking up is what ``queryTaggedValue`` would do,
@@ -868,6 +868,7 @@ class ModuleScopedInterfaceObjectIO(InterfaceObjectIO):
         return most_derived
 
     def _ext_schemas_to_consider(self, ext_self):
+        assert self._ext_search_module is not None
         search_module_name = self._ext_search_module.__name__
         return [x for x in interface.providedBy(ext_self)
                 if x.__module__ == search_module_name

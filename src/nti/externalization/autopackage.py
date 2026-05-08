@@ -6,16 +6,16 @@ typically via a ZCML directive.
 """
 
 import logging
+from collections.abc import Iterable
 
 from zope import interface
-
 from zope.dottedname import resolve as dottedname
 from zope.mimetype.interfaces import IContentTypeAware
 
 from nti.schema.interfaces import find_most_derived_interface
+
 from ._compat import TRACE
 from .datastructures import ModuleScopedInterfaceObjectIO
-
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 # for each subclass. But we also start participating in acquisition, which
 # is probably not what we want
 # import ExtensionClass
-
 
 class _ClassNameRegistry(object):
     __name__ = ''
@@ -74,7 +73,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         return cls._ap_compute_external_class_name_from_concrete_class(impl.__class__)
 
     @classmethod
-    def _ap_compute_external_class_name_from_concrete_class(cls, a_type):
+    def _ap_compute_external_class_name_from_concrete_class(cls, a_type) -> str:
         """
         Return the string value of the external class name.
 
@@ -87,7 +86,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         return getattr(a_type, '__external_class_name__', a_type.__name__)
 
     @classmethod
-    def _ap_compute_external_mimetype(cls, package_name, unused_a_type, ext_class_name):
+    def _ap_compute_external_mimetype(cls, package_name, unused_a_type, ext_class_name) -> str:
         """
         Return the string value of the external mime type for the given
         type in the given package having the given external name (probably
@@ -105,7 +104,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
 
     @classmethod
     # TODO: We can probably do something with this
-    def _ap_enumerate_externalizable_root_interfaces(cls, interfaces):
+    def _ap_enumerate_externalizable_root_interfaces(cls, interfaces) -> Iterable:
         """
         Return an iterable of the root interfaces in this package that should be
         externalized.
@@ -115,7 +114,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         raise NotImplementedError()
 
     @classmethod
-    def _ap_enumerate_module_names(cls):
+    def _ap_enumerate_module_names(cls) -> Iterable[str]:
         """
         Return an iterable of module names in this package that should be searched to find
         factories.
@@ -125,7 +124,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
         raise NotImplementedError()
 
     @classmethod
-    def _ap_find_potential_factories_in_module(cls, module):
+    def _ap_find_potential_factories_in_module(cls, module) -> Iterable[type]:
         """
         Given a module that we're supposed to examine, iterate over
         the types that could be factories.
@@ -249,7 +248,7 @@ class AutoPackageSearchingScopedInterfaceObjectIO(ModuleScopedInterfaceObjectIO)
                 implementation_class.containerId = None
 
     @classmethod
-    def _ap_find_package_name(cls):
+    def _ap_find_package_name(cls) -> str:
         """
         Return the package name to search for modules.
 

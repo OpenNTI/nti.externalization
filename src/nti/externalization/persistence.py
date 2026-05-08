@@ -12,10 +12,6 @@ context.
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # stdlib imports
 from collections.abc import Sequence
 izip = zip
@@ -33,12 +29,12 @@ except ModuleNotFoundError as ex:
     assert ex.name == 'persistent'
     UPTODATE = None
     CHANGED = 'Fake Changed'
-    class Persistent:
+    class Persistent: # type:ignore[no-redef]
         """Mock"""
     PersistentList = list
     PersistentMapping = dict
     from weakref import ref
-    class PWeakRef(ref):
+    class PWeakRef(ref): # type:ignore[no-redef]
         __slots__ = ()
 
 from zope import interface
@@ -231,7 +227,7 @@ class PersistentExternalizableWeakList(PersistentExternalizableList): # pylint:d
             return self.__class__(plain)
 
 
-    __hash__ = None
+    __hash__ = None # type:ignore[assignment]
 
     def __wrap(self, obj):
         return obj if isinstance(obj, PWeakRef) else PWeakRef(obj)

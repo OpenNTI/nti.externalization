@@ -3,18 +3,14 @@
 Tests for dublincore.py
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
-
-from . import ExternalizationLayerTest
 
 from hamcrest import assert_that
 from hamcrest import is_
 from hamcrest import same_instance
+
+from . import ExternalizationLayerTest
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -104,12 +100,12 @@ class TestDCDescriptiveProprtiesExternalMappingDecorator(AbstractDCDecoratorTest
 class TestConfigured(ExternalizationLayerTest):
 
     def test_decorate(self):
-        from ..dublincore import IDCDescriptiveProperties
-        from ..dublincore import IDCExtended
-
         from zope import interface
 
         from nti.externalization.externalization import decorate_external_mapping
+
+        from ..dublincore import IDCDescriptiveProperties
+        from ..dublincore import IDCExtended
 
         @interface.implementer(IDCExtended, IDCDescriptiveProperties)
         class O(object):

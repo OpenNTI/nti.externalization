@@ -1,30 +1,24 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import unittest
 
 from zope import interface
 from zope.component import eventtesting
-
-
+from zope.schema import Object
+from zope.schema.fieldproperty import createFieldProperties
 from zope.schema.interfaces import IBeforeObjectAssignedEvent
 from zope.schema.interfaces import IFieldUpdatedEvent
 from zope.schema.interfaces import SchemaNotProvided
-from zope.schema import Object
-from zope.schema.fieldproperty import createFieldProperties
-
 from zope.testing.cleanup import CleanUp
+
+from nti.externalization.internalization.fields import validate_field_value
+from nti.externalization.internalization.fields import validate_named_field_value
 
 from hamcrest import assert_that
 from hamcrest import has_length
 from hamcrest import has_property as has_attr
 from hamcrest import is_
 from hamcrest import same_instance
-
-from nti.externalization.internalization.fields import validate_named_field_value
-from nti.externalization.internalization.fields import validate_field_value
 
 # pylint:disable=inherit-non-class,blacklisted-name
 
@@ -127,8 +121,8 @@ class TestValidateFieldValue(unittest.TestCase):
         assert_that(foo, has_attr('field', 'text'))
 
     def test_from_bytes(self):
-        from zope.schema.interfaces import IFromBytes
         from zope.schema import Field
+        from zope.schema.interfaces import IFromBytes
         @interface.implementer(IFromBytes)
         class OnlyBytes(Field):
             _type = bytes
@@ -148,8 +142,8 @@ class TestValidateFieldValue(unittest.TestCase):
 
 
     def test_raises_SchemaNotCorrectlyImplemented(self):
-        from zope.schema.interfaces import SchemaNotCorrectlyImplemented
         from zope.schema import TextLine
+        from zope.schema.interfaces import SchemaNotCorrectlyImplemented
         class IFoo(interface.Interface):
             field = TextLine(title='text', required=True)
 

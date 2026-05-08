@@ -4,16 +4,11 @@
 A cache based on the interfaces provided by an object.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 from weakref import WeakSet
 
 from zope.interface import providedBy
 
-cache_instances = WeakSet()
+cache_instances: WeakSet["InterfaceCache"] = WeakSet()
 
 
 class InterfaceCache(object):
@@ -41,7 +36,7 @@ class InterfaceCache(object):
         self.modified_event_attributes = {}
 
 
-def cache_for_key_in_providedBy(key, provided_by): # type: (object, object) -> InterfaceCache
+def cache_for_key_in_providedBy(key, provided_by) -> InterfaceCache:
     # The Declaration objects returned from ``providedBy(obj)`` maintain a _v_attrs that
     # gets blown away on changes to themselves or their
     # dependents, including adding interfaces dynamically to an instance
@@ -60,7 +55,7 @@ def cache_for_key_in_providedBy(key, provided_by): # type: (object, object) -> I
     return cache
 
 
-def cache_for(externalizer, ext_self): # type: (object, object) -> InterfaceCache
+def cache_for(externalizer, ext_self) -> InterfaceCache:
     return cache_for_key_in_providedBy(type(externalizer), providedBy(ext_self))
 
 
@@ -82,4 +77,5 @@ else:
 
 # pylint:disable=wrong-import-position
 from nti.externalization._compat import import_c_accel
+
 import_c_accel(globals(), 'nti.externalization.__interface_cache')

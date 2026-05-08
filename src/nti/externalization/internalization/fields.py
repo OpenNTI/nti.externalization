@@ -6,30 +6,23 @@ Functions for validating and setting individual fields
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from collections.abc import Callable
 
 # pylint:disable=protected-access
-
 # stdlib imports
 from sys import exc_info as get_exc_info
 
-
+from zope.event import notify
 from zope.interface import implementedBy
-
+from zope.schema.fieldproperty import NO_VALUE
+from zope.schema.fieldproperty import FieldProperty
+from zope.schema.fieldproperty import FieldUpdatedEvent
 from zope.schema.interfaces import IField
-from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import SchemaNotCorrectlyImplemented
+from zope.schema.interfaces import SchemaNotProvided
 from zope.schema.interfaces import ValidationError
 from zope.schema.interfaces import WrongContainedType
 from zope.schema.interfaces import WrongType
-
-from zope.schema.fieldproperty import FieldProperty
-from zope.schema.fieldproperty import NO_VALUE
-from zope.schema.fieldproperty import FieldUpdatedEvent
-
-from zope.event import notify
 
 IField_providedBy = IField.providedBy
 
@@ -116,13 +109,13 @@ def _FieldProperty__set__valid(self, inst, value):
     else:
         _FieldProperty_orig_set(self, inst, value)
 
-_FieldProperty__set__valid.orig_func = _FieldProperty_orig_set
+_FieldProperty__set__valid.orig_func = _FieldProperty_orig_set # type:ignore[attr-defined]
 
 # Detect the case that we're in Cython compiled code, where
 # we've already replaced the __set__ function with our own.
 if FieldProperty.__set__.__name__ == _FieldProperty__set__valid.__name__: # pragma: no cover
     _FieldProperty_orig_set = FieldProperty.__set__.orig_func # pylint:disable=no-member
-    _FieldProperty__set__valid.org_func = _FieldProperty_orig_set
+    _FieldProperty__set__valid.orig_func = _FieldProperty_orig_set # type:ignore[attr-defined]
 
 FieldProperty.__set__ = _FieldProperty__set__valid
 
@@ -134,7 +127,7 @@ class CannotConvertSequenceError(TypeError):
     but we don't know how.
     """
 
-def _adapt_sequence(field, value):
+def _adapt_sequence(field, value) -> list:
     # IObject provides `schema`, which is an interface, so we can adapt
     # using it. Some other things do not, for example nti.schema.field.Variant
     # They might provide a `fromObject` function to do the conversion
@@ -174,7 +167,7 @@ def _handle_SchemaNotProvided(field_name, field, value): # pylint:disable=unused
     # The object doesn't implement the required interface.
     # Can we adapt the provided object to the desired interface?
     # First, capture the details so we can reraise if needed
-    exc_info = get_exc_info()
+    exc_type, exc_val, _exc_tb = get_exc_info()
 
     try:
         value = field.schema(value)
@@ -183,24 +176,25 @@ def _handle_SchemaNotProvided(field_name, field, value): # pylint:disable=unused
         # Nope. TypeError (or AttrError - Variant) means we couldn't adapt,
         # and a validation error means we could adapt, but it still wasn't
         # right. Raise the original SchemaValidationError.
-        raise exc_info[1] if exc_info[1] is not None else exc_info[0]() from None
+        raise exc_val if exc_val is not None else exc_type() from None # type:ignore[misc]
     return value
 
 def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argument
     # Like SchemaNotProvided, but for a primitive type,
     # most commonly a date
     # Can we adapt?
-    exc_info = get_exc_info()
+    _exc_type, exc_value, _exc_tb = get_exc_info()
+    assert isinstance(exc_value, WrongType)
 
-    if not exc_info[1].expected_type: # pragma: no cover
-        raise exc_info[1]
+    if not exc_value.expected_type: # pragma: no cover
+        raise exc_value
 
-    exp_type = exc_info[1].expected_type
+    exp_type = exc_value.expected_type
     implemented_by_type = list(implementedBy(exp_type))
     # If the type unambiguously implements an interface (one interface)
     # that's our target. IDate does this
     if len(implemented_by_type) != 1: # pragma: no cover
-        raise exc_info[1]
+        raise exc_value
 
 
     schema = implemented_by_type[0]
@@ -209,7 +203,7 @@ def _handle_WrongType(field_name, field, value): # pylint:disable=unused-argumen
         result = schema(value)
     except (LookupError, TypeError):
         # No registered adapter, darn
-        raise exc_info[1] if exc_info[1] is not None else exc_info[0]() from None
+        raise exc_value from None
     except ValidationError as e:
         # Found an adapter, but it does its own validation,
         # and that validation failed (eg, IDate below)
@@ -226,10 +220,11 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
     # types.
     # Try to adapt each value to what the sequence wants, just as above,
     # if the error is one that may be solved via simple adaptation
-    exc_info = get_exc_info()
+    _exc_type, exc_val, _exc_tb = get_exc_info()
+    assert isinstance(exc_val, WrongContainedType)
 
-    if not exc_info[1].errors or not _all_SchemaNotProvided(exc_info[1].errors):
-        raise exc_info[1]
+    if not exc_val.errors or not _all_SchemaNotProvided(exc_val.errors):
+        raise exc_val
 
     # IObject provides `schema`, which is an interface, so we can adapt
     # using it. Some other things do not, for example nti.schema.field.Variant
@@ -244,7 +239,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
         # to raise the original error. If we could adapt,
         # but the converter does its own validation (e.g., fromObject)
         # then we want to let that validation error rise
-        raise exc_info[1] from None
+        raise exc_val from None
 
     # Now try to validate the converted value
     try:
@@ -253,7 +248,7 @@ def _handle_WrongContainedType(field_name, field, value): # pylint:disable=unuse
         # Nope. TypeError means we couldn't adapt, and a
         # validation error means we could adapt, but it still wasn't
         # right. Raise the original SchemaValidationError.
-        raise exc_info[1] from None
+        raise exc_val from None
 
     return value
 
@@ -263,7 +258,7 @@ _CONVERTERS = (
     ('fromObject', object)
 )
 
-def validate_field_value(self, field_name, field, value):
+def validate_field_value(self, field_name:str, field, value) -> Callable[[], None]:
     """
     Given a :class:`zope.schema.interfaces.IField` object from a schema
     implemented by `self`, validates that the proposed value can be
@@ -312,7 +307,7 @@ def validate_field_value(self, field_name, field, value):
         if value is not None:
             # First time through we get to set it, but we must bypass
             # the field
-            _do_set = SetattrSet(self, _as_native_str(field_name), value)
+            _do_set = SetattrSet(self, field_name, value)
         else:
             _do_set = noop
     else:
@@ -321,7 +316,7 @@ def validate_field_value(self, field_name, field, value):
     return _do_set
 
 
-def validate_named_field_value(self, iface, field_name, value):
+def validate_named_field_value(self, iface, field_name:str, value):
     """
     Given a :class:`zope.interface.Interface` and the name of one of its attributes,
     validate that the given ``value`` is appropriate to set. See :func:`validate_field_value`
@@ -334,7 +329,6 @@ def validate_named_field_value(self, iface, field_name, value):
 
     :return: A callable of no arguments to call to actually set the value.
     """
-    field_name = _as_native_str(field_name)
     field = iface[field_name]
     if IField_providedBy(field): # pylint:disable=no-value-for-parameter
         return validate_field_value(self, field_name, field, value)
@@ -342,11 +336,5 @@ def validate_named_field_value(self, iface, field_name, value):
     return SetattrSet(self, field_name, value)
 
 
-def _as_native_str(s):
-    if isinstance(s, str):
-        return s
-    return s.encode('ascii') # Python 2
-
-
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization.internalization._fields')

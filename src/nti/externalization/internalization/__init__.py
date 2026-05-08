@@ -5,10 +5,6 @@ Functions for taking externalized objects and creating application
 model objects.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import warnings
 
 from zope.interface.interfaces import ComponentLookupError

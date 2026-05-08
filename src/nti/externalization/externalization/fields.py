@@ -4,16 +4,7 @@
 Finding fields of an object.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
-
-
 from nti.externalization._base_interfaces import get_standard_external_fields
-
-logger = __import__('logging').getLogger(__name__)
 
 StandardExternalFields = get_standard_external_fields()
 
