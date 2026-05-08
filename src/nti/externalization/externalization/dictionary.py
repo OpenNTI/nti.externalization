@@ -116,7 +116,7 @@ def to_standard_external_dictionary(
       and produce a warning.
     .. versionchanged:: 2.1
        Add the *policy* keyword.
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.1.0
        Remove deprecated parameters.
     """
     # pylint:disable=too-many-positional-arguments

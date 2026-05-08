@@ -157,7 +157,7 @@ def find_factory_for(externalized_object) -> Callable|None:
     .. versionchanged:: 1.0a10
        The ``registry`` argument is deprecated and ignored.
 
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.1.0
        Remove the registry argument.
     """
 

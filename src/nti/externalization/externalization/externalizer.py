@@ -382,7 +382,7 @@ def to_external_object(
     :param str policy_name: If no *policy* is given, then this is used to
         lookup a utility. If this is used, the utility must exist.
 
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.1.0
        Remove the deprecated *registry* argument.
     """
     # pylint:disable=too-many-positional-arguments

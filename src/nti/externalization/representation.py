@@ -72,7 +72,7 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
 
     .. versionchanged:: 3.0.0
        Added *repr_kwargs*
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.1.0
        Removed the deprecated 'registry' param
     """
 
@@ -105,7 +105,7 @@ def to_json_representation_fast(obj) -> bytes:
     uses :class:`JsonRepresenter`
 
     .. versionadded:: 3.0.0
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.1.0
        Now properly externalizes the object instead of relying on
        the second-chance externalization mechanism.
     """
@@ -121,7 +121,7 @@ def to_json_representation_sorted(obj) -> str:
     Note that this bypasses utility lookup and directly
     uses :class:`JsonRepresenter`
 
-    .. versionadded:: NEXT
+    .. versionadded:: 3.1.0
     """
     return cast(str, _to_external_representation(obj, JsonRepresenter,
                                                  sort_keys=True))

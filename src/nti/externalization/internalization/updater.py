@@ -234,7 +234,7 @@ def update_from_external_object(containedObject: T|MutableSequence,
     .. versionchanged:: 1.1.3
        Correctly fire `~.IObjectWillUpdateFromExternalEvent` before updating
        each object.
-    .. versionchanged:: NEXT
+    .. versionchanged:: 3.1.0
        Remove the long-deprecated 'pre_hook' parameter. Remove the long-deprecated
        'registry' parameter.
     """
