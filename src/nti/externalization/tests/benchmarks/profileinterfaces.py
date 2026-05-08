@@ -2,24 +2,20 @@
 """
 A rich user profile.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from zope.interface import Interface
 from zope.interface import taggedValue
-
-from zope.schema import Object
 from zope.schema import URI
-
-from nti.schema.field import Dict
-from nti.schema.field import TextLine
-from nti.schema.field import ValidTextLine
-from nti.schema.field import DecodingValidTextLine
+from zope.schema import Object
 
 from nti.externalization.tests.benchmarks.bootstrapinterfaces import IRootInterface
 from nti.externalization.tests.benchmarks.bootstrapinterfaces import checkEmailAddress
 from nti.externalization.tests.benchmarks.bootstrapinterfaces import checkRealname
+from nti.schema.field import DecodingValidTextLine
+from nti.schema.field import Dict
+from nti.schema.field import TextLine
+from nti.schema.field import ValidTextLine
+
 
 # pylint:disable=inherit-non-class
 class IFriendlyNamed(Interface):

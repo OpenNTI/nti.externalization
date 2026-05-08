@@ -3,13 +3,11 @@
 Benchmark for creating singleton objects.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+from nti.externalization.singleton import Singleton
 
 import pyperf as perf
 
-from nti.externalization.singleton import Singleton
 
 # These are defined to have __slots__ = ()
 class SingletonSubclass(Singleton):

@@ -5,13 +5,15 @@ Object replacers.
 
 """
 
-from zope import interface
+import logging
+
 from zope import deprecation
+from zope import interface
 
 from nti.externalization.interfaces import INonExternalizableReplacement
 from nti.externalization.interfaces import INonExternalizableReplacementFactory
 
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 @interface.implementer(INonExternalizableReplacement)
 class _NonExternalizableObject(dict):

@@ -3,19 +3,17 @@
 Tests for interfaces.py
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 
 import unittest
 
+from nti.externalization.interfaces import LocatedExternalDict
+
 from hamcrest import assert_that
 from hamcrest import has_property
 
-from nti.externalization.interfaces import LocatedExternalDict
 
 class TestLocatedExternalDict(unittest.TestCase):
 

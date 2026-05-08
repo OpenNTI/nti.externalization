@@ -3,11 +3,6 @@
 Tests for _compat.py
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904

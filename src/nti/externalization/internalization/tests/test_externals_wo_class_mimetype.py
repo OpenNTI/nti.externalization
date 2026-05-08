@@ -4,9 +4,6 @@ Tests for reading data into objects from external data *not* following
 the conventions of this package, e.g., missing Class and MimeType values.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -14,26 +11,24 @@ from __future__ import print_function
 import sys
 import unittest
 
-from hamcrest import is_
-from hamcrest import assert_that
-from hamcrest import has_property as has_attr
-from hamcrest import has_length
-from hamcrest import contains_string
-
-from zope import interface
 from zope import component
-
-from zope.schema import Object
+from zope import interface
+from zope.schema import Dict
 from zope.schema import Int
 from zope.schema import List
-from zope.schema import Dict
-
+from zope.schema import Object
 from zope.testing.cleanup import CleanUp
 
 from nti.externalization import interfaces
+from nti.externalization.datastructures import InterfaceObjectIO
 from nti.externalization.internalization import update_from_external_object
 from nti.externalization.internalization import updater
-from nti.externalization.datastructures import InterfaceObjectIO
+
+from hamcrest import assert_that
+from hamcrest import contains_string
+from hamcrest import has_length
+from hamcrest import has_property as has_attr
+from hamcrest import is_
 
 
 class TestExternals(CleanUp,

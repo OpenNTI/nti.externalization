@@ -1,55 +1,64 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import datetime
 import json
-from numbers import Number
 import unittest
-
+from numbers import Number
 
 try:
-    from ZODB.broken import Broken
     from persistent import CHANGED
     from persistent import UPTODATE
     from zope.dublincore import interfaces as dub_interfaces
+
+    from ZODB.broken import Broken
 except ModuleNotFoundError:
     Broken = None
     dub_interfaces = None
     from ..persistence import CHANGED
     from ..persistence import UPTODATE
 
+from collections import UserDict
+
 from zope import component
 from zope import interface
-
 from zope.testing.cleanup import CleanUp
 
 from nti.externalization.externalization import stripSyntheticKeysFromExternalDictionary
-from nti.testing.matchers import verifiably_provides
-from nti.testing.matchers import is_true
 from nti.testing.matchers import is_false
+from nti.testing.matchers import is_true
+from nti.testing.matchers import verifiably_provides
 
-from . import ExternalizationLayerTest
+from hamcrest import assert_that
+from hamcrest import calling
+from hamcrest import contains_exactly
+from hamcrest import has_entry
+from hamcrest import has_items
+from hamcrest import has_key
+from hamcrest import has_property as has_attr
+from hamcrest import is_
+from hamcrest import is_not
+from hamcrest import none
+from hamcrest import raises
+from hamcrest import same_instance
+
 from ..datastructures import ExternalizableDictionaryMixin
 from ..datastructures import ExternalizableInstanceDict
+from ..extension_points import set_external_identifiers
 from ..externalization import NonExternalizableObjectError
-from ..externalization.replacers import DevmodeNonExternalizableObjectReplacementFactory
 from ..externalization import catch_replace_action
 from ..externalization import choose_field
 from ..externalization import isSyntheticKey
 from ..externalization import removed_unserializable
-from ..extension_points import set_external_identifiers
 from ..externalization import to_standard_external_dictionary
 from ..externalization import toExternalObject
+from ..externalization.replacers import DevmodeNonExternalizableObjectReplacementFactory
 from ..externalization.standard_fields import get_creator
 from ..interfaces import EXT_REPR_JSON
 from ..interfaces import EXT_REPR_YAML
-from ..interfaces import IInternalObjectExternalizer as IExternalObject
 from ..interfaces import IExternalObjectDecorator
+from ..interfaces import IInternalObjectExternalizer as IExternalObject
 from ..interfaces import LocatedExternalDict
 from ..interfaces import LocatedExternalList
 from ..interfaces import StandardExternalFields
@@ -60,22 +69,7 @@ from ..persistence import PersistentExternalizableWeakList
 from ..persistence import getPersistentState
 from ..representation import to_external_representation
 from ..testing import assert_does_not_pickle
-
-from hamcrest import assert_that
-from hamcrest import calling
-from hamcrest import contains_exactly
-from hamcrest import has_entry
-from hamcrest import has_items
-from hamcrest import has_key
-from hamcrest import is_
-from hamcrest import is_not
-from hamcrest import none
-from hamcrest import raises
-from hamcrest import same_instance
-from hamcrest import has_property as has_attr
-
-from collections import UserDict
-
+from . import ExternalizationLayerTest
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -276,9 +270,10 @@ class TestFunctions(ExternalizationLayerTest):
         assert_that(result, is_({StandardExternalFields.CREATOR: WithSystemUser.user}))
 
     def test_get_creator_system_user(self):
-        from nti.externalization.externalization import SYSTEM_USER_NAME
         from zope.security.interfaces import IPrincipal
         from zope.security.management import system_user
+
+        from nti.externalization.externalization import SYSTEM_USER_NAME
 
         @interface.implementer(IPrincipal)
         class MySystemUser(object):
@@ -300,8 +295,8 @@ class TestDecorators(CleanUp,
                      unittest.TestCase):
 
     def test_decorate_external_mapping(self):
-        from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
         from nti.externalization.externalization import decorate_external_mapping
+        from nti.externalization.interfaces import IExternalStandardDictionaryDecorator
         class IRequest(interface.Interface):
             pass
 
@@ -417,9 +412,10 @@ class TestExternalizableInstanceDict(ExternalizationLayerTest):
             self.lastModified = 8675309
 
     def to_str(ts): # pylint:disable=no-self-argument
-        from ..datetime_ext import datetime_to_string
         from datetime import datetime as DateTime
         from datetime import timezone
+
+        from ..datetime_ext import datetime_to_string
         return datetime_to_string(DateTime.fromtimestamp(ts, timezone.utc)).toExternalObject()
     created_string = to_str(X().createdTime)
     modified_string = to_str(X().lastModified)
@@ -639,8 +635,8 @@ class TestToExternalObject(ExternalizationLayerTest):
     def test_to_stand_dict_uses_dubcore_iso8601(self):
         if dub_interfaces is None:
             self.skipTest('zope.dublincore not installed')
-        from ..interfaces import ExternalizationPolicy
         from ..datetime_ext import datetime_to_string
+        from ..interfaces import ExternalizationPolicy
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 
         @interface.implementer(dub_interfaces.IDCTimes)
@@ -660,9 +656,10 @@ class TestToExternalObject(ExternalizationLayerTest):
     def test_to_stand_dict_prefers_direct_fields_iso8601(self):
         if dub_interfaces is None:
             self.skipTest('zope.dublincore not installed')
-        from ..interfaces import ExternalizationPolicy
-        from ..datetime_ext import datetime_to_string
         from datetime import timezone
+
+        from ..datetime_ext import datetime_to_string
+        from ..interfaces import ExternalizationPolicy
         policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 
         @interface.implementer(dub_interfaces.IDCTimes)
@@ -901,9 +898,10 @@ class TestNoPickle(unittest.TestCase):
 class TestDeprecatedImports(unittest.TestCase):
 
     def test_SEF(self):
+        import warnings
+
         from nti.externalization import externalization
         from nti.externalization import interfaces
-        import warnings
 
         with warnings.catch_warnings(record=True):
             sef = getattr(externalization, 'StandardExternalFields')
@@ -911,9 +909,10 @@ class TestDeprecatedImports(unittest.TestCase):
         assert_that(sef, is_(same_instance(interfaces.StandardExternalFields)))
 
     def test_SIF(self):
+        import warnings
+
         from nti.externalization import externalization
         from nti.externalization import interfaces
-        import warnings
 
         with warnings.catch_warnings(record=True):
             sif = getattr(externalization, 'StandardInternalFields')

@@ -3,7 +3,7 @@
 =========
 
 
-3.0.1 (unreleased)
+3.1.0(unreleased)
 ==================
 
 - Document the ``to_json_representation`` variants and add one
@@ -11,6 +11,7 @@
   on second-chance externalization.
 - Renamed the "datetime" module to "datetime_ext" to avoid conflicts
   with the standard library. Backwards compatibility shims are in place.
+- Remove some long-deprecated parameters that were typically undocumented.
 
 3.0.0 (2026-05-07)
 ==================

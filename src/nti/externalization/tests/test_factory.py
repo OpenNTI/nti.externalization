@@ -3,22 +3,17 @@
 Tests for factory.py
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # stdlib imports
 import doctest
 import unittest
 
-
-from hamcrest import assert_that
-from hamcrest import is_
-from hamcrest import is_not
-from hamcrest import has_property
 from nti.testing.matchers import validly_provides
 
-logger = __import__('logging').getLogger(__name__)
+from hamcrest import assert_that
+from hamcrest import has_property
+from hamcrest import is_
+from hamcrest import is_not
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904

@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import sys
 import unittest
 
@@ -13,17 +9,16 @@ from zope import interface
 from zope.testing.cleanup import CleanUp
 
 from nti.externalization.tests import ExternalizationLayerTest
-
 from nti.testing.matchers import is_false
 from nti.testing.matchers import is_true
 from nti.testing.matchers import verifiably_provides
 
 from hamcrest import assert_that
+from hamcrest import contains_string
 from hamcrest import has_property
 from hamcrest import is_
 from hamcrest import is_not as does_not
 from hamcrest import none
-from hamcrest import contains_string
 
 is_not = does_not
 
@@ -54,10 +49,11 @@ class CommonTestMixin(object):
                     is_(none()))
 
     def test_standard_dates_policy(self):
-        from ..interfaces import ExternalizationPolicy
-        from ..datetime_ext import datetime_to_string
         from datetime import datetime as DateTime
         from datetime import timezone
+
+        from ..datetime_ext import datetime_to_string
+        from ..interfaces import ExternalizationPolicy
 
         iso_policy = ExternalizationPolicy(use_iso8601_for_unix_timestamp=True)
 
@@ -769,15 +765,15 @@ class TestExternalizableInstanceDict(CommonTestMixin,
 class TestStandardInternalObjectExternalizer(unittest.TestCase):
 
     def test_provides(self):
-        from nti.externalization.interfaces import IInternalObjectExternalizer
         from nti.externalization.datastructures import StandardInternalObjectExternalizer
+        from nti.externalization.interfaces import IInternalObjectExternalizer
         o = StandardInternalObjectExternalizer(object())
         assert_that(o, verifiably_provides(IInternalObjectExternalizer))
 
     def test_subclass(self):
-        from nti.externalization.interfaces import IInternalObjectExternalizer
-        from nti.externalization.datastructures import StandardInternalObjectExternalizer
         from nti.externalization._compat import PURE_PYTHON
+        from nti.externalization.datastructures import StandardInternalObjectExternalizer
+        from nti.externalization.interfaces import IInternalObjectExternalizer
 
         class X(StandardInternalObjectExternalizer):
             def __init__(self, context):

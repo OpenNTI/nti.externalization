@@ -58,12 +58,10 @@ cdef _handle_SchemaNotProvided(field_name, field, value)
 cdef _handle_WrongType(field_name, field, value)
 cdef _handle_WrongContainedType(field_name, field, value)
 
-cdef str _as_native_str(s)
-
 cdef tuple _CONVERTERS
 
 @cython.locals(
     meth_name_kind=tuple,
 )
-cpdef validate_field_value(self, field_name, field, value)
-cpdef validate_named_field_value(self, iface, field_name, value)
+cpdef validate_field_value(self, str field_name, field, value)
+cpdef validate_named_field_value(self, iface, str field_name, value)

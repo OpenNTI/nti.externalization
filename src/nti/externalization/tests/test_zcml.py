@@ -3,11 +3,7 @@
 Tests for zcml.py.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
 
 from zope import component
@@ -21,13 +17,13 @@ from nti.externalization.interfaces import _ILegacySearchModuleFactory
 from nti.testing.matchers import is_empty
 
 from hamcrest import assert_that
-from hamcrest import same_instance
 from hamcrest import equal_to
-from hamcrest import is_
-from hamcrest import is_not
 from hamcrest import has_length
 from hamcrest import has_property
+from hamcrest import is_
+from hamcrest import is_not
 from hamcrest import none
+from hamcrest import same_instance
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
@@ -196,7 +192,9 @@ class TestAutoPackageZCML(PlacelessSetup,
         # Issue #97: When interface tags are inherited,
         # we don't double register.
         import sys
+
         from zope.interface.interfaces import IInterface
+
         from ..interfaces import IInternalObjectIOFinder
 
         class IPublic(interface.Interface):

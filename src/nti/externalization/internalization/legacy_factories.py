@@ -5,27 +5,24 @@ Support for magically finding factories given class names.
 
 .. deprecated:: 1.0
 """
-## Implementation of legacy search modules.
+import logging
+import types
+import warnings
 
+from zope import component
+from zope.dottedname.resolve import resolve
+
+from nti.externalization._base_interfaces import NotGiven
+from nti.externalization.interfaces import _ILegacySearchModuleFactory
+
+## Implementation of legacy search modules.
 # We go through the global component registry, using a local
 # interface. We treat the registry as a cache and we will only
 # look at any given module object one time. We can detect duplicates
 # in this fashion. (For cython compilation, this lives in interfaces.)
 
 
-# stdlib imports
-import types
-import warnings
-
-from zope import component
-
-from zope.dottedname.resolve import resolve
-
-from nti.externalization.interfaces import _ILegacySearchModuleFactory
-from nti.externalization._base_interfaces import NotGiven
-
-
-logger = __import__('logging').getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'register_legacy_search_module',
@@ -37,7 +34,7 @@ __all__ = [
 LEGACY_FACTORY_SEARCH_MODULES = set() # type:ignore
 
 try:
-    from zope.testing.cleanup import addCleanUp # pylint: disable=ungrouped-imports
+    from zope.testing.cleanup import addCleanUp  # pylint: disable=ungrouped-imports
 except ImportError: # pragma: no cover
     pass
 else:
@@ -197,4 +194,5 @@ def find_factories_in_module(module,
 
  # pylint:disable=wrong-import-position,wrong-import-order
 from nti.externalization._compat import import_c_accel
+
 import_c_accel(globals(), 'nti.externalization.internalization._legacy_factories')

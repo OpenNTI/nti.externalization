@@ -9,7 +9,6 @@ provide and register two, one for `JSON <.EXT_REPR_JSON>` and one for
 `YAML <.EXT_REPR_YAML>`.
 """
 import decimal
-import warnings
 from typing import cast
 
 try:
@@ -52,7 +51,7 @@ def _to_external_representation(obj, io, name=_NotGiven,
     return io.dump(ext, **repr_kwargs)
 
 def to_external_representation(obj, ext_format=EXT_REPR_JSON,
-                               name=_NotGiven, registry=_NotGiven,
+                               name=_NotGiven,
                                **repr_kwargs) -> str|bytes:
     """
     to_external_representation(obj, ext_format='json', name=NotGiven, **repr_kwargs) -> str|bytes
@@ -73,12 +72,10 @@ def to_external_representation(obj, ext_format=EXT_REPR_JSON,
 
     .. versionchanged:: 3.0.0
        Added *repr_kwargs*
+    .. versionchanged:: NEXT
+       Removed the deprecated 'registry' param
     """
-    if registry is not _NotGiven: # pragma: no cover
-        warnings.warn(
-            "The registry argument is ignored. Call in a correct site.",
-            FutureWarning
-        )
+
     # It would seem nice to be able to do this in one step during
     # the externalization process itself, but we would wind up traversing
     # parts of the datastructure more than necessary. Here we traverse

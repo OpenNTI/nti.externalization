@@ -11,15 +11,12 @@ from typing import overload
 
 text_type = str
 
-PY2 = False
-PY3 = True
-PYPY = hasattr(sys, 'pypy_version_info')
 WIN = sys.platform.startswith("win")
 LINUX = sys.platform.startswith('linux')
 OSX = sys.platform == 'darwin'
 
 
-PURE_PYTHON = PYPY or os.getenv('PURE_PYTHON') or os.getenv("NTI_EXT_PURE_PYTHON")
+PURE_PYTHON = os.getenv('PURE_PYTHON') or os.getenv("NTI_EXT_PURE_PYTHON")
 
 
 try:

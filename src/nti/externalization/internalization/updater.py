@@ -5,33 +5,35 @@ The driver functions for updating an object from an external form.
 
 """
 
-# stdlib imports
-from collections.abc import MutableSequence
-from collections.abc import MutableMapping
 import inspect
 import warnings
+from collections.abc import MutableMapping
+from collections.abc import MutableSequence
+from typing import TypeVar
+from typing import overload
 
 from zope import interface
+
 try:
     from persistent.interfaces import IPersistent
 except ModuleNotFoundError:
-    class IPersistent(interface.Interface): # pylint: disable=inherit-non-class
+     # pylint: disable-next=inherit-non-class
+    class IPersistent(interface.Interface): # type:ignore[no-redef]
         """Mock"""
 
 from zope.event import notify as notify_event
 
 from nti.externalization._base_interfaces import PRIMITIVES
-from nti.externalization._base_interfaces import NotGiven
-from nti.externalization.interfaces import IInternalObjectUpdater
 from nti.externalization.interfaces import IInternalObjectIO
+from nti.externalization.interfaces import IInternalObjectUpdater
 from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
 from nti.externalization.interfaces import ObjectWillUpdateFromExternalEvent
 
-from .factories import find_factory_for
 from .events import _notifyModified
 from .externals import resolve_externals
+from .factories import find_factory_for
 
-
+T = TypeVar('T')
 
 _EMPTY_DICT: dict = {}
 IPersistent_providedBy = IPersistent.providedBy
@@ -42,7 +44,6 @@ class _RecallArgs(object):
         'context',
         'require_updater',
         'notify',
-        'pre_hook',
         'root',
     )
 
@@ -54,7 +55,6 @@ class _RecallArgs(object):
         self.context = None
         self.require_updater = False
         self.notify = True
-        self.pre_hook = None
         self.root = None
 
 ##
@@ -69,7 +69,7 @@ class _RecallArgs(object):
 # cumbersome and needs to go; we are in the deprecation period now.
 # See https://github.com/NextThought/nti.externalization/issues/30
 
-_argspec_cache = {}
+_argspec_cache: dict[type, str] = {}
 
 # update(ext, context) or update(ext, context=None) or update(ext, dataserver)
 # exactly two arguments. It doesn't matter what the name is, we'll call it
@@ -79,7 +79,7 @@ _UPDATE_ARGS_CONTEXT_KW = "update args **kwargs"
 _UPDATE_ARGS_ONE = "update args external only"
 
 
-def _get_update_signature(updater):
+def _get_update_signature(updater) -> str:
     kind = type(updater)
 
     spec = _argspec_cache.get(kind)
@@ -127,9 +127,9 @@ def _get_update_signature(updater):
     return spec
 
 
-_usable_updateFromExternalObject_cache = {}
+_usable_updateFromExternalObject_cache: dict[type, bool]= {}
 
-def _obj_has_usable_updateFromExternalObject(obj):
+def _obj_has_usable_updateFromExternalObject(obj) -> bool:
     kind = type(obj)
 
     usable_from = _usable_updateFromExternalObject_cache.get(kind)
@@ -152,7 +152,7 @@ def _obj_has_usable_updateFromExternalObject(obj):
 
 
 try:
-    from zope.testing import cleanup # pylint:disable=ungrouped-imports
+    from zope.testing import cleanup  # pylint:disable=ungrouped-imports
 except ImportError: # pragma: no cover
     pass
 else:
@@ -170,12 +170,31 @@ interface.classImplements(DefaultInternalObjectFactoryFinder, INamedExternalized
 
 _default_factory_finder = DefaultInternalObjectFactoryFinder()
 
-def update_from_external_object(containedObject, externalObject,
-                                registry=NotGiven, context=None,
+@overload
+def update_from_external_object(containedObject: MutableSequence,
+                                externalObject: MutableSequence,
+                                context=None,
                                 require_updater=False,
-                                notify=True,
-                                pre_hook=None):
-    # pylint:disable=line-too-long, too-many-positional-arguments
+                                notify=True) -> MutableSequence:
+    # pylint:disable=too-many-positional-arguments
+    ...
+
+@overload
+def update_from_external_object(containedObject: T,
+                                externalObject: MutableMapping,
+                                context=None,
+                                require_updater=False,
+                                notify=True) -> T:
+    # pylint:disable=too-many-positional-arguments
+    ...
+
+def update_from_external_object(containedObject: T|MutableSequence,
+                                externalObject: MutableSequence|MutableMapping,
+                                context=None,
+                                require_updater=False,
+                                notify=True) -> T|MutableSequence:
+    # pylint:disable=line-too-long
+    # pylint:disable=too-many-positional-arguments
     """
     update_from_external_object(containedObject, externalObject, context=None, require_updater=False, notify=True)
 
@@ -203,11 +222,6 @@ def update_from_external_object(containedObject, externalObject,
         attribute; if this is the case and we can also find an
         interface declaring the attribute, then the ``IAttributes``
         will have the right value for ``interface`` as well).
-    :keyword callable pre_hook: If given, called with the before
-        update_from_external_object is called for every nested object.
-        Signature ``f(k,x)`` where ``k`` is either the key name, or
-        None in the case of a sequence and ``x`` is the external
-        object. Deprecated.
     :return: *containedObject* after updates from *externalObject*
 
     Notifies `~.IObjectModifiedFromExternalEvent` for each object that is modified,
@@ -218,25 +232,17 @@ def update_from_external_object(containedObject, externalObject,
     .. versionchanged:: 1.0.0a2
        Remove the ``object_hook`` parameter.
     .. versionchanged:: 1.1.3
-       Correctly file `~.IObjectWillUpdateFromExternalEvent` before updating
+       Correctly fire `~.IObjectWillUpdateFromExternalEvent` before updating
        each object.
+    .. versionchanged:: NEXT
+       Remove the long-deprecated 'pre_hook' parameter. Remove the long-deprecated
+       'registry' parameter.
     """
-
-    if pre_hook is not None: # pragma: no cover
-        for i in range(3):
-            warnings.warn('pre_hook is deprecated', FutureWarning, stacklevel=i)
-
-    if registry is not NotGiven: # pragma: no cover
-        warnings.warn(
-            "registry is deprecated and ignored. Call in a correct site.",
-            FutureWarning
-        )
 
     kwargs = _RecallArgs()
     kwargs.context = context
     kwargs.require_updater = require_updater
     kwargs.notify = notify
-    kwargs.pre_hook = pre_hook
     kwargs.root = containedObject
 
     return _update_from_external_object(containedObject, externalObject, kwargs)
@@ -250,13 +256,13 @@ def _invoke_factory(factory, value):
     return factory()
 
 def _update_sequence(
-        externalObject, args,
+        externalObject:MutableSequence,
+        args:_RecallArgs,
         destination_name=None,
-        find_factory_for_named_value=_default_factory_finder.find_factory_for_named_value):
+        find_factory_for_named_value=_default_factory_finder.find_factory_for_named_value
+) -> MutableSequence:
 
     for index, value in enumerate(externalObject):
-        if args.pre_hook is not None: # pragma: no cover
-            args.pre_hook(None, value)
         factory = find_factory_for_named_value(destination_name, value)
         if factory is not None:
             new_obj = _invoke_factory(factory, value)
@@ -314,7 +320,9 @@ def _find_INamedExternalizedObjectFactoryFinder(containedObject):
     return updater
 
 
-def _update_from_external_object(containedObject, externalObject, args):
+def _update_from_external_object(containedObject:T,
+                                 externalObject:MutableSequence|MutableMapping,
+                                 args:_RecallArgs) -> T|MutableSequence:
 
     # Parse any contained objects
     # TODO: We're (deliberately?) not actually updating any contained
@@ -326,7 +334,7 @@ def _update_from_external_object(containedObject, externalObject, args):
 
     if IPersistent_providedBy(containedObject): # pylint:disable=no-value-for-parameter
         # pylint:disable=protected-access
-        containedObject._v_updated_from_external_source = externalObject
+        containedObject._v_updated_from_external_source = externalObject # type:ignore[attr-defined]
 
 
     # Sequences do not represent python types, they represent collections of
@@ -347,9 +355,6 @@ def _update_from_external_object(containedObject, externalObject, args):
         external_keys.append(k)
         if isinstance(v, PRIMITIVES):
             continue
-
-        if args.pre_hook is not None: # pragma: no cover
-            args.pre_hook(k, v)
 
         if isinstance(v, MutableSequence):
             # Update the sequence in-place
@@ -385,5 +390,7 @@ def _update_from_external_object(containedObject, externalObject, args):
 
 
 
-from nti.externalization._compat import import_c_accel # pylint:disable=wrong-import-position,wrong-import-order
+from nti.externalization._compat import \
+    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
+
 import_c_accel(globals(), 'nti.externalization.internalization._updater')

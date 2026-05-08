@@ -33,8 +33,8 @@ cdef class _DefaultExternalizedObjectFactoryFinder(object):
 
 cdef _search_for_class_factory(externalized_object, class_name)
 cdef _search_for_mime_factory(externalized_object, mime_type)
-cpdef find_factory_for_class_name(class_name)
+cpdef find_factory_for_class_name(str class_name)
 cdef _find_factory_for_mime_or_class(externalized_object)
 
 
-cpdef find_factory_for(externalized_object, registry=*)
+cpdef find_factory_for(externalized_object)

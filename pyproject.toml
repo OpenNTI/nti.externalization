@@ -17,7 +17,7 @@ requires = [
      # failing in Python 2 (https://travis-ci.org/github/gevent/gevent/jobs/683782800);
      # This was fixed in 3.0a5 (https://github.com/cython/cython/issues/3578)
      # 3.0a6 fixes an issue cythonizing source on 32-bit platforms
-     "Cython >= 3.2.1",
+     "Cython >= 3.2.4",
 ]
 
 [tool.check-manifest]
@@ -31,6 +31,11 @@ check_untyped_defs = true
 allow_redefinition = true
 disable_error_code = [
   "method-assign"
+]
+# Our tests are in terrible shape
+# and will need some work to be clean
+exclude = [
+  'test_.*\.py',
 ]
 
 [[tool.mypy.overrides]]
@@ -57,6 +62,9 @@ module = [
   "pg8000",
   "urllib3.*",
   "indexed_gzip",
+  "pyperf",
+  "isodate",
+  "vmprof"
 
 ]
 ignore_missing_imports = true

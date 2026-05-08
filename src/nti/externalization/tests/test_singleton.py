@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 from nti.externalization.singleton import SingletonDecorator
 from nti.externalization.tests import ExternalizationLayerTest
 
@@ -57,8 +52,8 @@ class TestSingleton(ExternalizationLayerTest):
 
 
 def test_suite():
-    import unittest
     import doctest
+    import unittest
     suite = unittest.defaultTestLoader.loadTestsFromName(__name__)
 
     return unittest.TestSuite([

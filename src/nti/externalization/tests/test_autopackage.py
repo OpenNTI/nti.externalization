@@ -3,11 +3,7 @@
 Tests for autopackage.py
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
 import unittest
 
 from zope import interface
@@ -15,15 +11,15 @@ from zope.mimetype.interfaces import IContentTypeAware
 
 from nti.testing.matchers import implements
 
-from ..autopackage import AutoPackageSearchingScopedInterfaceObjectIO as AutoPackage
-
 from hamcrest import assert_that
+from hamcrest import contains_string
 from hamcrest import has_key
 from hamcrest import has_property
 from hamcrest import is_
 from hamcrest import is_not as does_not
 from hamcrest import none
-from hamcrest import contains_string
+
+from ..autopackage import AutoPackageSearchingScopedInterfaceObjectIO as AutoPackage
 
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904

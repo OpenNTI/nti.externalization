@@ -1,27 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# stdlib imports
-from contextlib import contextmanager
-from datetime import date
-from datetime import timedelta
 import os
 import time
 import unittest
+from contextlib import contextmanager
+from datetime import date
+from datetime import timedelta
 
+from zope.configuration import xmlconfig
 from zope.interface.common.idatetime import IDate
 from zope.interface.common.idatetime import IDateTime
 from zope.schema.interfaces import InvalidValue
-from zope.configuration import xmlconfig
 from zope.testing import cleanup
 
 import nti.externalization
-from nti.externalization.datetime_ext import datetime_to_string
 from nti.externalization.datetime_ext import datetime_from_string
+from nti.externalization.datetime_ext import datetime_to_string
 from nti.externalization.tests import ExternalizationLayerTest
 from nti.externalization.tests import externalizes
 
@@ -124,8 +120,9 @@ class TestDatetime(ExternalizationLayerTest):
 class TestTzinfo(unittest.TestCase):
 
     def test_invalid_local_name_in_dst_uses_system_settings(self):
-        import pytz
         from nti.externalization.datetime_ext import _local_tzinfo
+
+        import pytz
         with environ_tz():
             os.environ['TZ'] = 'CST+06CDT+05,0,365'
             time.tzset()

@@ -8,10 +8,11 @@ are implementation details.
 """
 
 
+from collections.abc import MutableMapping
+
 # Our request hook function always returns None, and pylint
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
-
 import warnings
 from collections.abc import Mapping
 
@@ -19,26 +20,20 @@ from zope import component
 from zope import deferredimport
 
 from nti.externalization._base_interfaces import MINIMAL_SYNTHETIC_EXTERNAL_KEYS
-from nti.externalization._base_interfaces import isSyntheticKey
-from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import PRIMITIVES as _primitives
-
+from nti.externalization._base_interfaces import NotGiven
+from nti.externalization._base_interfaces import isSyntheticKey
 from nti.externalization.extension_points import get_current_request
 
-from .replacers import NonExternalizableObjectError
-
-from .fields import choose_field
-
-from .standard_fields import SYSTEM_USER_NAME
-from .standard_fields import get_last_modified_time
-from .standard_fields import get_created_time
-
-from .dictionary import to_standard_external_dictionary
-from .dictionary import to_minimal_standard_external_dictionary
-
-from .externalizer import to_external_object
-
 from .decorate import decorate_external_mapping as _decorate_external_mapping
+from .dictionary import to_minimal_standard_external_dictionary
+from .dictionary import to_standard_external_dictionary
+from .externalizer import to_external_object
+from .fields import choose_field
+from .replacers import NonExternalizableObjectError
+from .standard_fields import SYSTEM_USER_NAME
+from .standard_fields import get_created_time
+from .standard_fields import get_last_modified_time
 
 __all__ = [
     'choose_field',
@@ -102,12 +97,6 @@ def toExternalDictionary(*args, **kwargs): # pragma: no cover
     return to_standard_external_dictionary(*args, **kwargs)
 
 
-def is_nonstr_iter(v): # pragma: no cover
-    warnings.warn("'is_nonstr_iter' will be deleted. It is broken on Python 3",
-                  FutureWarning, stacklevel=2)
-    return hasattr(v, '__iter__')
-
-
 def removed_unserializable(ext):
     # pylint:disable=too-many-branches,too-complex
     # XXX: Why is this here? We don't use it anymore.
@@ -122,10 +111,12 @@ def removed_unserializable(ext):
             for k, v in list(m.items()):
                 if _is_sequence(v):
                     if not isinstance(v, list):
+                        assert isinstance(m, MutableMapping)
                         m[k] = list(v)
                 # pylint:disable-next=confusing-consecutive-elif
                 elif not isinstance(v, Mapping):
                     if not isinstance(v, _primitives):
+                        assert isinstance(m, MutableMapping)
                         m[k] = None
             values = m.values()
         elif isinstance(m, list):

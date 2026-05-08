@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # disable: accessing protected members, too many methods
 # pylint: disable=W0212,R0904
 
@@ -11,12 +7,13 @@ import unittest
 
 from zope.proxy import ProxyBase
 
+from nti.externalization.externalization import to_external_object
+
 from hamcrest import assert_that
 from hamcrest import has_length
 from hamcrest import is_
 from hamcrest import same_instance
 
-from nti.externalization.externalization import to_external_object
 from ..externalizer import _obj_has_usable_externalObject
 
 
@@ -70,6 +67,7 @@ class TestFunctions(unittest.TestCase):
 
     def test_uses_directly_provided(self):
         from zope import interface
+
         from nti.externalization.interfaces import IInternalObjectExternalizer
 
         class Obj(object):

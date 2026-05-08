@@ -8,10 +8,9 @@ The basics of turning objects into dictionaries.
 # flags that as useless (good for it)
 # pylint:disable=assignment-from-none
 # stdlib imports
-import warnings
 from collections.abc import Mapping
-from collections.abc import MutableMapping
 
+from nti.externalization._base_interfaces import LocatedExternalDict
 from nti.externalization._base_interfaces import NotGiven
 from nti.externalization._base_interfaces import get_default_externalization_policy
 from nti.externalization._base_interfaces import get_standard_external_fields
@@ -35,7 +34,7 @@ def internal_to_standard_external_dictionary(
         request=NotGiven,
         decorate_callback=NotGiven,
         policy=DEFAULT_EXTERNALIZATION_POLICY,
-) -> MutableMapping:
+) -> LocatedExternalDict:
     # pylint:disable=too-many-positional-arguments
     # The real implementation of this function. Code in this
     # package should use this; code outside of this package *MUST NOT*
@@ -66,18 +65,14 @@ def internal_to_standard_external_dictionary(
 
 def to_standard_external_dictionary(
         self,
-        mergeFrom=None,
-        registry=NotGiven, # Ignored
+        mergeFrom: Mapping|None = None,
         decorate=True,
         request=NotGiven,
         decorate_callback=NotGiven,
         policy=DEFAULT_EXTERNALIZATION_POLICY,
-        # These are ignored, present for BWC
-        name=NotGiven,
-        useCache=NotGiven,
-        **kwargs
-) -> MutableMapping:
-    """to_standard_external_dictionary(self, mergeFrom=None, decorate=True, request=NotGiven)
+) -> LocatedExternalDict:
+    """
+    to_standard_external_dictionary(self, mergeFrom=None, decorate=True, request=NotGiven)
 
     Returns a dictionary representing the standard externalization of
     the object *self*. This function takes care of many of the standard external fields:
@@ -106,34 +101,25 @@ def to_standard_external_dictionary(
     type and mutating the dictionary returned from super's
     ``toExternalObject`` in your own implementation.
 
-   :keyword dict mergeFrom: For convenience, if *mergeFrom* is not
+    :keyword dict mergeFrom: For convenience, if *mergeFrom* is not
        `None`, then values it contains will be added to the dictionary
        created by this method. The keys and values in *mergeFrom*
        should already be external.
-   :type mergeFrom: dict
-   :keyword ExternalizationPolicy policy: The :class:`~.ExternalizationPolicy` to
+    :type mergeFrom: dict
+    :keyword ExternalizationPolicy policy: The :class:`~.ExternalizationPolicy` to
        use. Must not be None.
-   :returns: A `.LocatedExternalDict`. For further externalization,
+    :returns: A `.LocatedExternalDict`. For further externalization,
        this object should be mutated in place.
 
-   .. versionchanged:: 1.0a1
+    .. versionchanged:: 1.0a1
       Arbitrary keyword arguments not used by this function are deprecated
       and produce a warning.
-   .. versionchanged:: 2.1
+    .. versionchanged:: 2.1
        Add the *policy* keyword.
+    .. versionchanged:: NEXT
+       Remove deprecated parameters.
     """
     # pylint:disable=too-many-positional-arguments
-    if (
-            kwargs
-            or name is not NotGiven
-            or useCache is not NotGiven
-            or registry is not NotGiven
-    ): # pragma: no cover
-        for _ in range(3):
-            warnings.warn(
-                "Passing unused arguments to to_standard_external_dictionary will be an error",
-                FutureWarning)
-
     return internal_to_standard_external_dictionary(
         self,
         mergeFrom,
@@ -144,7 +130,8 @@ def to_standard_external_dictionary(
     )
 
 
-def to_minimal_standard_external_dictionary(self, mergeFrom=None) -> MutableMapping:
+def to_minimal_standard_external_dictionary(self,
+                                            mergeFrom:Mapping|None = None) -> LocatedExternalDict:
     """
     Does no decoration. Useful for non-'object' types. *self* should have a *mime_type* field.
     """
@@ -161,7 +148,5 @@ def to_minimal_standard_external_dictionary(self, mergeFrom=None) -> MutableMapp
     return result
 
 
-from nti.externalization._compat import \
-    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
-
+from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization.externalization._dictionary')

@@ -3,9 +3,6 @@
 Benchmarks a realistic user profile object.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 
@@ -27,8 +24,6 @@ from nti.externalization.tests.benchmarks.bm_simple_iface import (
     update_from_external_object_time_func,
     profile
 )
-
-logger = __import__('logging').getLogger(__name__)
 
 
 def main(runner=None):

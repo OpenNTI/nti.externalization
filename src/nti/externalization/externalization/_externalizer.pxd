@@ -50,7 +50,7 @@ cdef tuple MAPPING_TYPES
 cdef class _ExternalizationState(object):
     cdef dict memo
 
-    cdef basestring name
+    cdef str name
     cdef catch_components
     cdef catch_component_action
     cdef request
@@ -78,7 +78,6 @@ cdef class _RecursiveCallState(dict):
 cpdef to_external_object(
     obj,
     name=*,
-    registry=*,
     catch_components=*,
     catch_component_action=*,
     request=*,

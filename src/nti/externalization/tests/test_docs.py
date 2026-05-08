@@ -3,18 +3,14 @@
 Tests for the sphinx documentation using `Manuel
 <https://pythonhosted.org/manuel/>`_.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 
 import doctest
 import os.path
 import re
 import unittest
 
-from zope.testing import renormalizing
 from zope.testing import cleanup
+from zope.testing import renormalizing
 
 import manuel.capture
 import manuel.codeblock

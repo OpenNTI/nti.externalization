@@ -9,6 +9,3 @@ The overall design is taken from `performance
 <https://github.com/python/performance/tree/master/performance>`_.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function

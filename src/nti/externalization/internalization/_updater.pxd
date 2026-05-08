@@ -38,7 +38,6 @@ cdef dict _EMPTY_DICT
 @cython.freelist(1000)
 cdef class _RecallArgs(object):
     cdef context
-    cdef pre_hook
     cdef root
     cdef bint require_updater
     cdef bint notify
@@ -61,13 +60,16 @@ cdef _update_sequence(externalObject, _RecallArgs args,
 cpdef _find_INamedExternalizedObjectFactoryFinder(containedObject)
 cdef _update_from_external_object(containedObject, externalObject, _RecallArgs args)
 
-cpdef update_from_external_object(containedObject,
-                                  externalObject,
-                                  registry=*,
-                                  context=*,
-                                  bint require_updater=*,
-                                  bint notify=*,
-                                  pre_hook=*)
+# The use of @overload prevents this from being
+# cpdef, unfortunately. Cython tries to generate the
+# function multiple times.
+# cpdef update_from_external_object(containedObject,
+#                                   externalObject,
+#                                   registry=*,
+#                                   context=*,
+#                                   bint require_updater=*,
+#                                   bint notify=*,
+#                                   )
 
 cdef dict _argspec_cacheg
 
