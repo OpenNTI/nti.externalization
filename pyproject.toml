@@ -25,7 +25,7 @@ ignore = ["*.c"]
 
 
 [tool.mypy]
-# Must be present for mpypy to read this file.
+# Must be present for mypy to read this file.
 follow_imports = "normal"
 check_untyped_defs = true
 allow_redefinition = true

@@ -20,7 +20,7 @@ try:
     from zope.intid.interfaces import IIntIds
 except ModuleNotFoundError:
     from zope.interface import Interface
-     # pylint: disable-next=inherit-non-class
+    # pylint: disable-next=inherit-non-class
     class IIntIds(Interface): # type:ignore[no-redef]
         """Mock"""
 

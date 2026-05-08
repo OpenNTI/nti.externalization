@@ -101,7 +101,9 @@ class _ExternalizationState(object):
 
     def __init__(self,
                  memos,
-                 name, catch_components, catch_component_action,
+                 name,
+                 catch_components: tuple[type[BaseException], ...] | type[BaseException],
+                 catch_component_action: Callable[[Any, BaseException], Any]|None,
                  request,
                  default_non_externalizable_replacer,
                  decorate=True,
@@ -128,7 +130,7 @@ class _ExternalizationState(object):
 
         self.policy = policy
 
-        self._kwargs = None
+        self._kwargs: dict|None = None
 
     def as_kwargs(self):
         if self._kwargs is None:
@@ -325,8 +327,8 @@ def _to_external_object_state(obj, state, top_level=False):
 def to_external_object(
         obj,
         name=NotGiven,
-        catch_components:tuple[type,...]|type = (),
-        catch_component_action:Callable[[Any, BaseException], Any]|None = None,
+        catch_components: tuple[type[BaseException],...]|type[BaseException] = (),
+        catch_component_action: Callable[[Any, BaseException], Any]|None = None,
         request=NotGiven,
         decorate=True,
         useCache=True,

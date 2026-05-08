@@ -127,7 +127,7 @@ def _get_update_signature(updater) -> str:
     return spec
 
 
-_usable_updateFromExternalObject_cache: dict[type, bool]= {}
+_usable_updateFromExternalObject_cache: dict[type, bool] = {}
 
 def _obj_has_usable_updateFromExternalObject(obj) -> bool:
     kind = type(obj)
@@ -256,8 +256,8 @@ def _invoke_factory(factory, value):
     return factory()
 
 def _update_sequence(
-        externalObject:MutableSequence,
-        args:_RecallArgs,
+        externalObject: MutableSequence,
+        args: _RecallArgs,
         destination_name=None,
         find_factory_for_named_value=_default_factory_finder.find_factory_for_named_value
 ) -> MutableSequence:
@@ -320,9 +320,9 @@ def _find_INamedExternalizedObjectFactoryFinder(containedObject):
     return updater
 
 
-def _update_from_external_object(containedObject:T,
-                                 externalObject:MutableSequence|MutableMapping,
-                                 args:_RecallArgs) -> T|MutableSequence:
+def _update_from_external_object(containedObject: T,
+                                 externalObject: MutableSequence|MutableMapping,
+                                 args: _RecallArgs) -> T|MutableSequence:
 
     # Parse any contained objects
     # TODO: We're (deliberately?) not actually updating any contained
@@ -390,7 +390,5 @@ def _update_from_external_object(containedObject:T,
 
 
 
-from nti.externalization._compat import \
-    import_c_accel  # pylint:disable=wrong-import-position,wrong-import-order
-
+from nti.externalization._compat import import_c_accel
 import_c_accel(globals(), 'nti.externalization.internalization._updater')

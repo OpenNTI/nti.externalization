@@ -31,7 +31,7 @@ __all__ = [
 #: .. deprecated:: 1.0
 #: This is legacy functionality, please do not access directly.
 #: The public interface is through :func:`register_legacy_search_module`
-LEGACY_FACTORY_SEARCH_MODULES = set() # type:ignore
+LEGACY_FACTORY_SEARCH_MODULES = set[str|types.ModuleType]()
 
 try:
     from zope.testing.cleanup import addCleanUp  # pylint: disable=ungrouped-imports
@@ -62,9 +62,9 @@ def register_legacy_search_module(module_name):
     if module_name:
         LEGACY_FACTORY_SEARCH_MODULES.add(module_name)
 
-_ext_factory_warnings = set() # type:ignore
+_ext_factory_warnings = set[str]()
 
-def search_for_external_factory(typeName):
+def search_for_external_factory(typeName:str):
     """
     Deprecated, legacy functionality. Given the name of a type,
     optionally ending in 's' for plural, attempt to locate that type.

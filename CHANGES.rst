@@ -3,7 +3,7 @@
 =========
 
 
-3.1.0(unreleased)
+3.1.0 (unreleased)
 ==================
 
 - Document the ``to_json_representation`` variants and add one

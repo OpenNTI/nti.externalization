@@ -115,7 +115,7 @@ _FieldProperty__set__valid.orig_func = _FieldProperty_orig_set # type:ignore[att
 # we've already replaced the __set__ function with our own.
 if FieldProperty.__set__.__name__ == _FieldProperty__set__valid.__name__: # pragma: no cover
     _FieldProperty_orig_set = FieldProperty.__set__.orig_func # pylint:disable=no-member
-    _FieldProperty__set__valid.org_func = _FieldProperty_orig_set # type:ignore[attr-defined]
+    _FieldProperty__set__valid.orig_func = _FieldProperty_orig_set # type:ignore[attr-defined]
 
 FieldProperty.__set__ = _FieldProperty__set__valid
 

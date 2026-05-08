@@ -22,7 +22,7 @@ cpdef list find_factories_in_module(module, case_sensitive=*)
 # private
 
 cdef set _ext_factory_warnings
-cpdef search_for_external_factory(class_name)
+cpdef search_for_external_factory(str class_name)
 
 cdef register_factories_from_search_set()
 cdef register_factories_from_module(module)

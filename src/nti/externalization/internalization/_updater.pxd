@@ -71,12 +71,12 @@ cdef _update_from_external_object(containedObject, externalObject, _RecallArgs a
 #                                   bint notify=*,
 #                                   )
 
-cdef dict _argspec_cacheg
+cdef dict _argspec_cache
 
 cdef str _UPDATE_ARGS_TWO
 cdef str _UPDATE_ARGS_ONE
 cdef str _UPDATE_ARGS_CONTEXT_KW
 cdef inline _get_update_signature(updater)
 
-cdef dict _upsable_updateFromExternalObject_cache
+cdef dict _usable_updateFromExternalObject_cache
 cdef _obj_has_usable_updateFromExternalObject(obj)
