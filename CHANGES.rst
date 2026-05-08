@@ -11,7 +11,9 @@
   on second-chance externalization.
 - Renamed the "datetime" module to "datetime_ext" to avoid conflicts
   with the standard library. Backwards compatibility shims are in place.
-- Remove some long-deprecated parameters that were typically undocumented.
+- Remove some long-deprecated parameters that were typically
+  undocumented.
+- Introduce some basic type annotations.
 
 3.0.0 (2026-05-07)
 ==================
