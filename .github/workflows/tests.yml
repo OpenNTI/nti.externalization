@@ -7,7 +7,6 @@ env:
   ZOPE_INTERFACE_STRICT_IRO: 1
   CFLAGS: "-Ofast -pipe -fomit-frame-pointer -march=native"
   PIP_UPGRADE_STRATEGY: eager
-  PYTHON_GIL: 0
 
 
 jobs:
@@ -46,6 +45,11 @@ jobs:
         python -m pip install -U pip setuptools wheel
         python -m pip install -U coverage
         python -m pip install -v -U -e ".${{ matrix.extras }}"
+    - name: Disable GIL
+      if: ${{endsWith(matrix.python-version, 't')}}
+      # zope.hookable 8.2 currently enables the gil
+      run: |
+        echo PYTHON_GIL=0 >> $GITHUB_ENV
     - name: Test
       run: |
         python -m coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress
