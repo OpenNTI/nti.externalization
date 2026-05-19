@@ -46,8 +46,8 @@ jobs:
         python -m pip install -U coverage
         python -m pip install -v -U -e ".${{ matrix.extras }}"
     - name: Disable GIL
-      if: ${{endsWith(matrix.python-version, 't')}}
-      # zope.hookable 8.2 currently enables the gil
+      if: ${{endsWith(matrix.python-version, 't') || endsWith(matrix.python-version, 't-dev')}}
+      # zope.hookable 8.2/zope.proxy 7.2 currently enables the gil
       run: |
         echo PYTHON_GIL=0 >> $GITHUB_ENV
     - name: Test
