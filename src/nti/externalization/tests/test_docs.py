@@ -37,6 +37,11 @@ CODEBLOCK_START = re.compile(
 manuel.codeblock.CODEBLOCK_START = CODEBLOCK_START
 
 def test_suite():
+    try:
+        import orjson
+    except ModuleNotFoundError:
+        orjson = None # type:ignore
+
     here = os.path.dirname(__file__)
     while not os.path.exists(os.path.join(here, 'setup.py')):
         here = os.path.join(here, '..')
@@ -48,7 +53,8 @@ def test_suite():
         'basics.rst',
         'externalization.rst',
         'internalization.rst',
-    )
+    ) if orjson else ()
+
     paths = [os.path.join(docs, f) for f in files_to_test]
     kwargs = {'tearDown': lambda _: cleanup.cleanUp()}
     m = manuel.ignore.Manuel()

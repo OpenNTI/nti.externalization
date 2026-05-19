@@ -133,6 +133,7 @@ if not PYPY:
                 'language_level': '3',
                 'always_allow_keywords': False,
                 'nonecheck': False,
+                'freethreading_compatible': True,
             },
         )
     except ValueError:
@@ -147,7 +148,7 @@ if not PYPY:
 
 setup(
     name='nti.externalization',
-    version='3.1.1.dev0',
+    version='3.2.0.dev0',
     author='Jason Madden',
     author_email='jason@seecoresoftware.com',
     description="NTI Externalization",
@@ -160,11 +161,11 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3.14',
+        'Programming Language :: Python :: 3.15',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     url="https://github.com/OpenNTI/nti.externalization",
@@ -179,7 +180,7 @@ setup(
         'PyYAML >= 5.1',
         'isodate',
         'pytz',
-        'orjson >= 3.11.9',
+
         'transaction',
         'zope.component >= 4.6.1',
         'zope.configuration >= 4.4.0',
@@ -212,7 +213,10 @@ setup(
         'benchmarks': [
             'pyperf',
         ],
+        'orjson': [
+            'orjson >= 3.11.9',
+        ]
     },
     entry_points=entry_points,
-    python_requires=">=3.10",
+    python_requires=">=3.11",
 )

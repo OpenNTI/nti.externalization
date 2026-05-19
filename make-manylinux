@@ -13,7 +13,7 @@ export TRAVIS=true
 # know. The env var works for pip 20.
 export PIP_NO_PYTHON_VERSION_WARNING=1
 export PIP_NO_WARN_SCRIPT_LOCATION=1
-
+export PIP_ROOT_USER_ACTION=1
 
 if [ -d /project ] && [ -d /opt/python ]; then
     # Running inside docker
@@ -44,9 +44,9 @@ if [ -d /project ] && [ -d /opt/python ]; then
     OPATH="$PATH"
     which auditwheel
     echo @@@@@@@@@@@@@@@@@@@@@@
-    echo Will build /opt/python/cp{310,311,312,313,314}*
+    echo Will build /opt/python/cp{311,312,313,314,315}*
 
-    for variant in `ls -d /opt/python/cp{314,313,310,311,312}*`; do
+    for variant in `ls -d /opt/python/cp{315,314,313,311,312}*`; do
 
         export PATH="$variant/bin:$OPATH"
         echo "Building $variant $(python --version)"

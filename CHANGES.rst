@@ -3,10 +3,18 @@
 =========
 
 
-3.1.1 (unreleased)
+3.2.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Drop support for Python 3.10.
+- Add support for Python 3.15.
+- Move the ``orjson`` dependency to the ``orjson`` extra
+  for compatibility with free-threaded Python. If you're using regular
+  Python, it is highly recommended to install this extra.
+- Add support for free-threaded CPython. However, note that some
+  dependencies, most notably orjson, cannot
+  currently be installed on free-threaded CPython, and other
+  dependencies may currently require enabling the GIL.
 
 
 3.1.0 (2026-05-08)

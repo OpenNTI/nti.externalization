@@ -20,7 +20,13 @@ except ModuleNotFoundError:
         """Mock"""
 else:
     from ZODB.POSException import POSError # type:ignore[no-redef]
-import orjson
+try:
+    import orjson
+    _HAS_ORJSON = True
+except ModuleNotFoundError:
+    import json
+    _HAS_ORJSON = False
+
 import yaml
 from zope import component
 from zope import interface
@@ -39,6 +45,8 @@ __all__ = [
     'to_json_representation_sorted',
     'WithRepr',
     'JsonRepresenter',
+    'OrJsonRepresenter',
+    'StdJsonRepresenter',
     'YamlRepresenter',
 ]
 
@@ -102,7 +110,8 @@ def to_json_representation_fast(obj) -> bytes:
     and additional parameters to optimize for speed.
 
     Note that this bypasses utility lookup and directly
-    uses :class:`JsonRepresenter`
+    uses :class:`JsonRepresenter`. It is also only
+    fastest when using orjson.
 
     .. versionadded:: 3.0.0
     .. versionchanged:: 3.1.0
@@ -148,7 +157,7 @@ def _second_pass_to_external_object(obj):
 
 @interface.named(EXT_REPR_JSON)
 @interface.implementer(IExternalObjectIO)
-class JsonRepresenter(object):
+class OrJsonRepresenter:
     """
     Default IO object using ``orjson`` for JSON input/output.
     """
@@ -169,7 +178,9 @@ class JsonRepresenter(object):
            Added the *sort_keys* parameter, defaulting to false for speed.
            Added the *as_str* parameter, defaulting to true for backwards compatibility.
            If set to false, then a bytes object will be returned (and written to any
-           *fp*). Bytes is orjson's native output format.
+           *fp*). Bytes is orjson's native output format, meaning no encoding/decoding is
+           required when this is false.
+
 
            Other keyword arguments are ignored.
 
@@ -185,6 +196,56 @@ class JsonRepresenter(object):
 
     def load(self, stream):
         return orjson.loads(stream)
+
+
+@interface.named(EXT_REPR_JSON)
+@interface.implementer(IExternalObjectIO)
+class StdJsonRepresenter:
+    """
+    Default IO object using :mod:`json` for JSON input/output.
+    """
+
+    @staticmethod
+    def dump(obj, fp=None, sort_keys=False, as_str=True, **_unused) -> str|bytes:
+        """
+        dump(obj, fp=None, sort_keys=False, as_str=True) -> str|bytes
+
+        Given an object that is known to already be in an externalized form,
+        convert it to JSON. This can be about 10% faster then requiring a pass
+        across all the sub-objects of the object to check that they are in external
+        form, while still handling a few corner cases with a second-pass conversion.
+        (These things creep in during the object decorator phase and are usually
+        links.)
+
+        .. versionchanged:: 3.0.0
+           Added the *sort_keys* parameter, defaulting to false for speed.
+           Added the *as_str* parameter, defaulting to true for backwards compatibility
+           and speed.
+           If set to false, then a bytes object will be returned (and written to any
+           *fp*). Because str is the standard library's default output format, this
+           requires decoding.
+
+           Other keyword arguments are ignored.
+
+        """
+        result = json.dumps(obj, # pylint: disable=used-before-assignment
+                            sort_keys=sort_keys,
+                            default=_second_pass_to_external_object)
+        if not as_str:
+            result = result.encode('utf-8') # type:ignore[assignment]
+        if fp:
+            return fp.write(result)
+        return result
+
+    def load(self, stream):
+        return json.loads(stream)
+
+
+if _HAS_ORJSON:
+    JsonRepresenter = OrJsonRepresenter
+else:
+    JsonRepresenter = StdJsonRepresenter # type:ignore
+
 
 # This is meant for dumping already externalized objects, but
 # because of the second_pass_to_external_object default,
@@ -255,7 +316,7 @@ _UnicodeLoader.add_constructor('tag:yaml.org,2002:str',
 @interface.implementer(IExternalObjectIO)
 class YamlRepresenter(object):
     """
-    Default IO object using ``yaml`` for object input/output.
+    Default IO object using :mod:`yaml` for object input/output.
     """
 
     @staticmethod

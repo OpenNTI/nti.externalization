@@ -60,6 +60,23 @@ concerns should be kept as separated as possible from our model
 objects. Ideally, we should be able to use third-party objects that we
 have no control over seamlessly in external and internal data.
 
+Installation
+============
+
+This package is installed from PyPI::
+
+  pip install nti.externalization[orjson,zodb]
+
+It has some extras:
+
+orjson
+   Highly recommended for a faster dumping and loading experience. As
+   of at least orjson 3.11.9, however, this is incompatible with
+   free-threaded Python.
+zodb
+   Optional; provides support for BTrees, persistent objects, intids, and
+   container proxies.
+
 Getting Started
 ===============
 
