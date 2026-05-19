@@ -85,7 +85,7 @@ We'll register our adapter and externalize:
    >>> from zope import component
    >>> component.provideSubscriptionAdapter(PrivateAddressDecorator)
    >>> from pprint import pprint
-   >>> pprint(to_external_object(home_address))
+   >>> pprint(to_external_object(home_address), compact=True, indent=1)
    {'Class': 'Address',
     'MimeType': 'application/vnd.nextthought.benchmarks.address',
     'country': 'USA',
@@ -118,7 +118,7 @@ look for a request):
    :pyversion: > 3.3
 
    >>> component.provideSubscriptionAdapter(LinkAddressDecorator)
-   >>> pprint(to_external_object(home_address, request=Request()))
+   >>> pprint(to_external_object(home_address, request=Request()), compact=True, indent=1)
    {'Class': 'Address',
     'MimeType': 'application/vnd.nextthought.benchmarks.address',
     'country': 'USA',

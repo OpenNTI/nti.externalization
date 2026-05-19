@@ -265,7 +265,7 @@ others:
 
   >>> internal.creator = u'sjohnson'
   >>> internal.createdTime = 123456
-  >>> pprint(to_external_object(internal))
+  >>> pprint(to_external_object(internal), compact=True, indent=1)
   {'Class': 'ExternalObject',
    'CreatedTime': 123456,
    'Creator': 'sjohnson',
@@ -354,7 +354,7 @@ Now we can register and use it as before:
    ...    postal_code=u'95014',
    ...    country=u'USA')
    >>> external = to_external_object(address)
-   >>> pprint(external)
+   >>> pprint(external, compact=True, indent=1)
    {'Class': 'Address',
     'city': 'Cupertino',
     'country': 'USA',
@@ -490,7 +490,7 @@ demonstrating that nested schemas and objects are possible.
    ...     realname=u'Steve Jobs',
    ... )
    >>> external = to_external_object(user_profile)
-   >>> pprint(external)
+   >>> pprint(external, compact=True, indent=1)
    {'Class': 'UserProfile',
     'MimeType': 'application/vnd.nextthought.benchmarks.userprofile',
     'addresses': {'home': {'Class': 'Address',
