@@ -28,7 +28,7 @@ jobs:
           # moving it to an extra.
           - python-version: "3.14t"
             extras: "[test,docs,zodb]"
-          - python-version: "3.15t"
+          - python-version: "3.15t-dev"
             extras: "[test,docs,zodb]"
 
     runs-on: ubuntu-latest
