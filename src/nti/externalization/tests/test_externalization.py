@@ -832,6 +832,10 @@ class TestToExternalObject(ExternalizationLayerTest):
     def test_recursive_call_on_creator(self):
         # Make sure that we properly handle recursive calls on a
         # field we want to pre-convert to a str, creator.
+        try:
+            __import__('orjson')
+        except ModuleNotFoundError:
+            self.skipTest('Requires orjson')
 
         class O(object):
             def __init__(self):

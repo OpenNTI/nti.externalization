@@ -221,6 +221,10 @@ class AbstractRepresenterTestMixin(object):
 
     def test_dump_decimal_nan(self):
         import decimal
+        try:
+            __import__('orjson')
+        except ModuleNotFoundError:
+            self.skipTest('Requires orjson') # type:ignore
         rep = self._makeOne()
 
         for f in float('-nan'), float('nan'):
@@ -235,6 +239,11 @@ class AbstractRepresenterTestMixin(object):
 
     def test_dump_decimal_inf(self):
         import decimal
+        try:
+            __import__('orjson')
+        except ModuleNotFoundError:
+            self.skipTest('Requires orjson') # type:ignore
+
         rep = self._makeOne()
 
         for f in float('-inf'), float('inf'):

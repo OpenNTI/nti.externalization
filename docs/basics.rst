@@ -60,6 +60,23 @@ concerns should be kept as separated as possible from our model
 objects. Ideally, we should be able to use third-party objects that we
 have no control over seamlessly in external and internal data.
 
+Installation
+============
+
+This package is installed from PyPI::
+
+  pip install nti.externalization[orjson,zodb]
+
+It has some extras:
+
+orjson
+   Highly recommended for a faster dumping and loading experience. As
+   of at least orjson 3.11.9, however, this is incompatible with
+   free-threaded Python.
+zodb
+   Optional; provides support for BTrees, persistent objects, intids, and
+   container proxies.
+
 Getting Started
 ===============
 
@@ -248,7 +265,7 @@ others:
 
   >>> internal.creator = u'sjohnson'
   >>> internal.createdTime = 123456
-  >>> pprint(to_external_object(internal))
+  >>> pprint(to_external_object(internal), compact=True, indent=1)
   {'Class': 'ExternalObject',
    'CreatedTime': 123456,
    'Creator': 'sjohnson',
@@ -337,7 +354,7 @@ Now we can register and use it as before:
    ...    postal_code=u'95014',
    ...    country=u'USA')
    >>> external = to_external_object(address)
-   >>> pprint(external)
+   >>> pprint(external, compact=True, indent=1)
    {'Class': 'Address',
     'city': 'Cupertino',
     'country': 'USA',
@@ -473,7 +490,7 @@ demonstrating that nested schemas and objects are possible.
    ...     realname=u'Steve Jobs',
    ... )
    >>> external = to_external_object(user_profile)
-   >>> pprint(external)
+   >>> pprint(external, compact=True, indent=1)
    {'Class': 'UserProfile',
     'MimeType': 'application/vnd.nextthought.benchmarks.userprofile',
     'addresses': {'home': {'Class': 'Address',

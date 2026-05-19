@@ -18,11 +18,18 @@ jobs:
           - "3.12"
           - "3.13"
           - "3.14"
+          - "3.15-dev"
         extras:
-          - "[test,docs,zodb]"
-        # include:
-        #   - python-version: "3.13"
-        #     extras: "[test,docs,gevent,pyramid]"
+          - "[test,docs,zodb,orjson]"
+        include:
+          # orjson 3.11.9 doesn't currently support
+          # being built for free-threaded python, so if we wanted
+          # to test there, we'd need to substitute it, most likely by
+          # moving it to an extra.
+          - python-version: "3.14t"
+            extras: "[test,docs,zodb]"
+          - python-version: "3.15t-dev"
+            extras: "[test,docs,zodb]"
 
     runs-on: ubuntu-latest
     steps:
@@ -38,13 +45,20 @@ jobs:
         python -m pip install -U pip setuptools wheel
         python -m pip install -U coverage
         python -m pip install -v -U -e ".${{ matrix.extras }}"
+    - name: Disable GIL
+      if: ${{endsWith(matrix.python-version, 't') || endsWith(matrix.python-version, 't-dev')}}
+      # zope.hookable 8.2/zope.proxy 7.2 currently enables the gil
+      run: |
+        echo PYTHON_GIL=0 >> $GITHUB_ENV
     - name: Test
       run: |
         python -m coverage run -m zope.testrunner --test-path=src  --auto-color --auto-progress
         PURE_PYTHON=1 coverage run -a -m zope.testrunner --test-path=src  --auto-color --auto-progress
+    - name: Docs
+      if: matrix.python-version == '3.14'
+      # Requires orjson
+      run: |
         coverage run -a -m sphinx -b doctest -d docs/_build/doctrees docs docs/_build/doctests
-        coverage combine || true
-        coverage report -i || true
     - name: Lint
       if: matrix.python-version == '3.14'
       run: |
@@ -54,6 +68,10 @@ jobs:
       run: |
         python -m pip uninstall -y ZODB zope.dublincore  persistent zope.container BTrees
         PURE_PYTHON=1 coverage run -a -m zope.testrunner --test-path=src  --auto-color --auto-progress
+    - name: Combine Coverage
+      run: |
+        coverage combine || true
+        coverage report -i || true
     - name: Submit to Coveralls
       uses: coverallsapp/github-action@v2
       with:
@@ -75,7 +93,7 @@ jobs:
     # We use a regular Python matrix entry to share as much code as possible.
     strategy:
       matrix:
-        python-version: [3.12]
+        python-version: [3.14]
         image:
           - manylinux_2_28_x86_64
           - manylinux_2_28_aarch64
