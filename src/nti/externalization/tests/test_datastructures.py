@@ -549,14 +549,14 @@ class TestInterfaceObjectIO(CleanUp,
         assert_that(factory, is_(none()))
 
     def test_factory_for_dict_with_object_value(self):
-        from zope.schema import Dict
+        from zope.schema import Mapping
         from zope.schema import Object
 
         class I2(interface.Interface):
             pass
 
         class I(interface.Interface):
-            field = Dict(
+            field = Mapping(
                 title='A blank field',
                 value_type=Object(I2)
             )

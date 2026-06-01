@@ -6,7 +6,9 @@
 3.2.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Make internalizing anonymous dictionary objects
+  support ``IMapping`` fields, rather than only its subclass
+  ``IDict``.
 
 
 3.2.0 (2026-05-19)

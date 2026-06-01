@@ -19,7 +19,7 @@ from collections.abc import MutableMapping
 from zope import interface
 from zope import schema
 from zope.component import getUtility
-from zope.schema.interfaces import IDict
+from zope.schema.interfaces import IMapping
 from zope.schema.interfaces import IObject
 from zope.schema.interfaces import SchemaNotProvided
 
@@ -49,7 +49,7 @@ from .representation import make_repr
 StandardExternalFields = get_standard_external_fields()
 StandardInternalFields = get_standard_internal_fields()
 DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
-IDict_providedBy = IDict.providedBy
+IMapping_providedBy = IMapping.providedBy
 IObject_providedBy = IObject.providedBy
 
 __all__ = [
@@ -694,12 +694,15 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
         remove this limitation is to subclass this object.
 
         If no registered factory is found, and the schema field is
-        a `zope.schema.Dict` with a value type of `zope.schema.Object`,
+        a `zope.schema.Mapping` with a value type of `zope.schema.Object`,
         then we return a factory which will update the object in place.
 
         .. versionchanged:: 1.0a6
            Only return an anonymous factory for ``IDict`` fields when
            it wants objects for the value.
+
+        .. versionchanged:: NEXT
+           Use ``IMapping`` instead of ``IDict`` to be more general.
 
         """
         factory = AbstractDynamicObjectIO.find_factory_for_named_value(self, key, value)
@@ -727,12 +730,12 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
 
                 if (
                         factory is None
-                        and IDict_providedBy(field) # pylint:disable=no-value-for-parameter
+                        and IMapping_providedBy(field) # pylint:disable=no-value-for-parameter
                         and isinstance(value, dict)
                         and IObject_providedBy(field.value_type) # pylint:disable=no-value-for-parameter
                 ):
-                    # If is no factory found, check to see if the
-                    # schema field is a Dict with a complex value type, and if
+                    # If there is no factory found, check to see if the
+                    # schema field is a Mapping with a complex value type, and if
                     # so, automatically update it in place. The alternative
                     # requires the user to use a ZCML directive for each such
                     # dict field.

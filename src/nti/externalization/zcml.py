@@ -244,7 +244,6 @@ def autoPackageExternalization(_context, root_interfaces, modules,
     # The plus side is that now that we are using component_zcml.utility()
     # to register legacy class factories too, there's not much harm in
     # initing the class early.
-
     legacy_factories = cls_iio.__class_init__()
 
     # Now that it's initted, register the factories

@@ -32,7 +32,7 @@ cdef make_repr
 cdef isSyntheticKey
 cdef find_most_derived_interface
 cdef NotGiven
-cdef IDict_providedBy
+cdef IMapping_providedBy
 cdef IObject_providedBy
 cdef _anonymous_dict_factory
 
