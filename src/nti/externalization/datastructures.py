@@ -701,7 +701,7 @@ class InterfaceObjectIO(AbstractDynamicObjectIO):
            Only return an anonymous factory for ``IDict`` fields when
            it wants objects for the value.
 
-        .. versionchanged:: NEXT
+        .. versionchanged:: 3.2.1
            Use ``IMapping`` instead of ``IDict`` to be more general.
 
         """

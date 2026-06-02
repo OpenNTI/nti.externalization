@@ -3,7 +3,7 @@
 =========
 
 
-3.2.1 (unreleased)
+3.2.1 (2026-06-02)
 ==================
 
 - Make internalizing anonymous dictionary objects
