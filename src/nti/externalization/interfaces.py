@@ -406,7 +406,7 @@ class IWantsMutableSequenceToUpdate(interface.Interface):
     if they're being updated from a sequence, they want that sequence passed directly
     to their ``IInternalObjectUpdater``'s ``updateFromExternalObject`` method.
 
-    .. versionaddedd:: NEXT
+    .. versionadded:: 3.3.0
     """
 
 class IInternalObjectIOFinder(INamedExternalizedObjectFactoryFinder, # pylint:disable=too-many-ancestors
