@@ -3,10 +3,18 @@
 =========
 
 
-3.2.2 (unreleased)
+3.3.0 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Introduce ``IWantsMutableSequenceToUpdate`` marker interface
+  that objects can implement to be passed the raw ``MutableSequence``
+  object, rather than assuming the sequence contains objects to
+  create/update in place. This is sufficient for direct calls to
+  ``update_from_external_object`` on the object so marked, but when
+  used in a nested context (an attribute of another object), you may
+  still need/want to implement an adapter ``@adapter(list)`` that
+  ``@implementer(YourType)`` that does the same thing.
+
 
 
 3.2.1 (2026-06-02)

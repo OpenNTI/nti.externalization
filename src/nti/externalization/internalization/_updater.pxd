@@ -20,6 +20,7 @@ cdef interface
 cdef IInternalObjectUpdater
 cdef IInternalObjectIO
 cdef INamedExternalizedObjectFactoryFinder
+cdef IWantsMutableSequenceToUpdate
 cdef notify_event
 cdef ObjectWillUpdateFromExternalEvent
 

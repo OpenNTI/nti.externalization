@@ -27,6 +27,7 @@ from nti.externalization._base_interfaces import PRIMITIVES
 from nti.externalization.interfaces import IInternalObjectIO
 from nti.externalization.interfaces import IInternalObjectUpdater
 from nti.externalization.interfaces import INamedExternalizedObjectFactoryFinder
+from nti.externalization.interfaces import IWantsMutableSequenceToUpdate
 from nti.externalization.interfaces import ObjectWillUpdateFromExternalEvent
 
 from .events import _notifyModified
@@ -178,6 +179,17 @@ def update_from_external_object(containedObject: MutableSequence,
                                 notify=True) -> MutableSequence:
     # pylint:disable=too-many-positional-arguments
     ...
+
+@overload
+def update_from_external_object(containedObject: T,
+                                externalObject: MutableSequence,
+                                context=None,
+                                require_updater=False,
+                                notify=True) -> T:
+    # Only for the case IWantsMutableSequenceToUpdate
+    # pylint:disable=too-many-positional-arguments
+    ...
+
 
 @overload
 def update_from_external_object(containedObject: T,
@@ -340,6 +352,12 @@ def _update_from_external_object(containedObject: T,
     # Sequences do not represent python types, they represent collections of
     # python types. Note that we don't touch the containedObject in this branch!
     if isinstance(externalObject, MutableSequence):
+        # However, if the contained object itself declares that it wants to handle
+        # the sequence, then let it.
+        if IWantsMutableSequenceToUpdate.providedBy(containedObject): # pylint: disable=no-value-for-parameter
+            updater = IInternalObjectUpdater(containedObject)
+            _invoke_updater(containedObject, externalObject, updater, [], args)
+            return containedObject
         return _update_sequence(externalObject, args)
 
     assert isinstance(externalObject, MutableMapping), externalObject

@@ -400,6 +400,15 @@ class IInternalObjectIO(IInternalObjectExternalizer, IInternalObjectUpdater):
     in external forms. This is convenient for keeping code organized.
     """
 
+class IWantsMutableSequenceToUpdate(interface.Interface):
+    """
+    A marker interface applied to contained (internale) objects indicating that
+    if they're being updated from a sequence, they want that sequence passed directly
+    to their ``IInternalObjectUpdater``'s ``updateFromExternalObject`` method.
+
+    .. versionaddedd:: NEXT
+    """
+
 class IInternalObjectIOFinder(INamedExternalizedObjectFactoryFinder, # pylint:disable=too-many-ancestors
                               IInternalObjectIO):
     """

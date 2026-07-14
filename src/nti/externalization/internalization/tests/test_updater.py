@@ -65,9 +65,9 @@ class TestUpdater(CleanUp,
     def setUp(self):
         from zope import event
 
+        events: list
         self.events = events = []
         event.subscribers.append(events.append)
-
 
     def tearDown(self):
         from zope import event
@@ -133,3 +133,21 @@ class TestUpdater(CleanUp,
 
         assert_that(events[1], is_(interfaces.ObjectModifiedFromExternalEvent))
         assert_that(events[3], is_(interfaces.ObjectModifiedFromExternalEvent))
+
+
+    def test_IWantsMutableSequenceToUpdate(self):
+        from ...interfaces import IWantsMutableSequenceToUpdate
+        from ...interfaces import IInternalObjectUpdater
+
+        @interface.implementer(IInternalObjectUpdater,
+                               IWantsMutableSequenceToUpdate)
+        class WantsSequence:
+            externalObject = None
+            def updateFromExternalObject(self, externalObject, **_kwargs):
+                self.externalObject = externalObject
+
+
+        inst = WantsSequence()
+        updater.update_from_external_object(inst, [1, 2, 3])
+
+        assert_that(inst, has_property('externalObject', [1, 2, 3]))
