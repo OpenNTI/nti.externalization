@@ -36,7 +36,10 @@ from .factories import find_factory_for
 
 T = TypeVar('T')
 
-_EMPTY_DICT: dict = {}
+# For Cython CDEF constants, must use type comments, not
+# type annotations, otherwise Cython 3.3 complains about the variable
+# being redeclared.
+_EMPTY_DICT = {} # type: dict
 IPersistent_providedBy = IPersistent.providedBy
 
 
@@ -70,7 +73,7 @@ class _RecallArgs(object):
 # cumbersome and needs to go; we are in the deprecation period now.
 # See https://github.com/NextThought/nti.externalization/issues/30
 
-_argspec_cache: dict[type, str] = {}
+_argspec_cache = {} # type: dict[type, str]
 
 # update(ext, context) or update(ext, context=None) or update(ext, dataserver)
 # exactly two arguments. It doesn't matter what the name is, we'll call it
@@ -128,7 +131,7 @@ def _get_update_signature(updater) -> str:
     return spec
 
 
-_usable_updateFromExternalObject_cache: dict[type, bool] = {}
+_usable_updateFromExternalObject_cache = {} # type: dict[type, bool]
 
 def _obj_has_usable_updateFromExternalObject(obj) -> bool:
     kind = type(obj)

@@ -8,7 +8,10 @@ from weakref import WeakSet
 
 from zope.interface import providedBy
 
-cache_instances: WeakSet["InterfaceCache"] = WeakSet()
+# For Cython CDEF constants, must use type comments, not
+# type annotations, otherwise Cython 3.3 complains about the variable
+# being redeclared.
+cache_instances = WeakSet() # type: WeakSet["InterfaceCache"]
 
 
 class InterfaceCache(object):

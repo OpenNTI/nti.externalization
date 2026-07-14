@@ -55,9 +55,13 @@ DEFAULT_EXTERNALIZATION_POLICY = get_default_externalization_policy()
 # the name that was established at the top level.
 
 # Stores tuples (name, memos)
-_manager: ThreadLocalManager[tuple[Any, Any, Any]] = ThreadLocalManager(
+
+# For Cython CDEF constants, must use type comments, not
+# type annotations, otherwise Cython 3.3 complains about the variable
+# being redeclared.
+_manager = ThreadLocalManager(
     default=lambda: (NotGiven, None, DEFAULT_EXTERNALIZATION_POLICY)
-)
+) # type: ThreadLocalManager[tuple[Any, Any, Any]]
 _manager_get = _manager.get
 _manager_pop = _manager.pop
 _manager_push = _manager.push
@@ -181,7 +185,7 @@ def _externalize_sequence(obj, state):
     return result
 
 
-_usable_externalObject_cache:MutableMapping[type, bool] = WeakKeyDictionary()
+_usable_externalObject_cache = WeakKeyDictionary() # type: MutableMapping[type, bool]
 _usable_externalObject_cache_get = _usable_externalObject_cache.get
 
 try:

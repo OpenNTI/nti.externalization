@@ -6,7 +6,7 @@
 3.3.1 (unreleased)
 ==================
 
-- Nothing changed yet.
+- Add compatibility with Cython 3.3.0a1
 
 
 3.3.0 (2026-07-14)
