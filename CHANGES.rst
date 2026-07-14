@@ -3,7 +3,7 @@
 =========
 
 
-3.3.0 (unreleased)
+3.3.0 (2026-07-14)
 ==================
 
 - Introduce ``IWantsMutableSequenceToUpdate`` marker interface
