@@ -7,6 +7,10 @@
 ==================
 
 - Add compatibility with Cython 3.3.0a1
+- Binary wheels for Python 3.15 are now built on Python 3.15b4.
+  These may or may not work on newer or older versions of Python 3.15.
+  Binary wheels for 3.15 in previous ``nti.externalization`` releases
+  probably won't work on 3.15b4.
 
 
 3.3.0 (2026-07-14)
