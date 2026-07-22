@@ -148,7 +148,7 @@ if not PYPY:
 
 setup(
     name='nti.externalization',
-    version='3.3.1',
+    version='3.3.2.dev0',
     author='Jason Madden',
     author_email='jason@seecoresoftware.com',
     description="NTI Externalization",
