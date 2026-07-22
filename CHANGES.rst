@@ -3,7 +3,7 @@
 =========
 
 
-3.3.1 (unreleased)
+3.3.1 (2026-07-22)
 ==================
 
 - Add compatibility with Cython 3.3.0a1
